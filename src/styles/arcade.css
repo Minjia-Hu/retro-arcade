@@ -47,7 +47,7 @@ button { font-family: inherit; cursor: pointer; }
   color: #00e5ff; padding: 4px 10px; font-size: 13px;
 }
 .frame-body { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-.frame-body canvas { max-width: 100%; max-height: 100%; }
+.frame-body canvas { max-width: 100%; max-height: 100%; object-fit: contain; }
 
 /* ---- 错误兜底 ---- */
 .frame-error {

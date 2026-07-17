@@ -91,6 +91,7 @@ describe('flappy logic', () => {
     s.pipes.push({ x: -PIPE_W - 1, gapY: H / 2, passed: true }, { x: 200, gapY: H / 2, passed: false });
     tick(s, 0.016, rand);
     expect(s.pipes.every((p) => p.x + PIPE_W > 0)).toBe(true);
+    expect(s.pipes).toHaveLength(1); // 出屏那根被清除；lastX=200 > W-SPAWN_MARGIN=130，故本帧不生成新管道
   });
 
   it('dead 状态下 tick 冻结世界', () => {
