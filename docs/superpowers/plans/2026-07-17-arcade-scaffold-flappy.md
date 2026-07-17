@@ -1621,6 +1621,16 @@ git push origin main
 
 ---
 
+## 评审修订记录（Task 11-12 质量审查后落地，作为 7 款游戏的模板基线）
+
+以下修订在 Flappy 合入后追加，实际代码为准（本文件 Task 11/12 的代码块未逐行回填）：
+
+1. `logic.ts`：`PIPE_SPACING` 更名 `SPAWN_MARGIN` 并修正注释（实际管距 = SPAWN_MARGIN + PIPE_W）；缺口位置改为由 `PIPE_GAP/2 + EDGE_MARGIN` 推导，调整 `PIPE_GAP` 不再可能让缺口伸出屏外。
+2. `index.ts`：canvas backing store 按 `devicePixelRatio`（上限 3）放大并 `g.scale(dpr, dpr)`，CSS 尺寸不变——修复高分屏手机画面发糊；暂停期间 `act()` 直接返回；死亡后 400ms 内忽略重开输入（防连点跳过 GAME OVER）。
+3. `registry.ts`：`GameEntry.meta` 注释标明须与游戏模块内 meta 手动同步（懒加载所需的有意重复）。
+4. `tests/flappy-logic.test.ts`：补撞天花板判死、出屏管道清理、dead 态世界冻结、同管道不重复计分 4 个用例（flappy 12 个，全套 29 个）。
+5. 记录为有意设计：小鸟按 AABB 参与管道碰撞（Flappy 类惯例）；撞天花板判死（比原版严苛，接受）。
+
 ## 本计划之外（后续计划逐一覆盖）
 
 贪吃蛇、2048、打砖块、扫雷、俄罗斯方块、数独、五子棋（含 AI 与 Web Worker）各出独立计划；最后是全局打磨与部署上线计划（仅在用户确认后执行）。
