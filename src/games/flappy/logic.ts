@@ -9,7 +9,8 @@ export const PIPE_GAP = 130;
 const GRAVITY = 1200; // px/s²
 const FLAP_VY = -380; // px/s
 const PIPE_SPEED = 120; // px/s
-const PIPE_SPACING = 190; // 相邻管道水平间距 px
+const SPAWN_MARGIN = 190; // 触发生成的右侧余量；实际管道间距 = SPAWN_MARGIN + PIPE_W（另有每帧 ≤ PIPE_SPEED*dt 的离散化漂移）
+const EDGE_MARGIN = 15; // 缺口边缘距屏幕上下的最小余量
 
 export type FlappyStatus = 'ready' | 'playing' | 'dead';
 
@@ -46,8 +47,9 @@ export function tick(s: FlappyState, dt: number, rand: () => number = Math.rando
 
   // 生成新管道
   const lastX = s.pipes.length > 0 ? s.pipes[s.pipes.length - 1].x : -Infinity;
-  if (lastX < W - PIPE_SPACING) {
-    const gapY = 80 + rand() * (H - 240);
+  if (lastX < W - SPAWN_MARGIN) {
+    const m = PIPE_GAP / 2 + EDGE_MARGIN; // 缺口完整留在屏内
+    const gapY = m + rand() * (H - 2 * m);
     s.pipes.push({ x: W + PIPE_W, gapY, passed: false });
   }
 

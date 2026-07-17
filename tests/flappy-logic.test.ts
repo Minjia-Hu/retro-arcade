@@ -74,4 +74,42 @@ describe('flappy logic', () => {
     flap(s);
     expect(s.status).toBe('dead');
   });
+
+  it('撞天花板判死', () => {
+    const s = createState();
+    flap(s);
+    s.birdY = BIRD_R;
+    s.birdVy = -400;
+    tick(s, 0.1, rand);
+    expect(s.status).toBe('dead');
+  });
+
+  it('出屏管道被移除', () => {
+    const s = createState();
+    flap(s);
+    s.birdY = H / 2;
+    s.pipes.push({ x: -PIPE_W - 1, gapY: H / 2, passed: true }, { x: 200, gapY: H / 2, passed: false });
+    tick(s, 0.016, rand);
+    expect(s.pipes.every((p) => p.x + PIPE_W > 0)).toBe(true);
+  });
+
+  it('dead 状态下 tick 冻结世界', () => {
+    const s = createState();
+    s.status = 'dead';
+    s.birdY = 100;
+    s.pipes.push({ x: 200, gapY: H / 2, passed: false });
+    tick(s, 0.1, rand);
+    expect(s.birdY).toBe(100);
+    expect(s.pipes[0].x).toBe(200);
+  });
+
+  it('同一根管道不会重复计分', () => {
+    const s = createState();
+    flap(s);
+    s.birdY = H / 2;
+    s.pipes.push({ x: BIRD_X - PIPE_W - 0.5, gapY: H / 2, passed: false });
+    tick(s, 0.016, rand);
+    tick(s, 0.016, rand);
+    expect(s.score).toBe(1);
+  });
 });

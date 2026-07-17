@@ -11,9 +11,13 @@ export function createFlappy(): Game {
   let ctx: GameContext | null = null;
   let best = 0;
   let deadHandled = false;
+  let paused = false;
+  let diedAt = 0;
 
   function act(): void {
+    if (paused) return;
     if (state.status === 'dead') {
+      if (performance.now() - diedAt < 400) return; // 死亡瞬间常有连点，给 GAME OVER 一点展示时间
       state = L.createState();
       deadHandled = false;
       return;
@@ -33,6 +37,7 @@ export function createFlappy(): Game {
     }
     if (state.status === 'dead' && !deadHandled) {
       deadHandled = true;
+      diedAt = performance.now();
       ctx?.audio.play('hit');
     }
   }
@@ -86,11 +91,14 @@ export function createFlappy(): Game {
       ctx = context;
       best = ctx.storage.get('best.flappy', 0);
       canvas = document.createElement('canvas');
-      canvas.width = L.W;
-      canvas.height = L.H;
+      const dpr = Math.min(window.devicePixelRatio || 1, 3);
+      canvas.width = L.W * dpr;
+      canvas.height = L.H * dpr;
+      canvas.style.width = `${L.W}px`; // CSS 尺寸不变；backing store 按 DPR 放大保证高分屏清晰
       canvas.style.touchAction = 'none';
       container.appendChild(canvas);
       g = canvas.getContext('2d')!;
+      g.scale(dpr, dpr);
 
       ctx.input.onTap(canvas, act);
       ctx.input.onKey((code) => {
@@ -102,10 +110,12 @@ export function createFlappy(): Game {
     },
 
     pause(): void {
+      paused = true;
       loop?.pause();
     },
 
     resume(): void {
+      paused = false;
       loop?.resume();
     },
 

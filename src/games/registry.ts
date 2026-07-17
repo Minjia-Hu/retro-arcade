@@ -1,6 +1,7 @@
 import type { Game, GameMeta } from '../core/game';
 
 export interface GameEntry {
+  /** 与各游戏模块内的 meta 保持手动同步（懒加载需要，属有意重复） */
   meta: GameMeta;
   /** 未实装的游戏没有 load，首页显示 COMING SOON */
   load?: () => Promise<Game>;
