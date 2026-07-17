@@ -1174,7 +1174,7 @@ git commit -m "feat: add game frame with pause, mute and error fallback"
 ```ts
 import { describe, it, expect } from 'vitest';
 import {
-  createState, flap, tick, W, H, BIRD_X, BIRD_R, PIPE_W, PIPE_GAP,
+  createState, flap, tick, H, BIRD_X, BIRD_R, PIPE_W, PIPE_GAP,
 } from '../src/games/flappy/logic';
 
 const rand = () => 0.5; // 固定随机数便于断言
