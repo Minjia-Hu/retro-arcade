@@ -1630,6 +1630,8 @@ git push origin main
 3. `registry.ts`：`GameEntry.meta` 注释标明须与游戏模块内 meta 手动同步（懒加载所需的有意重复）。
 4. `tests/flappy-logic.test.ts`：补撞天花板判死、出屏管道清理、dead 态世界冻结、同管道不重复计分 4 个用例（flappy 12 个，全套 29 个）。
 5. 记录为有意设计：小鸟按 AABB 参与管道碰撞（Flappy 类惯例）；撞天花板判死（比原版严苛，接受）。
+6. `arcade.css`：`.frame-body canvas` 增加 `object-fit: contain`（修复矮视口纵向压扁）；cull 测试补 `toHaveLength(1)` 断言。
+7. 移交下一里程碑（贪吃蛇计划）的遗留项：空格键与聚焦按钮的焦点冲突、frame mount 失败路径的即时 dispose、`reuseExistingServer` 按 CI 区分、`onSwipe` 的 pointer capture/pointercancel、扫雷需要的 `onLongPress`。
 
 ## 本计划之外（后续计划逐一覆盖）
 
