@@ -38,7 +38,7 @@ retro-arcade/
 │   ├── shell/
 │   │   ├── router.ts        # hash 路由
 │   │   ├── hub.ts           # 首页：游戏卡片网格
-│   │   └── frame.ts         # 游戏页外框：标题栏/返回/静音/暂停/最高分
+│   │   └── frame.ts         # 游戏页外框：标题栏/返回/静音/暂停（最高分展示在首页卡片与游戏内画面，外框保持精简）
 │   ├── core/
 │   │   ├── game.ts          # Game 接口定义
 │   │   ├── loop.ts          # requestAnimationFrame 游戏循环

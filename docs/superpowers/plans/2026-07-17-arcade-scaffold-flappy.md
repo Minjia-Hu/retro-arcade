@@ -931,7 +931,8 @@ import type { ArcadeStorage } from '../core/storage';
 export function renderHub(root: HTMLElement, storage: ArcadeStorage): void {
   const cards = GAMES.map((g) => {
     const playable = Boolean(g.load);
-    const best = storage.get<number | null>(`best.${g.meta.id}`, null);
+    const raw = storage.get<number | null>(`best.${g.meta.id}`, null);
+    const best = Number.isFinite(raw) ? (raw as number) : null; // 存量数据可能被写坏，只信数字
     const sub = playable ? (best === null ? '—' : `BEST ${best}`) : 'COMING SOON';
     return `
       <button class="card${playable ? '' : ' card-soon'}" data-id="${g.meta.id}"${playable ? '' : ' disabled'}>
@@ -1046,8 +1047,12 @@ export class GameFrame {
       if (!this.game) return;
       this.paused = !this.paused;
       btn('pause').textContent = this.paused ? '▶' : '⏸';
-      if (this.paused) this.game.pause();
-      else this.game.resume();
+      try {
+        if (this.paused) this.game.pause();
+        else this.game.resume();
+      } catch (err) {
+        console.error('[arcade] game crashed on pause/resume:', err);
+      }
     });
 
     const resizeCbs = new Set<() => void>();
@@ -1070,6 +1075,7 @@ export class GameFrame {
       this.game = game;
     } catch (err) {
       console.error('[arcade] game crashed on mount:', err);
+      try { game.destroy(); } catch { /* 尽力清理半挂载游戏的自有资源（rAF/定时器） */ }
       this.showError(root);
     }
   }
@@ -1542,10 +1548,11 @@ import { defineConfig } from '@playwright/test';
 
 export default defineConfig({
   testDir: './e2e',
-  use: { baseURL: 'http://localhost:5173' },
+  // 固定专用端口，避免与本机其他 Vite 项目（另一个常驻 5173 的本机项目）撞车
+  use: { baseURL: 'http://localhost:5183' },
   webServer: {
-    command: 'npm run dev',
-    url: 'http://localhost:5173',
+    command: 'npm run dev -- --port 5183 --strictPort',
+    url: 'http://localhost:5183',
     reuseExistingServer: true,
   },
 });
