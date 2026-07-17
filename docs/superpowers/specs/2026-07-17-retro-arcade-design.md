@@ -38,7 +38,7 @@ retro-arcade/
 │   ├── shell/
 │   │   ├── router.ts        # hash 路由
 │   │   ├── hub.ts           # 首页：游戏卡片网格
-│   │   └── frame.ts         # 游戏页外框：标题栏/返回/静音/暂停/最高分
+│   │   └── frame.ts         # 游戏页外框：标题栏/返回/静音/暂停（最高分展示在首页卡片与游戏内画面，外框保持精简）
 │   ├── core/
 │   │   ├── game.ts          # Game 接口定义
 │   │   ├── loop.ts          # requestAnimationFrame 游戏循环
@@ -126,7 +126,7 @@ interface Game {
 
 ## 9. 数据存储
 
-- `core/storage.ts` 封装 localStorage，命名空间 `arcade.<gameId>.*`。
+- `core/storage.ts` 封装 localStorage，统一前缀 `arcade.*`（如 `arcade.best.<gameId>`、`arcade.muted`）。
 - 存储内容：各游戏最高分/最佳纪录、静音设置、数独进行中盘面。
 - 所有读写 try-catch 兜底；localStorage 不可用（如隐私模式）时降级为内存存储，游戏功能不受影响。
 

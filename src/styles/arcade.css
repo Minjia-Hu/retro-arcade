@@ -1,0 +1,56 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  background: #0d0d16;
+  color: #e8e6ff;
+  font-family: 'Courier New', ui-monospace, monospace;
+  -webkit-tap-highlight-color: transparent;
+}
+#app { height: 100%; display: flex; flex-direction: column; }
+button { font-family: inherit; cursor: pointer; }
+
+/* ---- 首页 ---- */
+.hub { padding: 24px 16px; max-width: 720px; margin: 0 auto; width: 100%; }
+.hub-title {
+  text-align: center; color: #39ff14; letter-spacing: 4px;
+  text-shadow: 0 0 10px #39ff14; font-size: clamp(18px, 5vw, 28px);
+}
+.hub-sub { text-align: center; color: #665f7a; font-size: 12px; margin: 8px 0 24px; letter-spacing: 2px; }
+.hub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
+.card {
+  --neon: #00e5ff;
+  background: #16121f; border: 2px solid var(--neon); border-radius: 6px;
+  color: var(--neon); padding: 16px 8px; text-align: center;
+  display: flex; flex-direction: column; gap: 8px; align-items: center;
+  transition: box-shadow .15s;
+}
+.card:not(:disabled):hover { box-shadow: 0 0 14px var(--neon); }
+.hub-grid .card:nth-child(4n+1) { --neon: #39ff14; }
+.hub-grid .card:nth-child(4n+2) { --neon: #ff2fd6; }
+.hub-grid .card:nth-child(4n+3) { --neon: #00e5ff; }
+.hub-grid .card:nth-child(4n+4) { --neon: #ffe600; }
+.card-icon { font-size: 32px; }
+.card-name { font-weight: bold; letter-spacing: 1px; }
+.card-best { font-size: 11px; color: #665f7a; }
+.card-soon { opacity: .45; cursor: default; }
+
+/* ---- 游戏外框 ---- */
+.frame { display: flex; flex-direction: column; height: 100%; }
+.frame-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 8px 12px; background: #16121f; border-bottom: 1px solid #2a2438;
+}
+.frame-title { color: #e8e6ff; letter-spacing: 2px; font-size: 14px; }
+.frame-right { display: flex; gap: 8px; }
+.btn {
+  background: none; border: 1px solid #00e5ff; border-radius: 4px;
+  color: #00e5ff; padding: 4px 10px; font-size: 13px;
+}
+.frame-body { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.frame-body canvas { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+/* ---- 错误兜底 ---- */
+.frame-error {
+  height: 100%; display: flex; flex-direction: column; gap: 16px;
+  align-items: center; justify-content: center; color: #ff2fd6;
+}
