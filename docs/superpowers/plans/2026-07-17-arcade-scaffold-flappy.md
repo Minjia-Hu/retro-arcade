@@ -433,11 +433,12 @@ Expected: FAIL（找不到模块 `../src/core/audio`）。
 ```ts
 import type { ArcadeStorage } from './storage';
 
-export type SfxName = 'flap' | 'score' | 'hit' | 'win' | 'over' | 'click';
+// 名字保持游戏无关的通用语义（'action' 而非 'flap'），避免各游戏词汇泄漏进 core
+export type SfxName = 'action' | 'score' | 'hit' | 'win' | 'over' | 'click';
 
 // 每个音效 = 一串 [频率Hz, 时长s] 音符，方波依次播放
 export const SFX: Record<SfxName, [number, number][]> = {
-  flap: [[600, 0.05], [900, 0.05]],
+  action: [[600, 0.05], [900, 0.05]],
   score: [[880, 0.06], [1320, 0.09]],
   hit: [[200, 0.1], [120, 0.15]],
   win: [[660, 0.1], [880, 0.1], [1100, 0.2]],
@@ -468,6 +469,8 @@ export class AudioFx {
     try {
       // 首次调用（必然发生在用户交互后）才创建 AudioContext，符合自动播放策略
       this.ctx ??= new AudioContext();
+      // iOS Safari 等会在切后台后挂起 AudioContext，此处正值用户手势，允许 resume
+      if (this.ctx.state === 'suspended') void this.ctx.resume();
       let t = this.ctx.currentTime;
       for (const [freq, dur] of SFX[name]) {
         const osc = this.ctx.createOscillator();
@@ -575,6 +578,16 @@ describe('GameLoop', () => {
     m.fire(16);
     expect(n).toBe(1);
   });
+
+  it('重复 start 不会叠加并行 rAF 链', () => {
+    let n = 0;
+    const m = manualRaf();
+    const loop = new GameLoop(() => { n += 1; }, () => {}, m.raf);
+    loop.start();
+    loop.start();
+    m.fire(0);
+    expect(n).toBe(1);
+  });
 });
 ```
 
@@ -603,6 +616,7 @@ export class GameLoop {
   ) {}
 
   start(): void {
+    if (this.running) return; // 防重入：避免叠加并行 rAF 链
     this.running = true;
     this.paused = false;
     this.hasBase = false;
@@ -644,7 +658,7 @@ export class GameLoop {
 ```bash
 npm test -- tests/loop.test.ts
 ```
-Expected: 4 passed。
+Expected: 5 passed。
 
 **注意**：时间基准必须用独立的 `hasBase` 布尔标志，不能用 `last===0` 当哨兵——真实时间戳可能恰好为 0，会导致下一帧 dt 被误判为首帧而算成 0。测试的 `m.fire(0)` 用例专门覆盖此场景，若实现方式改变必须保留。
 
@@ -705,19 +719,20 @@ export function swipeDirection(dx: number, dy: number, threshold = 24): SwipeDir
 export class InputService {
   private disposers: (() => void)[] = [];
 
-  onKey(handler: (code: string) => void): void {
+  /** 各 on* 方法均返回单独的解绑函数；dispose() 仍可整体清理 */
+  onKey(handler: (code: string) => void): () => void {
     const fn = (e: KeyboardEvent) => handler(e.code);
     window.addEventListener('keydown', fn);
-    this.disposers.push(() => window.removeEventListener('keydown', fn));
+    return this.track(() => window.removeEventListener('keydown', fn));
   }
 
-  onTap(el: HTMLElement, handler: () => void): void {
+  onTap(el: HTMLElement, handler: () => void): () => void {
     const fn = (e: PointerEvent) => { e.preventDefault(); handler(); };
     el.addEventListener('pointerdown', fn);
-    this.disposers.push(() => el.removeEventListener('pointerdown', fn));
+    return this.track(() => el.removeEventListener('pointerdown', fn));
   }
 
-  onSwipe(el: HTMLElement, handler: (dir: SwipeDir) => void): void {
+  onSwipe(el: HTMLElement, handler: (dir: SwipeDir) => void): () => void {
     let sx = 0;
     let sy = 0;
     const down = (e: PointerEvent) => { sx = e.clientX; sy = e.clientY; };
@@ -727,7 +742,7 @@ export class InputService {
     };
     el.addEventListener('pointerdown', down);
     el.addEventListener('pointerup', up);
-    this.disposers.push(() => {
+    return this.track(() => {
       el.removeEventListener('pointerdown', down);
       el.removeEventListener('pointerup', up);
     });
@@ -736,6 +751,11 @@ export class InputService {
   dispose(): void {
     this.disposers.forEach((d) => d());
     this.disposers = [];
+  }
+
+  private track(off: () => void): () => void {
+    this.disposers.push(off);
+    return off;
   }
 }
 ```
@@ -1367,7 +1387,7 @@ export function createFlappy(): Game {
       return;
     }
     L.flap(state);
-    ctx?.audio.play('flap');
+    ctx?.audio.play('action');
   }
 
   function update(dt: number): void {
@@ -1491,7 +1511,7 @@ export function createFlappy(): Game {
 ```bash
 npx tsc && npm test
 ```
-Expected: 无编译错误；24 tests passed（storage 4 + audio 3 + loop 4 + input 3 + router 2 + flappy 8）。
+Expected: 无编译错误；25 tests passed（storage 4 + audio 3 + loop 5 + input 3 + router 2 + flappy 8）。
 
 - [ ] **Step 4: 人工验证（dev server）**
 
