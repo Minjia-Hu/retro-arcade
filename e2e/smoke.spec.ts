@@ -1,0 +1,21 @@
+import { test, expect } from '@playwright/test';
+
+test('首页显示 8 张游戏卡片', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('.hub-title')).toBeVisible();
+  await expect(page.locator('.card')).toHaveCount(8);
+});
+
+test('进入 flappy 有画布渲染，返回首页正常', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-id="flappy"]');
+  await expect(page.locator('canvas')).toBeVisible();
+  await expect(page.locator('.frame-title')).toContainText('FLAPPY');
+  await page.click('[data-act="back"]');
+  await expect(page.locator('.hub-title')).toBeVisible();
+});
+
+test('未实装游戏卡片为禁用状态', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('[data-id="snake"]')).toBeDisabled();
+});
