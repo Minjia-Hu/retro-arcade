@@ -594,6 +594,7 @@ export class GameLoop {
   private running = false;
   private paused = false;
   private last = 0;
+  private hasBase = false; // 是否已建立时间基准（不能用 last===0 当哨兵：真实时间戳可能恰为 0）
 
   constructor(
     private update: (dt: number) => void,
@@ -604,7 +605,7 @@ export class GameLoop {
   start(): void {
     this.running = true;
     this.paused = false;
-    this.last = 0;
+    this.hasBase = false;
     this.raf(this.frame);
   }
 
@@ -618,13 +619,16 @@ export class GameLoop {
 
   resume(): void {
     this.paused = false;
-    this.last = 0; // 重建时间基准，避免暂停时长被算进 dt
+    this.hasBase = false; // 重建时间基准，避免暂停时长被算进 dt
   }
 
   private frame = (t: number): void => {
     if (!this.running) return;
     if (!this.paused) {
-      if (this.last === 0) this.last = t;
+      if (!this.hasBase) {
+        this.hasBase = true;
+        this.last = t;
+      }
       const dt = Math.min((t - this.last) / 1000, 0.05);
       this.last = t;
       this.update(dt);
@@ -642,7 +646,7 @@ npm test -- tests/loop.test.ts
 ```
 Expected: 4 passed。
 
-**注意**：`t=0` 的首帧与 `last===0` 哨兵值冲突时行为仍正确（dt=0），测试已覆盖 `m.fire(0)` 场景；若实现方式改变需保留该用例。
+**注意**：时间基准必须用独立的 `hasBase` 布尔标志，不能用 `last===0` 当哨兵——真实时间戳可能恰好为 0，会导致下一帧 dt 被误判为首帧而算成 0。测试的 `m.fire(0)` 用例专门覆盖此场景，若实现方式改变必须保留。
 
 - [ ] **Step 5: Commit**
 
