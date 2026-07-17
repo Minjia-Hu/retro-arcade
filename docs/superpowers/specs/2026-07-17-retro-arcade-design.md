@@ -139,7 +139,7 @@ interface Game {
 
 - **Vitest 单测**（针对纯逻辑）：俄罗斯方块消行/旋转踢墙、2048 合并、扫雷展开与首点安全、五子棋棋形评分与 AI 走子、数独生成唯一解等。
 - **Playwright 冒烟**：首页 8 张卡片可见；每款游戏可进入且 Canvas 有渲染；返回首页正常。
-- 开发流程：分支开发 → `tsc` → Vitest → Playwright → 英文 commit → `merge --no-ff` 到 main → push。
+- 开发流程：分支开发 → `tsc` → Vitest → Playwright → 英文 commit → `merge --no-ff` 到 main（→ push，仅在远程仓库建立后）。
 
 ## 12. 部署
 
