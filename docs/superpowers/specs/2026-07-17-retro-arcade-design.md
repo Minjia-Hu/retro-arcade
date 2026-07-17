@@ -145,6 +145,7 @@ interface Game {
 
 - GitHub Pages；GitHub Actions 在 push 到 main 时构建发布。
 - Vite `base` 配置为仓库名路径。
+- **部署时机由用户决定**：开发期全程本地调试（Vite dev server，手机可经局域网试玩）；仅在用户明确确认"可以上线"后，才创建 GitHub 远程仓库并配置 Pages。上线后不 push 即不更新线上版本。
 
 ## 13. 范围外（明确不做）
 
@@ -152,7 +153,8 @@ interface Game {
 
 ## 14. 建议实施顺序
 
-1. 脚手架：Vite + TS + 外壳（路由/首页/外框）+ core 各模块 + 部署链路打通。
+1. 脚手架：Vite + TS + 外壳（路由/首页/外框）+ core 各模块。
 2. Flappy Bird（最简，验证 Game 接口与移动端适配）。
 3. 贪吃蛇 → 2048 → 打砖块 → 扫雷 → 俄罗斯方块 → 数独 → 五子棋（AI 最后、难度最高）。
 4. 全局打磨：音效补全、Playwright 冒烟、README 与作品集说明。
+5. 部署上线（仅在用户确认后执行）：创建 GitHub 仓库、配置 Pages 与 Actions。
