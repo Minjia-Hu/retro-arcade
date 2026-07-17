@@ -9,19 +9,20 @@ export function swipeDirection(dx: number, dy: number, threshold = 24): SwipeDir
 export class InputService {
   private disposers: (() => void)[] = [];
 
-  onKey(handler: (code: string) => void): void {
+  /** 各 on* 方法均返回单独的解绑函数；dispose() 仍可整体清理 */
+  onKey(handler: (code: string) => void): () => void {
     const fn = (e: KeyboardEvent) => handler(e.code);
     window.addEventListener('keydown', fn);
-    this.disposers.push(() => window.removeEventListener('keydown', fn));
+    return this.track(() => window.removeEventListener('keydown', fn));
   }
 
-  onTap(el: HTMLElement, handler: () => void): void {
+  onTap(el: HTMLElement, handler: () => void): () => void {
     const fn = (e: PointerEvent) => { e.preventDefault(); handler(); };
     el.addEventListener('pointerdown', fn);
-    this.disposers.push(() => el.removeEventListener('pointerdown', fn));
+    return this.track(() => el.removeEventListener('pointerdown', fn));
   }
 
-  onSwipe(el: HTMLElement, handler: (dir: SwipeDir) => void): void {
+  onSwipe(el: HTMLElement, handler: (dir: SwipeDir) => void): () => void {
     let sx = 0;
     let sy = 0;
     const down = (e: PointerEvent) => { sx = e.clientX; sy = e.clientY; };
@@ -31,7 +32,7 @@ export class InputService {
     };
     el.addEventListener('pointerdown', down);
     el.addEventListener('pointerup', up);
-    this.disposers.push(() => {
+    return this.track(() => {
       el.removeEventListener('pointerdown', down);
       el.removeEventListener('pointerup', up);
     });
@@ -40,5 +41,10 @@ export class InputService {
   dispose(): void {
     this.disposers.forEach((d) => d());
     this.disposers = [];
+  }
+
+  private track(off: () => void): () => void {
+    this.disposers.push(off);
+    return off;
   }
 }

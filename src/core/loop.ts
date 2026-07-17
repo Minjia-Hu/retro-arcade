@@ -13,6 +13,7 @@ export class GameLoop {
   ) {}
 
   start(): void {
+    if (this.running) return; // 防重入：避免叠加并行 rAF 链
     this.running = true;
     this.paused = false;
     this.hasBase = false;

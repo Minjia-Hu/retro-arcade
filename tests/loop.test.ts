@@ -60,4 +60,14 @@ describe('GameLoop', () => {
     m.fire(16);
     expect(n).toBe(1);
   });
+
+  it('重复 start 不会叠加并行 rAF 链', () => {
+    let n = 0;
+    const m = manualRaf();
+    const loop = new GameLoop(() => { n += 1; }, () => {}, m.raf);
+    loop.start();
+    loop.start();
+    m.fire(0);
+    expect(n).toBe(1);
+  });
 });
