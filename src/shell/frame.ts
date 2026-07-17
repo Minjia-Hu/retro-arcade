@@ -43,8 +43,12 @@ export class GameFrame {
       if (!this.game) return;
       this.paused = !this.paused;
       btn('pause').textContent = this.paused ? '▶' : '⏸';
-      if (this.paused) this.game.pause();
-      else this.game.resume();
+      try {
+        if (this.paused) this.game.pause();
+        else this.game.resume();
+      } catch (err) {
+        console.error('[arcade] game crashed on pause/resume:', err);
+      }
     });
 
     const resizeCbs = new Set<() => void>();
@@ -67,6 +71,7 @@ export class GameFrame {
       this.game = game;
     } catch (err) {
       console.error('[arcade] game crashed on mount:', err);
+      try { game.destroy(); } catch { /* 尽力清理半挂载游戏的自有资源（rAF/定时器） */ }
       this.showError(root);
     }
   }

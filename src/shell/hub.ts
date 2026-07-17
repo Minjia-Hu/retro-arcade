@@ -4,7 +4,8 @@ import type { ArcadeStorage } from '../core/storage';
 export function renderHub(root: HTMLElement, storage: ArcadeStorage): void {
   const cards = GAMES.map((g) => {
     const playable = Boolean(g.load);
-    const best = storage.get<number | null>(`best.${g.meta.id}`, null);
+    const raw = storage.get<number | null>(`best.${g.meta.id}`, null);
+    const best = Number.isFinite(raw) ? (raw as number) : null; // 存量数据可能被写坏，只信数字
     const sub = playable ? (best === null ? '—' : `BEST ${best}`) : 'COMING SOON';
     return `
       <button class="card${playable ? '' : ' card-soon'}" data-id="${g.meta.id}"${playable ? '' : ' disabled'}>
