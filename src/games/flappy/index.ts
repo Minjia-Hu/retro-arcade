@@ -47,6 +47,11 @@ export function createFlappy(): Game {
     g.fillStyle = THEME.bg;
     g.fillRect(0, 0, L.W, L.H);
 
+    // 天花板与地面同样致死，画出可见边界（画布背景与页面同色，否则边界隐形）
+    g.fillStyle = THEME.neonCyan;
+    g.fillRect(0, 0, L.W, 2);
+    g.fillRect(0, L.H - 2, L.W, 2);
+
     // 管道：霓虹绿
     g.fillStyle = THEME.neonGreen;
     g.shadowColor = THEME.neonGreen;
