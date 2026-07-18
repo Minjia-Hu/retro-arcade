@@ -140,4 +140,26 @@ describe('2048 logic', () => {
   it('SIZE 恒为 4（渲染层依赖）', () => {
     expect(SIZE).toBe(4);
   });
+
+  it('undo 可从 won 退回 playing，重新合出 2048 会再次胜利', () => {
+    const s = createState(seq(0, 0, 0, 0));
+    s.board = emptyBoard();
+    s.board[0] = 1024; s.board[1] = 1024;
+    move(s, 'left', seq(0, 0));
+    expect(s.status).toBe('won');
+    expect(undo(s)).toBe(true);
+    expect(s.status).toBe('playing');
+    move(s, 'left', seq(0, 0));
+    expect(s.status).toBe('won'); // 未曾选择继续，再次达成应再次提示
+  });
+
+  it('非 playing 状态下 move 被拒绝', () => {
+    const s = createState(seq(0, 0, 0, 0));
+    s.board = emptyBoard();
+    s.board[0] = 1024; s.board[1] = 1024;
+    move(s, 'left', seq(0, 0)); // → won
+    const before = s.board.slice();
+    expect(move(s, 'right', seq(0, 0))).toBe(false);
+    expect(s.board).toEqual(before);
+  });
 });

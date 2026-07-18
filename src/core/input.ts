@@ -51,7 +51,11 @@ export class InputService {
     });
   }
 
-  /** 原地按下并抬起才算点按（位移 < 10px，与滑动互斥）；回调收到元素内相对坐标（CSS 像素） */
+  /**
+   * 原地按下并抬起才算点按（位移 < 10px，与滑动互斥；10–24px 为无操作缓冲带，
+   * 两个阈值不可改到重叠）。回调收到元素内相对坐标（CSS 像素）。
+   * 注意：不要与 onTap 共挂同一元素（onTap 在 pointerdown 即触发，会双触发）。
+   */
   onTapAt(el: HTMLElement, handler: (x: number, y: number) => void): () => void {
     let sx = 0;
     let sy = 0;
