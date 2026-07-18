@@ -64,6 +64,11 @@ export function createSnake(): Game {
     g.fillStyle = THEME.bg;
     g.fillRect(0, 0, W, H);
 
+    // 边界墙：撞上即死，必须肉眼可见（画布背景与页面同色，无此描边则边界隐形）
+    g.strokeStyle = THEME.neonCyan;
+    g.lineWidth = 2;
+    g.strokeRect(1, 1, W - 2, H - 2);
+
     // 食物：霓虹粉方块
     g.fillStyle = THEME.neonPink;
     g.shadowColor = THEME.neonPink;
