@@ -8,7 +8,10 @@ export interface GameEntry {
 }
 
 export const GAMES: GameEntry[] = [
-  { meta: { id: 'snake', name: '贪吃蛇', icon: '🐍' } },
+  {
+    meta: { id: 'snake', name: '贪吃蛇', icon: '🐍' },
+    load: async () => (await import('./snake')).createSnake(),
+  },
   { meta: { id: 'tetris', name: '俄罗斯方块', icon: '🧱' } },
   { meta: { id: 'breakout', name: '打砖块', icon: '🕹️' } },
   {

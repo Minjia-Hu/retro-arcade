@@ -25,16 +25,29 @@ export class InputService {
   onSwipe(el: HTMLElement, handler: (dir: SwipeDir) => void): () => void {
     let sx = 0;
     let sy = 0;
-    const down = (e: PointerEvent) => { sx = e.clientX; sy = e.clientY; };
+    let tracking = false;
+    const down = (e: PointerEvent) => {
+      tracking = true;
+      sx = e.clientX;
+      sy = e.clientY;
+      el.setPointerCapture?.(e.pointerId); // 手指滑出元素外也能收到 up
+    };
     const up = (e: PointerEvent) => {
+      if (!tracking) return; // 无配对 down 的 up 会用 sx=0,sy=0 算出伪滑动
+      tracking = false;
       const dir = swipeDirection(e.clientX - sx, e.clientY - sy);
       if (dir) handler(dir);
     };
+    const cancel = () => {
+      tracking = false;
+    };
     el.addEventListener('pointerdown', down);
     el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', cancel);
     return this.track(() => {
       el.removeEventListener('pointerdown', down);
       el.removeEventListener('pointerup', up);
+      el.removeEventListener('pointercancel', cancel);
     });
   }
 

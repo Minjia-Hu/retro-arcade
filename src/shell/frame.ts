@@ -30,16 +30,25 @@ export class GameFrame {
     const body = root.querySelector<HTMLElement>('.frame-body')!;
     const btn = (act: string) => root.querySelector<HTMLButtonElement>(`[data-act="${act}"]`)!;
 
-    btn('back').addEventListener('click', () => {
+    // 点击后移除焦点，避免残留焦点让空格键误触按钮
+    const wire = (act: string, fn: () => void) => {
+      const b = btn(act);
+      b.addEventListener('click', () => {
+        fn();
+        b.blur();
+      });
+    };
+
+    wire('back', () => {
       this.audio.play('click');
       location.hash = '#/';
     });
-    btn('mute').addEventListener('click', () => {
+    wire('mute', () => {
       const muted = this.audio.toggleMuted();
       btn('mute').textContent = muted ? '🔇' : '🔊';
       this.audio.play('click');
     });
-    btn('pause').addEventListener('click', () => {
+    wire('pause', () => {
       if (!this.game) return;
       this.paused = !this.paused;
       btn('pause').textContent = this.paused ? '▶' : '⏸';
@@ -72,6 +81,10 @@ export class GameFrame {
     } catch (err) {
       console.error('[arcade] game crashed on mount:', err);
       try { game.destroy(); } catch { /* 尽力清理半挂载游戏的自有资源（rAF/定时器） */ }
+      this.input?.dispose();
+      this.input = null;
+      this.observer?.disconnect();
+      this.observer = null;
       this.showError(root);
     }
   }
