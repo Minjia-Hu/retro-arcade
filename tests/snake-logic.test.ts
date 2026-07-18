@@ -115,4 +115,28 @@ describe('snake logic', () => {
     const food = spawnFood([{ x: 0, y: 0 }, { x: 1, y: 0 }], zero);
     expect(food).toEqual({ x: 2, y: 0 }); // 行优先扫描的第一个空格
   });
+
+  it('一次 tick 累积两个间隔则前进两格', () => {
+    const s = createState(rand);
+    setDirection(s, 'right');
+    tick(s, stepInterval(0) * 2, rand);
+    expect(s.snake[0]).toEqual({ x: 12, y: 15 });
+  });
+
+  it('同一间隔内两次输入：最后一个合法输入生效', () => {
+    const s = createState(rand); // 向右
+    setDirection(s, 'up');
+    setDirection(s, 'down'); // 相对当前 dir(right) 合法，覆盖 up
+    tick(s, stepInterval(0), rand);
+    expect(s.snake[0]).toEqual({ x: 10, y: 16 });
+  });
+
+  it('同一间隔内两次输入：非法的第二个输入被拒', () => {
+    const s = createState(rand); // 向右
+    setDirection(s, 'up');
+    setDirection(s, 'left'); // 相对当前 dir(right) 是掉头，拒绝
+    expect(s.nextDir).toBe('up');
+    tick(s, stepInterval(0), rand);
+    expect(s.snake[0]).toEqual({ x: 10, y: 14 });
+  });
 });

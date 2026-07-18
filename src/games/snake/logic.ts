@@ -51,7 +51,7 @@ export function spawnFood(snake: Cell[], rand: () => number): Cell {
       if (!occupied.has(`${x},${y}`)) free.push({ x, y });
     }
   }
-  return free[Math.floor(rand() * free.length)] ?? { x: 0, y: 0 };
+  return free[Math.floor(rand() * free.length)] ?? { x: 0, y: 0 }; // 兜底：蛇占满全场需 597 分、实际不可达，不做胜利终局（有意取舍）
 }
 
 export function createState(rand: () => number = Math.random): SnakeState {
