@@ -16,10 +16,16 @@ function SIZE_PX(): number {
   return L.SIZE * CELL + (L.SIZE + 1) * PAD;
 }
 
+// 经典 2048 配色（Gabriele Cirulli 原版）
+const BOARD_BG = '#bbada0';
+const CELL_EMPTY = '#cdc1b4';
+const TILE_SUPER = '#3c3a32'; // 4096 及以上
+const TEXT_DARK = '#776e65'; // 2/4 与遮罩文字
+const TEXT_LIGHT = '#f9f6f2'; // 8 及以上
 const TILE_COLORS: Record<number, string> = {
-  2: '#1d3a4f', 4: '#1d4f3a', 8: '#2a6b2a', 16: '#4f8f1d',
-  32: '#8f8f1d', 64: '#b8741d', 128: '#c9541d', 256: '#d63a7a',
-  512: '#a12fd6', 1024: '#5c2fd6', 2048: '#ffe600',
+  2: '#eee4da', 4: '#ede0c8', 8: '#f2b179', 16: '#f59563',
+  32: '#f67c5f', 64: '#f65e3b', 128: '#edcf72', 256: '#edcc61',
+  512: '#edc850', 1024: '#edc22e', 2048: '#edc22e',
 };
 
 const KEY_DIR: Record<string, L.Dir> = {
@@ -90,13 +96,13 @@ export function createG2048(): Game {
     const px = BOARD_X + PAD + x * (CELL + PAD);
     const py = BOARD_Y + PAD + y * (CELL + PAD);
     if (v === 0) {
-      g.fillStyle = THEME.panel;
+      g.fillStyle = CELL_EMPTY;
       g.fillRect(px, py, CELL, CELL);
       return;
     }
-    g.fillStyle = TILE_COLORS[v] ?? THEME.neonPink;
+    g.fillStyle = TILE_COLORS[v] ?? TILE_SUPER;
     g.fillRect(px, py, CELL, CELL);
-    g.fillStyle = v === 2048 ? '#1a1a00' : THEME.text;
+    g.fillStyle = v <= 4 ? TEXT_DARK : TEXT_LIGHT;
     const len = String(v).length;
     g.font = `bold ${len <= 2 ? 28 : len === 3 ? 24 : 18}px ${THEME.font}`;
     g.textAlign = 'center';
@@ -120,10 +126,9 @@ export function createG2048(): Game {
     g.font = `14px ${THEME.font}`;
     g.fillText(`BEST ${best}`, W - 10, 44);
 
-    // 棋盘描边（终局边界可见规矩）
-    g.strokeStyle = THEME.neonCyan;
-    g.lineWidth = 2;
-    g.strokeRect(BOARD_X + 1, BOARD_Y + 1, BOARD_SIZE - 2, BOARD_SIZE - 2);
+    // 经典米棕色棋盘底板（与暗色页面强对比，"边界可见"规矩由底板本身满足）
+    g.fillStyle = BOARD_BG;
+    g.fillRect(BOARD_X, BOARD_Y, BOARD_SIZE, BOARD_SIZE);
 
     for (let y = 0; y < L.SIZE; y++) {
       for (let x = 0; x < L.SIZE; x++) {
@@ -140,26 +145,20 @@ export function createG2048(): Game {
     g.textAlign = 'center';
     g.fillText('↩ 撤销 (Z)', W / 2, UNDO_RECT.y + 22);
 
-    // 终局覆盖层
+    // 终局覆盖层（经典半透明米色遮罩 + 深棕文字）
     if (state.status !== 'playing') {
-      g.fillStyle = 'rgba(13, 13, 22, 0.82)';
+      g.fillStyle = 'rgba(238, 228, 218, 0.73)';
       g.fillRect(BOARD_X, BOARD_Y, BOARD_SIZE, BOARD_SIZE);
       g.textAlign = 'center';
-      if (state.status === 'won') {
-        g.fillStyle = THEME.neonYellow;
-        g.font = `bold 26px ${THEME.font}`;
-        g.fillText('达成 2048！', W / 2, BOARD_Y + BOARD_SIZE / 2 - 12);
-        g.fillStyle = THEME.neonCyan;
-        g.font = `14px ${THEME.font}`;
-        g.fillText('点按继续 · Z 撤销', W / 2, BOARD_Y + BOARD_SIZE / 2 + 20);
-      } else {
-        g.fillStyle = THEME.neonPink;
-        g.font = `bold 26px ${THEME.font}`;
-        g.fillText('GAME OVER', W / 2, BOARD_Y + BOARD_SIZE / 2 - 12);
-        g.fillStyle = THEME.neonCyan;
-        g.font = `14px ${THEME.font}`;
-        g.fillText(`BEST ${best} · 点按重来 · Z 撤销`, W / 2, BOARD_Y + BOARD_SIZE / 2 + 20);
-      }
+      g.fillStyle = TEXT_DARK;
+      g.font = `bold 26px ${THEME.font}`;
+      g.fillText(state.status === 'won' ? '达成 2048！' : 'GAME OVER', W / 2, BOARD_Y + BOARD_SIZE / 2 - 12);
+      g.font = `14px ${THEME.font}`;
+      g.fillText(
+        state.status === 'won' ? '点按继续 · Z 撤销' : `BEST ${best} · 点按重来 · Z 撤销`,
+        W / 2,
+        BOARD_Y + BOARD_SIZE / 2 + 20,
+      );
     }
   }
 
