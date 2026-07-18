@@ -51,6 +51,40 @@ export class InputService {
     });
   }
 
+  /**
+   * 原地按下并抬起才算点按（位移 < 10px，与滑动互斥；10–24px 为无操作缓冲带，
+   * 两个阈值不可改到重叠）。回调收到元素内相对坐标（CSS 像素）。
+   * 注意：不要与 onTap 共挂同一元素（onTap 在 pointerdown 即触发，会双触发）。
+   */
+  onTapAt(el: HTMLElement, handler: (x: number, y: number) => void): () => void {
+    let sx = 0;
+    let sy = 0;
+    let tracking = false;
+    const down = (e: PointerEvent) => {
+      tracking = true;
+      sx = e.clientX;
+      sy = e.clientY;
+    };
+    const up = (e: PointerEvent) => {
+      if (!tracking) return;
+      tracking = false;
+      if (Math.abs(e.clientX - sx) >= 10 || Math.abs(e.clientY - sy) >= 10) return;
+      const rect = el.getBoundingClientRect();
+      handler(e.clientX - rect.left, e.clientY - rect.top);
+    };
+    const cancel = () => {
+      tracking = false;
+    };
+    el.addEventListener('pointerdown', down);
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', cancel);
+    return this.track(() => {
+      el.removeEventListener('pointerdown', down);
+      el.removeEventListener('pointerup', up);
+      el.removeEventListener('pointercancel', cancel);
+    });
+  }
+
   dispose(): void {
     this.disposers.forEach((d) => d());
     this.disposers = [];
