@@ -13,7 +13,10 @@ export const GAMES: GameEntry[] = [
     load: async () => (await import('./snake')).createSnake(),
   },
   { meta: { id: 'tetris', name: '俄罗斯方块', icon: '🧱' } },
-  { meta: { id: 'breakout', name: '打砖块', icon: '🕹️' } },
+  {
+    meta: { id: 'breakout', name: '打砖块', icon: '🕹️' },
+    load: async () => (await import('./breakout')).createBreakout(),
+  },
   {
     meta: { id: 'flappy', name: 'FLAPPY BIRD', icon: '🐦' },
     load: async () => (await import('./flappy')).createFlappy(),
