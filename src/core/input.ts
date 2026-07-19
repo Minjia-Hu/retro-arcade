@@ -85,6 +85,45 @@ export class InputService {
     });
   }
 
+  /** 键盘抬起（与 onKey 配对，用于按住式控制） */
+  onKeyUp(handler: (code: string) => void): () => void {
+    const fn = (e: KeyboardEvent) => handler(e.code);
+    window.addEventListener('keyup', fn);
+    return this.track(() => window.removeEventListener('keyup', fn));
+  }
+
+  /**
+   * 按住拖动：pointerdown 后每次移动回调相邻两次指针事件的水平位移 dx（CSS 像素）。
+   * 报告相对位移而非绝对坐标，点按不会令被控对象跳位；可与 onTapAt 共挂。
+   */
+  onDrag(el: HTMLElement, handler: (dx: number) => void): () => void {
+    let lastX = 0;
+    let dragging = false;
+    const down = (e: PointerEvent) => {
+      dragging = true;
+      lastX = e.clientX;
+      el.setPointerCapture?.(e.pointerId);
+    };
+    const move = (e: PointerEvent) => {
+      if (!dragging) return;
+      handler(e.clientX - lastX);
+      lastX = e.clientX;
+    };
+    const end = () => {
+      dragging = false;
+    };
+    el.addEventListener('pointerdown', down);
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', end);
+    el.addEventListener('pointercancel', end);
+    return this.track(() => {
+      el.removeEventListener('pointerdown', down);
+      el.removeEventListener('pointermove', move);
+      el.removeEventListener('pointerup', end);
+      el.removeEventListener('pointercancel', end);
+    });
+  }
+
   dispose(): void {
     this.disposers.forEach((d) => d());
     this.disposers = [];
