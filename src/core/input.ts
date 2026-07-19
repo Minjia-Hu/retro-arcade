@@ -95,22 +95,27 @@ export class InputService {
   /**
    * 按住拖动：pointerdown 后每次移动回调相邻两次指针事件的水平位移 dx（CSS 像素）。
    * 报告相对位移而非绝对坐标，点按不会令被控对象跳位；可与 onTapAt 共挂。
+   * 仅跟踪首个按下的指针（pointerId 过滤，多点触控不串扰）。
+   * 前置条件：消费方需在目标元素设置 touch-action: none，否则触屏拖动会滚动页面。
    */
   onDrag(el: HTMLElement, handler: (dx: number) => void): () => void {
     let lastX = 0;
     let dragging = false;
+    let pid = -1;
     const down = (e: PointerEvent) => {
+      if (dragging) return; // 已有指针在拖动，忽略后来的手指
       dragging = true;
+      pid = e.pointerId;
       lastX = e.clientX;
       el.setPointerCapture?.(e.pointerId);
     };
     const move = (e: PointerEvent) => {
-      if (!dragging) return;
+      if (!dragging || e.pointerId !== pid) return;
       handler(e.clientX - lastX);
       lastX = e.clientX;
     };
-    const end = () => {
-      dragging = false;
+    const end = (e: PointerEvent) => {
+      if (e.pointerId === pid) dragging = false;
     };
     el.addEventListener('pointerdown', down);
     el.addEventListener('pointermove', move);
