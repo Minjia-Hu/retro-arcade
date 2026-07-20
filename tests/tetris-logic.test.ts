@@ -89,7 +89,7 @@ describe('tetris logic', () => {
     const ev = hardDrop(s, zero);
     expect(ev.locked).toBe(true);
     expect(s.board.filter((v) => v !== 0)).toHaveLength(4);
-    expect(s.score).toBe(36); // O 从 y=0 落到 y=18，距离 18 × 2
+    expect(s.score).toBe(36); // 从 y=0 硬降 18 格 × 2（七种出生形状最大行偏移均为 1，距离与方块无关）
     expect(s.current).not.toBeNull();
   });
 
@@ -120,13 +120,13 @@ describe('tetris logic', () => {
   });
 
   it('新块出生位置被占则判负', () => {
-    const s = createState(zero); // 当前 O，下一块 T（zero rand 洗牌确定）
+    const s = createState(zero);
     start(s);
-    s.board[2 * COLS + 4] = 3;
-    s.board[2 * COLS + 5] = 3; // 挡住 O 的下落，让它锁在 0-1 行
-    const ev = hardDrop(s, zero); // O 锁定于 (4,0)(5,0)(4,1)(5,1)
+    s.board[1 * COLS + 4] = 3; // 七种方块的出生形状都覆盖 (4,1)，与洗牌顺序无关
+    s.current = { type: 1, rot: 0, x: 0, y: 18 }; // 当前块远离出生区，落底锁定
+    const ev = hardDrop(s, zero);
     expect(ev.over).toBe(true);
-    expect(s.status).toBe('over'); // T 出生于 (4,0)... 与 O 重叠
+    expect(s.status).toBe('over');
   });
 
   it('Hold：暂存当前块、每次落块限用一次、锁定后恢复', () => {
