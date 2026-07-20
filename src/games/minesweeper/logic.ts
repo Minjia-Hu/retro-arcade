@@ -104,7 +104,7 @@ export function reveal(s: MineState, idx: number, rand: () => number = Math.rand
     return ev;
   }
 
-  // BFS 洪水展开：零格扩张，数字格作为边界揭开但不扩张；跳过插旗格
+  // 洪水展开（迭代栈式 DFS，无递归；展开结果与 BFS 相同）：零格扩张，数字格作为边界揭开但不扩张；跳过插旗格
   const queue = [idx];
   while (queue.length > 0) {
     const i = queue.pop()!;

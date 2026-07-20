@@ -131,4 +131,24 @@ describe('minesweeper logic', () => {
     expect(ev.revealedSome).toBe(false);
     expect(ev.won).toBe(false);
   });
+
+  it('生产路径胜利：placeMines 布雷后翻完全部非雷格', () => {
+    const s = createState(EASY);
+    reveal(s, 40, zero); // zero rand 使雷确定落在 0..9
+    for (let i = 0; i < s.grid.length; i++) {
+      const c = s.grid[i];
+      if (!c.mine && !c.revealed) reveal(s, i, zero);
+    }
+    expect(s.status).toBe('won');
+    expect(s.revealed).toBe(71);
+  });
+
+  it('ready 时先插旗：点旗格不触发布雷', () => {
+    const s = createState(EASY);
+    toggleFlag(s, 40);
+    const ev = reveal(s, 40, zero);
+    expect(ev.revealedSome).toBe(false);
+    expect(s.status).toBe('ready');
+    expect(s.grid.every((c) => !c.mine)).toBe(true);
+  });
 });

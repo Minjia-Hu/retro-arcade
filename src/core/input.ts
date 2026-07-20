@@ -190,14 +190,20 @@ export class InputService {
       tracking = false;
       clear();
       if (!longFired && !moved) h.tap?.(...rel(e.clientX, e.clientY));
+      longFired = false; // 鼠标路径在此复位；触屏取消路径保持 true 以拦截随后的模拟 contextmenu
     };
     const cancel = (e: PointerEvent) => {
       if (e.pointerId !== pid) return;
       tracking = false;
       clear();
+      // 注意：不要在此复位 longFired——Android 长按序列是 down → cancel → contextmenu，
+      // longFired 需要活到 contextmenu 守卫处
     };
     const ctxMenu = (e: MouseEvent) => {
       e.preventDefault();
+      // Android Chrome/Firefox 触屏长按会派发模拟 contextmenu，此时 450ms 定时器已报 long，
+      // 吞掉避免 long+right 双触发（插旗翻两次 = 净零）
+      if (tracking || longFired) return;
       h.right?.(...rel(e.clientX, e.clientY));
     };
     el.addEventListener('pointerdown', down);
