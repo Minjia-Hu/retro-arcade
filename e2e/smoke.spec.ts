@@ -60,7 +60,16 @@ test('进入俄罗斯方块有画布渲染，返回首页正常', async ({ page 
   await expect(page.locator('.hub-title')).toBeVisible();
 });
 
+test('进入数独有画布渲染，返回首页正常', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-id="sudoku"]');
+  await expect(page.locator('canvas')).toBeVisible();
+  await expect(page.locator('.frame-title')).toContainText('数独');
+  await page.click('[data-act="back"]');
+  await expect(page.locator('.hub-title')).toBeVisible();
+});
+
 test('未实装游戏卡片为禁用状态', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('[data-id="sudoku"]')).toBeDisabled();
+  await expect(page.locator('[data-id="gomoku"]')).toBeDisabled();
 });
