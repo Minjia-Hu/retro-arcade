@@ -45,6 +45,9 @@ export function createTetris(): Game {
   let heldLeft = false;
   let heldRight = false;
   let heldSoft = false;
+  let heldRotate = false;
+  let heldSpace = false;
+  let heldHold = false;
   let repeatTimer = 0;
 
   function saveBest(): void {
@@ -248,30 +251,53 @@ export function createTetris(): Game {
       ctx.input.onKey((code) => {
         if (paused) return;
         if (state.status !== 'playing') {
-          if (code === 'Enter' || code === 'Space') primary();
+          if (code === 'Enter' || code === 'Space') {
+            if (code === 'Space') heldSpace = true; // 防止重开后按住的空格立即硬降
+            primary();
+          }
           return;
         }
+        // held 标志双重职责：驱动自建重复定时器，并吸收 OS 键盘自动重复
+        //（keydown 会以系统重复率反复触发，不滤会叠加成不可控的移动/连续硬降）
         if (code === 'ArrowLeft' || code === 'KeyA') {
-          heldLeft = true;
-          L.move(state, -1);
+          if (!heldLeft) {
+            heldLeft = true;
+            L.move(state, -1);
+          }
         } else if (code === 'ArrowRight' || code === 'KeyD') {
-          heldRight = true;
-          L.move(state, 1);
+          if (!heldRight) {
+            heldRight = true;
+            L.move(state, 1);
+          }
         } else if (code === 'ArrowDown' || code === 'KeyS') {
-          heldSoft = true;
-          L.softDrop(state);
+          if (!heldSoft) {
+            heldSoft = true;
+            L.softDrop(state);
+          }
         } else if (code === 'ArrowUp' || code === 'KeyW' || code === 'KeyX') {
-          L.rotate(state);
+          if (!heldRotate) {
+            heldRotate = true;
+            L.rotate(state);
+          }
         } else if (code === 'Space') {
-          afterEvents(L.hardDrop(state));
+          if (!heldSpace) {
+            heldSpace = true;
+            afterEvents(L.hardDrop(state));
+          }
         } else if (code === 'KeyC') {
-          doHold();
+          if (!heldHold) {
+            heldHold = true;
+            doHold();
+          }
         }
       });
       ctx.input.onKeyUp((code) => {
         if (code === 'ArrowLeft' || code === 'KeyA') heldLeft = false;
         else if (code === 'ArrowRight' || code === 'KeyD') heldRight = false;
         else if (code === 'ArrowDown' || code === 'KeyS') heldSoft = false;
+        else if (code === 'ArrowUp' || code === 'KeyW' || code === 'KeyX') heldRotate = false;
+        else if (code === 'Space') heldSpace = false;
+        else if (code === 'KeyC') heldHold = false;
       });
 
       loop = new GameLoop(update, render);
@@ -288,6 +314,9 @@ export function createTetris(): Game {
       heldLeft = false; // 暂停期间的按键抬起收不到，复位防止恢复后自走
       heldRight = false;
       heldSoft = false;
+      heldRotate = false;
+      heldSpace = false;
+      heldHold = false;
       loop?.resume();
     },
 
