@@ -104,14 +104,20 @@ git checkout main && git pull --ff-only && git checkout -b feature/minesweeper
       tracking = false;
       clear();
       if (!longFired && !moved) h.tap?.(...rel(e.clientX, e.clientY));
+      longFired = false; // 鼠标路径在此复位；触屏取消路径保持 true 以拦截随后的模拟 contextmenu
     };
     const cancel = (e: PointerEvent) => {
       if (e.pointerId !== pid) return;
       tracking = false;
       clear();
+      // 注意：不要在此复位 longFired——Android 长按序列是 down → cancel → contextmenu，
+      // longFired 需要活到 contextmenu 守卫处
     };
     const ctxMenu = (e: MouseEvent) => {
       e.preventDefault();
+      // Android Chrome/Firefox 触屏长按会派发模拟 contextmenu，此时 450ms 定时器已报 long，
+      // 吞掉避免 long+right 双触发（插旗翻两次 = 净零）
+      if (tracking || longFired) return;
       h.right?.(...rel(e.clientX, e.clientY));
     };
     el.addEventListener('pointerdown', down);
@@ -288,6 +294,26 @@ describe('minesweeper logic', () => {
     expect(ev.revealedSome).toBe(false);
     expect(ev.won).toBe(false);
   });
+
+  it('生产路径胜利：placeMines 布雷后翻完全部非雷格', () => {
+    const s = createState(EASY);
+    reveal(s, 40, zero); // zero rand 使雷确定落在 0..9
+    for (let i = 0; i < s.grid.length; i++) {
+      const c = s.grid[i];
+      if (!c.mine && !c.revealed) reveal(s, i, zero);
+    }
+    expect(s.status).toBe('won');
+    expect(s.revealed).toBe(71);
+  });
+
+  it('ready 时先插旗：点旗格不触发布雷', () => {
+    const s = createState(EASY);
+    toggleFlag(s, 40);
+    const ev = reveal(s, 40, zero);
+    expect(ev.revealedSome).toBe(false);
+    expect(s.status).toBe('ready');
+    expect(s.grid.every((c) => !c.mine)).toBe(true);
+  });
 });
 ```
 
@@ -407,7 +433,7 @@ export function reveal(s: MineState, idx: number, rand: () => number = Math.rand
     return ev;
   }
 
-  // BFS 洪水展开：零格扩张，数字格作为边界揭开但不扩张；跳过插旗格
+  // 洪水展开（迭代栈式 DFS，无递归；展开结果与 BFS 相同）：零格扩张，数字格作为边界揭开但不扩张；跳过插旗格
   const queue = [idx];
   while (queue.length > 0) {
     const i = queue.pop()!;
@@ -423,7 +449,10 @@ export function reveal(s: MineState, idx: number, rand: () => number = Math.rand
   }
   ev.revealedSome = true;
 
-  if (s.revealed === s.grid.length - s.diff.mines) {
+  // 胜利以棋盘实际雷数为准（而非难度配置值）：语义上"所有非雷格全开"才是赢，
+  // 也让手工构造棋盘的测试与生产路径共享同一条判定
+  const totalMines = s.grid.reduce((n, c) => n + (c.mine ? 1 : 0), 0);
+  if (s.revealed === s.grid.length - totalMines) {
     s.status = 'won';
     ev.won = true;
   }
@@ -445,7 +474,7 @@ export function toggleFlag(s: MineState, idx: number): boolean {
 ```bash
 npm test -- tests/minesweeper-logic.test.ts
 ```
-Expected: 12 passed。
+Expected: 14 passed。
 
 - [ ] **Step 5: Commit**
 
@@ -704,6 +733,8 @@ export function createMinesweeper(): Game {
       ctx = context;
       canvas = document.createElement('canvas');
       canvas.style.touchAction = 'none';
+      canvas.style.userSelect = 'none';
+      canvas.style.setProperty('-webkit-touch-callout', 'none'); // iOS 长按放大镜/呼出菜单兜底
       container.appendChild(canvas);
       g = canvas.getContext('2d')!;
       setCanvasSize(MENU_W, MENU_H);
@@ -764,7 +795,7 @@ export function createMinesweeper(): Game {
 ```bash
 npx tsc && npm test && npm run build
 ```
-Expected: tsc 干净；87 单测通过（75 + minesweeper 12）；build 成功且 minesweeper 为独立懒加载 chunk。
+Expected: tsc 干净；89 单测通过（75 + minesweeper 14）；build 成功且 minesweeper 为独立懒加载 chunk。
 
 - [ ] **Step 4: Commit**
 
@@ -816,7 +847,7 @@ git commit -m "test: cover minesweeper in e2e smoke"
 ```bash
 npx tsc && npm test && npm run build && npm run e2e
 ```
-Expected: 全部通过（87 单测 + 7 e2e）。
+Expected: 全部通过（89 单测 + 7 e2e）。
 
 - [ ] **Step 2: 合并并推送**
 
