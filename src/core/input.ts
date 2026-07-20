@@ -129,6 +129,92 @@ export class InputService {
     });
   }
 
+  /**
+   * 组合按压手势（三合一）：
+   * - tap：原地（位移 < 10px）短按抬起时触发；
+   * - long：按住 450ms 未移动未抬起时触发，触发后本次手势不再报 tap；
+   * - right：桌面右键触发，并抑制系统上下文菜单。
+   * 坐标为元素内相对 CSS 像素。仅跟踪首个按下的指针。
+   * 注意：不要与 onTap/onTapAt 共挂同一元素（会双触发）。
+   * 前置条件：消费方需在目标元素设置 touch-action: none。
+   */
+  onPress(
+    el: HTMLElement,
+    h: { tap?: (x: number, y: number) => void; long?: (x: number, y: number) => void; right?: (x: number, y: number) => void },
+  ): () => void {
+    let sx = 0;
+    let sy = 0;
+    let pid = -1;
+    let timer = 0;
+    let tracking = false;
+    let longFired = false;
+    let moved = false;
+    const rel = (clientX: number, clientY: number): [number, number] => {
+      const r = el.getBoundingClientRect();
+      return [clientX - r.left, clientY - r.top];
+    };
+    const clear = () => {
+      if (timer) {
+        window.clearTimeout(timer);
+        timer = 0;
+      }
+    };
+    const down = (e: PointerEvent) => {
+      if (tracking || e.button !== 0) return;
+      tracking = true;
+      longFired = false;
+      moved = false;
+      pid = e.pointerId;
+      sx = e.clientX;
+      sy = e.clientY;
+      el.setPointerCapture?.(e.pointerId);
+      if (h.long) {
+        timer = window.setTimeout(() => {
+          timer = 0;
+          if (tracking && !moved) {
+            longFired = true;
+            h.long!(...rel(sx, sy));
+          }
+        }, 450);
+      }
+    };
+    const move = (e: PointerEvent) => {
+      if (!tracking || e.pointerId !== pid) return;
+      if (Math.abs(e.clientX - sx) >= 10 || Math.abs(e.clientY - sy) >= 10) {
+        moved = true;
+        clear();
+      }
+    };
+    const up = (e: PointerEvent) => {
+      if (!tracking || e.pointerId !== pid) return;
+      tracking = false;
+      clear();
+      if (!longFired && !moved) h.tap?.(...rel(e.clientX, e.clientY));
+    };
+    const cancel = (e: PointerEvent) => {
+      if (e.pointerId !== pid) return;
+      tracking = false;
+      clear();
+    };
+    const ctxMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      h.right?.(...rel(e.clientX, e.clientY));
+    };
+    el.addEventListener('pointerdown', down);
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', cancel);
+    el.addEventListener('contextmenu', ctxMenu);
+    return this.track(() => {
+      clear();
+      el.removeEventListener('pointerdown', down);
+      el.removeEventListener('pointermove', move);
+      el.removeEventListener('pointerup', up);
+      el.removeEventListener('pointercancel', cancel);
+      el.removeEventListener('contextmenu', ctxMenu);
+    });
+  }
+
   dispose(): void {
     this.disposers.forEach((d) => d());
     this.disposers = [];
