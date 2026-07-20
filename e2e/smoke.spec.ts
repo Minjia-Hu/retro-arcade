@@ -51,7 +51,16 @@ test('进入扫雷有画布渲染，返回首页正常', async ({ page }) => {
   await expect(page.locator('.hub-title')).toBeVisible();
 });
 
+test('进入俄罗斯方块有画布渲染，返回首页正常', async ({ page }) => {
+  await page.goto('/');
+  await page.click('[data-id="tetris"]');
+  await expect(page.locator('canvas')).toBeVisible();
+  await expect(page.locator('.frame-title')).toContainText('俄罗斯方块');
+  await page.click('[data-act="back"]');
+  await expect(page.locator('.hub-title')).toBeVisible();
+});
+
 test('未实装游戏卡片为禁用状态', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('[data-id="tetris"]')).toBeDisabled();
+  await expect(page.locator('[data-id="sudoku"]')).toBeDisabled();
 });
