@@ -134,6 +134,9 @@ describe('sudoku logic', () => {
   it('填错不获胜；获胜后 setValue 被拒', () => {
     const s = createState(EASY, mulberry32(11));
     const empties = s.puzzle.map((v, i) => (v === 0 ? i : -1)).filter((i) => i >= 0);
+    const wrong = (s.solution[empties[0]] % 9) + 1; // 恒不等于正解
+    setValue(s, empties[0], wrong);
+    expect(s.status).toBe('playing'); // 错填不获胜
     for (const i of empties) setValue(s, i, s.solution[i]);
     expect(s.status).toBe('won');
     expect(setValue(s, empties[0], 1)).toBe(false); // 已胜锁定
@@ -156,5 +159,10 @@ describe('sudoku logic', () => {
     expect(restored!.diff.id).toBe(EASY.id);
     expect(deserialize(null)).toBeNull();
     expect(deserialize({ bogus: 1 })).toBeNull();
+    // 损坏存档：notes 元素非数组，须拒绝以免渲染层每帧崩溃
+    expect(deserialize({
+      p: new Array(81).fill(0), s: new Array(81).fill(0), v: new Array(81).fill(0),
+      n: new Array(81).fill(0), d: 'easy', st: 'playing',
+    })).toBeNull();
   });
 });

@@ -11,12 +11,14 @@ export const DIFFICULTIES: Difficulty[] = [
   { id: 'hard', name: '高级', clues: 30 },
 ];
 
+export type SudokuStatus = 'playing' | 'won';
+
 export interface SudokuState {
   puzzle: number[]; // 给定盘（0 空），给定格判定依据
   solution: number[]; // 唯一解
   values: number[]; // 玩家当前盘（含给定）
   notes: number[][]; // 每格铅笔标记（升序）
-  status: 'playing' | 'won';
+  status: SudokuStatus;
   diff: Difficulty;
 }
 
@@ -210,7 +212,8 @@ export function deserialize(save: unknown): SudokuState | null {
   const o = save as Partial<SudokuSave>;
   const diff = DIFFICULTIES.find((d) => d.id === o.d);
   if (!diff || !Array.isArray(o.p) || o.p.length !== 81 || !Array.isArray(o.v) || o.v.length !== 81
-    || !Array.isArray(o.s) || o.s.length !== 81 || !Array.isArray(o.n) || o.n.length !== 81) return null;
+    || !Array.isArray(o.s) || o.s.length !== 81 || !Array.isArray(o.n) || o.n.length !== 81
+    || !o.n.every((x) => Array.isArray(x))) return null; // notes 逐元素须为数组，否则渲染 for..of 会每帧抛异常
   return {
     puzzle: o.p,
     solution: o.s,
