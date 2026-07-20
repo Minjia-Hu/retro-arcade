@@ -423,7 +423,10 @@ export function reveal(s: MineState, idx: number, rand: () => number = Math.rand
   }
   ev.revealedSome = true;
 
-  if (s.revealed === s.grid.length - s.diff.mines) {
+  // 胜利以棋盘实际雷数为准（而非难度配置值）：语义上"所有非雷格全开"才是赢，
+  // 也让手工构造棋盘的测试与生产路径共享同一条判定
+  const totalMines = s.grid.reduce((n, c) => n + (c.mine ? 1 : 0), 0);
+  if (s.revealed === s.grid.length - totalMines) {
     s.status = 'won';
     ev.won = true;
   }
