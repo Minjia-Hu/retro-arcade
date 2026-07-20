@@ -32,6 +32,9 @@ export const GAMES: GameEntry[] = [
     meta: { id: 'minesweeper', name: '扫雷', icon: '💣' },
     load: async () => (await import('./minesweeper')).createMinesweeper(),
   },
-  { meta: { id: 'sudoku', name: '数独', icon: '✏️' } },
+  {
+    meta: { id: 'sudoku', name: '数独', icon: '✏️' },
+    load: async () => (await import('./sudoku')).createSudoku(),
+  },
   { meta: { id: 'gomoku', name: '五子棋', icon: '⚫' } },
 ];
