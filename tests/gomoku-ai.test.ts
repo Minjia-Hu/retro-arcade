@@ -92,4 +92,22 @@ describe('gomoku ai', () => {
     while (x >= 0 && b[7 * SIZE + x] === BLACK) { run += 1; x -= 1; }
     expect(run).toBeGreaterThanOrEqual(4);
   });
+
+  it('findBestMove：应对对手活三（困难档前瞻封堵或反制）', () => {
+    const b = createBoard();
+    // 白活三：列 5-7 第 7 行，两端 (4,7)(8,7) 皆空 —— 不堵将成活四必败
+    b[at(5, 7)] = WHITE; b[at(6, 7)] = WHITE; b[at(7, 7)] = WHITE;
+    const m = findBestMove(b, BLACK, AI_LEVELS[2].depth);
+    // 黑应落在白活三的延展端之一（堵活四），或己方已有等价强攻——此处黑无子，必为封堵
+    expect([at(4, 7), at(8, 7)]).toContain(m);
+  });
+
+  it('findBestMove：省略 rand 时确定；相同盘面重复调用结果一致', () => {
+    const b = createBoard();
+    b[CENTER] = WHITE;
+    const m1 = findBestMove(b, BLACK, 2);
+    const m2 = findBestMove(b, BLACK, 2);
+    expect(m1).toBe(m2); // 无随机注入 → 可复现
+    expect(b[m1]).toBe(EMPTY);
+  });
 });

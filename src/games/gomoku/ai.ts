@@ -136,10 +136,16 @@ function minimaxValue(
   return best;
 }
 
-/** 为 player 求一手最佳落子（depth 越大越强） */
-export function findBestMove(board: number[], player: number, depth: number): number {
+/**
+ * 为 player 求一手最佳落子（depth 越大越强）。
+ * 传入 rand 时在"并列最优手"中随机取一个，避免 AI 逐盘复刻同一棋谱；
+ * 省略 rand 则严格确定（取下标最小的最优手），供单测复现。
+ * 战术必然手（能连五 / 唯一封堵）因最优手唯一，抖动不改变结果。
+ */
+export function findBestMove(board: number[], player: number, depth: number, rand?: () => number): number {
   if (board.every((v) => v === EMPTY)) return CENTER;
   const cands = orderedCandidates(board, player);
+  if (cands.length === 0) return -1; // 满盘（不可达，防御性）
   // 己方能连五则直接落
   for (const c of cands) {
     board[c] = player;
@@ -148,12 +154,14 @@ export function findBestMove(board: number[], player: number, depth: number): nu
     if (win) return c;
   }
   let best = -Infinity;
-  let bestC = cands[0];
+  let bestMoves: number[] = [cands[0]];
   for (const c of cands.slice(0, TOP_K)) {
     board[c] = player;
     const v = minimaxValue(board, other(player), player, depth - 1, -Infinity, Infinity);
     board[c] = EMPTY;
-    if (v > best) { best = v; bestC = c; }
+    if (v > best) { best = v; bestMoves = [c]; }
+    else if (v === best) bestMoves.push(c);
   }
-  return bestC;
+  if (rand && bestMoves.length > 1) return bestMoves[Math.floor(rand() * bestMoves.length)];
+  return bestMoves[0];
 }
