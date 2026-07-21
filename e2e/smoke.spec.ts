@@ -69,7 +69,16 @@ test('进入数独有画布渲染，返回首页正常', async ({ page }) => {
   await expect(page.locator('.hub-title')).toBeVisible();
 });
 
-test('未实装游戏卡片为禁用状态', async ({ page }) => {
+test('进入五子棋有画布渲染，返回首页正常', async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('[data-id="gomoku"]')).toBeDisabled();
+  await page.click('[data-id="gomoku"]');
+  await expect(page.locator('canvas')).toBeVisible();
+  await expect(page.locator('.frame-title')).toContainText('五子棋');
+  await page.click('[data-act="back"]');
+  await expect(page.locator('.hub-title')).toBeVisible();
+});
+
+test('全部 8 张卡片均可进入（无禁用）', async ({ page }) => {
+  await page.goto('/');
+  await expect(page.locator('.card:not([disabled])')).toHaveCount(8);
 });
