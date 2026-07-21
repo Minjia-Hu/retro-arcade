@@ -42,10 +42,11 @@ export function createGomoku(): Game {
     try {
       worker = new Worker(new URL('./ai.worker.ts', import.meta.url), { type: 'module' });
       worker.onmessage = (e: MessageEvent) => {
-        const myToken = token;
-        if (paused || !game || game.status !== 'playing') { thinking = false; return; }
-        if (myToken !== token) return; // 过期回复
-        applyAiMove(e.data as number);
+        const { idx, token: replyToken } = e.data as { idx: number; token: number };
+        thinking = false;
+        if (replyToken !== token) return; // 过期回复：玩家已返回菜单或另开新局
+        if (paused || !game || game.status !== 'playing') return;
+        applyAiMove(idx);
       };
       return worker;
     } catch {
@@ -59,7 +60,7 @@ export function createGomoku(): Game {
     thinking = true;
     const w = ensureWorker();
     if (w) {
-      w.postMessage({ board: game.board.slice(), player: game.turn, depth: aiLevel.depth });
+      w.postMessage({ board: game.board.slice(), player: game.turn, depth: aiLevel.depth, token });
     } else {
       // 无 Worker：主线程直接算（仍可玩，只是可能瞬卡）
       const idx = findBestMove(game.board.slice(), game.turn, aiLevel.depth, Math.random);
