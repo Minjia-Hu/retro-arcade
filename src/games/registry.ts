@@ -36,5 +36,8 @@ export const GAMES: GameEntry[] = [
     meta: { id: 'sudoku', name: '数独', icon: '✏️' },
     load: async () => (await import('./sudoku')).createSudoku(),
   },
-  { meta: { id: 'gomoku', name: '五子棋', icon: '⚫' } },
+  {
+    meta: { id: 'gomoku', name: '五子棋', icon: '⚫' },
+    load: async () => (await import('./gomoku')).createGomoku(),
+  },
 ];
