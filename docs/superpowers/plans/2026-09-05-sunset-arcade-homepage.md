@@ -54,7 +54,7 @@
 - Modify: `src/games/registry.ts`
 - Test: `tests/hub-model.test.ts`（本任务只建文件写第一个用例）
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 创建 `tests/hub-model.test.ts`：
 
@@ -84,12 +84,12 @@ describe('registry displayName', () => {
 });
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `npx vitest run tests/hub-model.test.ts`
 Expected: FAIL —— `SUNSET` 不存在（导入报错）。
 
-- [ ] **Step 3: 加 SUNSET 令牌**
+- [x] **Step 3: 加 SUNSET 令牌**
 
 在 `src/core/theme.ts` **末尾追加**（不要改 `THEME`）：
 
@@ -110,7 +110,7 @@ export const SUNSET = {
 } as const;
 ```
 
-- [ ] **Step 4: 给 GameMeta 加 displayName**
+- [x] **Step 4: 给 GameMeta 加 displayName**
 
 `src/core/game.ts` 中把 `GameMeta` 改成：
 
@@ -124,7 +124,7 @@ export interface GameMeta {
 }
 ```
 
-- [ ] **Step 5: 给 registry 补 displayName**
+- [x] **Step 5: 给 registry 补 displayName**
 
 `src/games/registry.ts` 中 8 条 `meta` 逐条加字段：
 
@@ -141,12 +141,12 @@ export interface GameMeta {
 
 只加字段，`load` 那行保持原样。
 
-- [ ] **Step 6: 跑测试确认通过**
+- [x] **Step 6: 跑测试确认通过**
 
 Run: `npx vitest run tests/hub-model.test.ts`
 Expected: PASS，3 passed。
 
-- [ ] **Step 7: 提交**
+- [x] **Step 7: 提交**
 
 ```bash
 git add src/core/theme.ts src/core/game.ts src/games/registry.ts tests/hub-model.test.ts
@@ -164,7 +164,7 @@ git commit -m "feat: add SUNSET tokens and English displayName for hub"
 - Create: `src/shell/hub/icons.ts`
 - Test: `tests/hub-icons.test.ts`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 创建 `tests/hub-icons.test.ts`：
 
@@ -207,12 +207,12 @@ describe('pixelIconSvg', () => {
 });
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `npx vitest run tests/hub-icons.test.ts`
 Expected: FAIL —— 找不到模块 `../src/shell/hub/icons`。
 
-- [ ] **Step 3: 实现 icons.ts**
+- [x] **Step 3: 实现 icons.ts**
 
 创建 `src/shell/hub/icons.ts`：
 
@@ -269,12 +269,12 @@ export function pixelIconSvg(id: string): string {
 }
 ```
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 Run: `npx vitest run tests/hub-icons.test.ts`
 Expected: PASS，4 passed。
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add src/shell/hub/icons.ts tests/hub-icons.test.ts
@@ -289,7 +289,7 @@ git commit -m "feat: add 8x8 pixel icon SVG renderer for hub"
 - Create: `src/shell/hub/model.ts`
 - Modify: `tests/hub-model.test.ts`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 在 `tests/hub-model.test.ts` **末尾追加**（保留 Task 1 已有内容），并在文件顶部补一行导入：
 
@@ -370,12 +370,12 @@ describe('dateKey / hashDate', () => {
 });
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `npx vitest run tests/hub-model.test.ts`
 Expected: FAIL —— 找不到模块 `../src/shell/hub/model`。
 
-- [ ] **Step 3: 实现基础函数**
+- [x] **Step 3: 实现基础函数**
 
 创建 `src/shell/hub/model.ts`：
 
@@ -421,13 +421,13 @@ export function hashDate(key: string): number {
 }
 ```
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 Run: `npx vitest run tests/hub-model.test.ts`
 Expected: PASS，全部 through。若 `hashDate('2026-09-05') !== hashDate('2026-09-06')` 断言意外失败，
 说明哈希退化——不要改测试，改哈希实现。
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add src/shell/hub/model.ts tests/hub-model.test.ts
@@ -445,7 +445,7 @@ git commit -m "feat: add hub model primitives (padScore, accentAt, relativeTime,
 **注意：** 行颜色不放在 model 里。model 只输出语义化的 `tone`，具体颜色由 Task 9 的 CSS class
 决定。这样色板的唯一真相源留在 CSS。
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 在 `tests/hub-model.test.ts` 顶部补导入：
 
@@ -505,12 +505,12 @@ describe('buildHall', () => {
 });
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `npx vitest run tests/hub-model.test.ts`
 Expected: FAIL —— `buildHall` 未导出。
 
-- [ ] **Step 3: 实现 buildHall**
+- [x] **Step 3: 实现 buildHall**
 
 在 `src/shell/hub/model.ts` 顶部补导入（`SUNSET` 已经导入过，不要重复）：
 
@@ -573,12 +573,12 @@ export function buildHall(storage: ArcadeStorage): HallRow[] {
 }
 ```
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 Run: `npx vitest run tests/hub-model.test.ts`
 Expected: PASS，6 个 buildHall 用例全绿。
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add src/shell/hub/model.ts tests/hub-model.test.ts
@@ -593,7 +593,7 @@ git commit -m "feat: add Hall of Fame model with dirty-data guards"
 - Modify: `src/shell/hub/model.ts`
 - Modify: `tests/hub-model.test.ts`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 顶部补导入：
 
@@ -642,12 +642,12 @@ describe('buildDaily', () => {
 });
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `npx vitest run tests/hub-model.test.ts`
 Expected: FAIL —— `buildDaily` / `CHALLENGES` 未导出。
 
-- [ ] **Step 3: 实现 buildDaily**
+- [x] **Step 3: 实现 buildDaily**
 
 在 `src/shell/hub/model.ts` 追加：
 
@@ -688,13 +688,13 @@ export function buildDaily(now: Date): DailyModel {
 }
 ```
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 Run: `npx vitest run tests/hub-model.test.ts`
 Expected: PASS。若「一个月内不会永远是同一个游戏」失败，说明 `hashDate` 的低位分布退化，
 调整 `hashDate`（例如混入 `h ^= h >>> 15`）而不是改测试。
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add src/shell/hub/model.ts tests/hub-model.test.ts
@@ -709,7 +709,7 @@ git commit -m "feat: add date-seeded daily challenge model"
 - Modify: `src/shell/hub/model.ts`
 - Modify: `tests/hub-model.test.ts`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 顶部补导入：
 
@@ -798,12 +798,12 @@ describe('buildHubModel', () => {
 });
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `npx vitest run tests/hub-model.test.ts`
 Expected: FAIL —— `buildFeatured` 未导出。
 
-- [ ] **Step 3: 实现剩余 model**
+- [x] **Step 3: 实现剩余 model**
 
 在 `src/shell/hub/model.ts` 追加：
 
@@ -901,12 +901,12 @@ export function buildHubModel(storage: ArcadeStorage, now: Date): HubModel {
 }
 ```
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 Run: `npx vitest run tests/hub-model.test.ts`
 Expected: PASS，全文件通过。
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add src/shell/hub/model.ts tests/hub-model.test.ts
@@ -926,7 +926,7 @@ git commit -m "feat: add featured/cards/hub model aggregation"
 两者都用 `data-id` 会让 `e2e/smoke.spec.ts` 的 `page.click('[data-id="flappy"]')` 触发
 Playwright strict mode 报错。
 
-- [ ] **Step 1: 实现 view.ts**
+- [x] **Step 1: 实现 view.ts**
 
 创建 `src/shell/hub/view.ts`：
 
@@ -1001,7 +1001,7 @@ export function hubHtml(m: HubModel): string {
 }
 ```
 
-- [ ] **Step 2: 实现 index.ts**
+- [x] **Step 2: 实现 index.ts**
 
 创建 `src/shell/hub/index.ts`：
 
@@ -1023,7 +1023,7 @@ export function renderHub(root: HTMLElement, storage: ArcadeStorage): void {
 }
 ```
 
-- [ ] **Step 3: 删除旧文件**
+- [x] **Step 3: 删除旧文件**
 
 ```bash
 git rm src/shell/hub.ts
@@ -1032,18 +1032,18 @@ git rm src/shell/hub.ts
 `src/main.ts` 的 `import { renderHub } from './shell/hub'` 无需修改——会自动解析到
 `src/shell/hub/index.ts`。
 
-- [ ] **Step 4: 类型检查通过**
+- [x] **Step 4: 类型检查通过**
 
 Run: `npx tsc --noEmit`
 Expected: 无输出（无错误）。若报找不到 `./shell/hub`，检查 `src/shell/hub/index.ts` 是否
 确实导出了 `renderHub`。
 
-- [ ] **Step 5: 单测仍全绿**
+- [x] **Step 5: 单测仍全绿**
 
 Run: `npm test`
 Expected: 全部 PASS。
 
-- [ ] **Step 6: 提交**
+- [x] **Step 6: 提交**
 
 ```bash
 git add src/shell/hub/view.ts src/shell/hub/index.ts
@@ -1057,7 +1057,7 @@ git commit -m "feat: render Sunset Arcade hub from model"
 **Files:**
 - Modify: `src/main.ts:26-32`
 
-- [ ] **Step 1: 写入 lastPlayed**
+- [x] **Step 1: 写入 lastPlayed**
 
 在 `src/main.ts` 的路由回调中，找到这段：
 
@@ -1083,12 +1083,12 @@ git commit -m "feat: render Sunset Arcade hub from model"
   try {
 ```
 
-- [ ] **Step 2: 类型检查**
+- [x] **Step 2: 类型检查**
 
 Run: `npx tsc --noEmit`
 Expected: 无输出。
 
-- [ ] **Step 3: 提交**
+- [x] **Step 3: 提交**
 
 ```bash
 git add src/main.ts
@@ -1103,7 +1103,7 @@ git commit -m "feat: record lastPlayed on game launch"
 - Modify: `index.html`
 - Modify: `src/styles/arcade.css`（首页部分整体替换）
 
-- [ ] **Step 1: 引入字体**
+- [x] **Step 1: 引入字体**
 
 `index.html` 的 `<head>` 中，在 `<title>` 之前插入：
 
@@ -1113,7 +1113,7 @@ git commit -m "feat: record lastPlayed on game launch"
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Space+Grotesk:wght@400;500;700&display=swap" />
 ```
 
-- [ ] **Step 2: 重写 arcade.css**
+- [x] **Step 2: 重写 arcade.css**
 
 把 `src/styles/arcade.css` **整体替换**为下面内容。三个要点：
 
@@ -1313,12 +1313,12 @@ button { font-family: inherit; cursor: pointer; }
 }
 ```
 
-- [ ] **Step 3: 构建通过**
+- [x] **Step 3: 构建通过**
 
 Run: `npm run build`
 Expected: `tsc` 无错误，vite 构建成功。
 
-- [ ] **Step 4: 提交**
+- [x] **Step 4: 提交**
 
 ```bash
 git add index.html src/styles/arcade.css
@@ -1331,17 +1331,17 @@ git commit -m "feat: restyle hub as Sunset Arcade, keep game frame dark"
 
 **Files:** 无改动（除非发现问题）
 
-- [ ] **Step 1: 类型检查**
+- [x] **Step 1: 类型检查**
 
 Run: `npx tsc --noEmit`
 Expected: 无输出。
 
-- [ ] **Step 2: 单元测试**
+- [x] **Step 2: 单元测试**
 
 Run: `npm test`
 Expected: 全部 PASS。原有 14 个测试文件 + 新增 2 个，一个不许失败。
 
-- [ ] **Step 3: e2e**
+- [x] **Step 3: e2e**
 
 Run: `npm run e2e`
 Expected: 10 passed。
@@ -1351,7 +1351,7 @@ Expected: 10 passed。
 - 「进入 flappy 有画布渲染」——`[data-id="flappy"]` 必须唯一匹配到网格卡片。若报
   strict mode violation，说明 hero 按钮误用了 `data-id`，改回 `data-goto`。
 
-- [ ] **Step 4: 人工目视核对**
+- [x] **Step 4: 人工目视核对**
 
 Run: `npm run dev`，浏览器打开首页，对照
 `design_handoff_sunset_arcade_homepage/Homepage Redesigns.dc.html` 的 artboard **3a** 逐项确认：
@@ -1365,7 +1365,7 @@ Run: `npm run dev`，浏览器打开首页，对照
 - Tab 键可依次聚焦所有卡片与按钮，焦点环为橙色
 - 进入任一游戏再返回首页，Continue Playing 变为该游戏且元信息显示 `JUST NOW`
 
-- [ ] **Step 5: 提交（若有修补）**
+- [x] **Step 5: 提交（若有修补）**
 
 ```bash
 git add -A
@@ -1373,3 +1373,21 @@ git commit -m "fix: address issues found in final verification"
 ```
 
 若无改动则跳过。
+
+---
+
+## 执行后记（2026-09-05）
+
+全部 10 个任务已完成，见 `git log ab8b01c..`。计划之外还做了两轮评审跟进：
+
+- `4b45195` — Task 1 评审：色板真相源收敛到 CSS，`THEME` 守卫改成整体断言。
+- `f085c9a` — 最终评审：model 改传 accent 色调名而非 hex（`SUNSET` 随之删除，
+  `src/core/theme.ts` 与本特性开始前逐字节相同）；新增 `tests/hub-view.test.ts`
+  钉住 `data-id`/`data-goto` 分工——原先这个不变量只由 e2e 守着，而那个 e2e
+  按日期偶发失败；统一 0 分口径。
+
+验收：`tsc --noEmit` 干净，`npm test` 17 文件 194 用例全绿，`npm run e2e` 10/10，
+1440px 与 390px 均已目视核对。
+
+**已知与设计稿的差异**（源自范围决策，非缺陷）：MINES 的 `BEST 000099` 与 GOMOKU 的
+`WINS 012` 未实现——这两个游戏没有持久化战绩，显示 `NO RECORD`。
