@@ -598,10 +598,11 @@ export class GameFrame {
   }
 
   private showError(root: HTMLElement): void {
+    // 用 cab-btn 而非旧的 .btn —— 机柜样式落地后 .btn 规则将不复存在
     root.innerHTML = `
       <div class="frame-error">
         <p>💥 GAME ERROR · 游戏出错了</p>
-        <button class="btn" data-act="home">返回首页</button>
+        <button class="cab-btn" data-act="home">返回首页</button>
       </div>`;
     root.querySelector('[data-act="home"]')!.addEventListener('click', () => {
       location.hash = '#/';
@@ -693,7 +694,11 @@ git commit -m "feat: mount games inside the cabinet shell with a settle overlay 
 
 把 `arcade.css` 中从 `/* ---- 游戏外框：保持原深色，底色下沉到 .frame 自身 ---- */` 起
 到 `.frame-body canvas { ... }` 为止的整段（即 `.frame`、`.frame-bar`、`.frame-title`、
-`.frame-right`、`.btn`、`.frame-body`、`.frame-body canvas` 七条规则）替换为：
+`.frame-right`、`.btn`、`.frame-body`、`.frame-body canvas` 七条规则）替换为下面内容。
+
+注意 `.btn` 规则在此被删除——Task 3 已经把 `showError` 里最后一个 `.btn` 用户改成了
+`cab-btn`，改完后仓库里不应再有 `class="btn"`。替换后用
+`grep -rn 'class="btn"' src/` 确认为空。
 
 ```css
 /* ---- 游戏机柜 ---- */
