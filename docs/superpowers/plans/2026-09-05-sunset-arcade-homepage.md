@@ -22,6 +22,9 @@
    只有网格卡片用 `data-id`。
 4. **存档可能是脏的。** `ArcadeStorage.get` 只做 `JSON.parse`，不校验类型。所有读取都要防非法值。
 5. **游戏名有两套。** `meta.name` 是中文（游戏内标题用，e2e 断言它），首页用新增的 `meta.displayName`（英文大写）。
+6. **颜色的真相源分工**（Task 1 评审后调整）：`SUNSET` 只保留 `accents` 四色——featured 卡片的
+   accent 取决于是哪个游戏，只能由 JS 内联。其余色板全部是 `src/styles/arcade.css` 里 `:root`
+   自定义属性的唯一真相源，TS 不再持有。Hall of Fame 的三种颜色走 CSS class，不走内联 hex。
 
 ## 文件结构
 
@@ -51,7 +54,7 @@
 - Modify: `src/games/registry.ts`
 - Test: `tests/hub-model.test.ts`（本任务只建文件写第一个用例）
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 创建 `tests/hub-model.test.ts`：
 
@@ -81,12 +84,12 @@ describe('registry displayName', () => {
 });
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `npx vitest run tests/hub-model.test.ts`
 Expected: FAIL —— `SUNSET` 不存在（导入报错）。
 
-- [ ] **Step 3: 加 SUNSET 令牌**
+- [x] **Step 3: 加 SUNSET 令牌**
 
 在 `src/core/theme.ts` **末尾追加**（不要改 `THEME`）：
 
@@ -107,7 +110,7 @@ export const SUNSET = {
 } as const;
 ```
 
-- [ ] **Step 4: 给 GameMeta 加 displayName**
+- [x] **Step 4: 给 GameMeta 加 displayName**
 
 `src/core/game.ts` 中把 `GameMeta` 改成：
 
@@ -121,7 +124,7 @@ export interface GameMeta {
 }
 ```
 
-- [ ] **Step 5: 给 registry 补 displayName**
+- [x] **Step 5: 给 registry 补 displayName**
 
 `src/games/registry.ts` 中 8 条 `meta` 逐条加字段：
 
@@ -138,12 +141,12 @@ export interface GameMeta {
 
 只加字段，`load` 那行保持原样。
 
-- [ ] **Step 6: 跑测试确认通过**
+- [x] **Step 6: 跑测试确认通过**
 
 Run: `npx vitest run tests/hub-model.test.ts`
 Expected: PASS，3 passed。
 
-- [ ] **Step 7: 提交**
+- [x] **Step 7: 提交**
 
 ```bash
 git add src/core/theme.ts src/core/game.ts src/games/registry.ts tests/hub-model.test.ts
@@ -161,7 +164,7 @@ git commit -m "feat: add SUNSET tokens and English displayName for hub"
 - Create: `src/shell/hub/icons.ts`
 - Test: `tests/hub-icons.test.ts`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 创建 `tests/hub-icons.test.ts`：
 
@@ -204,12 +207,12 @@ describe('pixelIconSvg', () => {
 });
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `npx vitest run tests/hub-icons.test.ts`
 Expected: FAIL —— 找不到模块 `../src/shell/hub/icons`。
 
-- [ ] **Step 3: 实现 icons.ts**
+- [x] **Step 3: 实现 icons.ts**
 
 创建 `src/shell/hub/icons.ts`：
 
@@ -266,12 +269,12 @@ export function pixelIconSvg(id: string): string {
 }
 ```
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 Run: `npx vitest run tests/hub-icons.test.ts`
 Expected: PASS，4 passed。
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add src/shell/hub/icons.ts tests/hub-icons.test.ts
@@ -286,7 +289,7 @@ git commit -m "feat: add 8x8 pixel icon SVG renderer for hub"
 - Create: `src/shell/hub/model.ts`
 - Modify: `tests/hub-model.test.ts`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 在 `tests/hub-model.test.ts` **末尾追加**（保留 Task 1 已有内容），并在文件顶部补一行导入：
 
@@ -367,12 +370,12 @@ describe('dateKey / hashDate', () => {
 });
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `npx vitest run tests/hub-model.test.ts`
 Expected: FAIL —— 找不到模块 `../src/shell/hub/model`。
 
-- [ ] **Step 3: 实现基础函数**
+- [x] **Step 3: 实现基础函数**
 
 创建 `src/shell/hub/model.ts`：
 
@@ -418,13 +421,13 @@ export function hashDate(key: string): number {
 }
 ```
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 Run: `npx vitest run tests/hub-model.test.ts`
 Expected: PASS，全部 through。若 `hashDate('2026-09-05') !== hashDate('2026-09-06')` 断言意外失败，
 说明哈希退化——不要改测试，改哈希实现。
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add src/shell/hub/model.ts tests/hub-model.test.ts
@@ -439,7 +442,10 @@ git commit -m "feat: add hub model primitives (padScore, accentAt, relativeTime,
 - Modify: `src/shell/hub/model.ts`
 - Modify: `tests/hub-model.test.ts`
 
-- [ ] **Step 1: 写失败测试**
+**注意：** 行颜色不放在 model 里。model 只输出语义化的 `tone`，具体颜色由 Task 9 的 CSS class
+决定。这样色板的唯一真相源留在 CSS。
+
+- [x] **Step 1: 写失败测试**
 
 在 `tests/hub-model.test.ts` 顶部补导入：
 
@@ -462,7 +468,7 @@ describe('buildHall', () => {
     const rows = buildHall(freshStorage());
     expect(rows).toHaveLength(3);
     expect(rows.every((r) => r.empty)).toBe(true);
-    expect(rows[0]).toMatchObject({ rank: '1', name: '— EMPTY —', score: '······', color: '#b5a88f' });
+    expect(rows[0]).toEqual({ rank: '1', name: '— EMPTY —', score: '······', tone: 'faint', empty: true });
   });
 
   it('按分数降序取前三，并补齐到三行', () => {
@@ -472,10 +478,9 @@ describe('buildHall', () => {
     expect(rows[2].empty).toBe(true);
   });
 
-  it('第一名用金色，二三名用 dim 色', () => {
+  it('第一名是 gold 色调，二三名是 dim 色调', () => {
     const rows = buildHall(freshStorage({ 'best.snake': 100, 'best.tetris': 200 }));
-    expect(rows[0].color).toBe('#e67700');
-    expect(rows[1].color).toBe('#8a7a66');
+    expect(rows.map((r) => r.tone)).toEqual(['gold', 'dim', 'faint']);
   });
 
   it('只取前三名', () => {
@@ -500,14 +505,14 @@ describe('buildHall', () => {
 });
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `npx vitest run tests/hub-model.test.ts`
 Expected: FAIL —— `buildHall` 未导出。
 
-- [ ] **Step 3: 实现 buildHall**
+- [x] **Step 3: 实现 buildHall**
 
-在 `src/shell/hub/model.ts` 顶部补导入：
+在 `src/shell/hub/model.ts` 顶部补导入（`SUNSET` 已经导入过，不要重复）：
 
 ```ts
 import { GAMES } from '../../games/registry';
@@ -518,11 +523,14 @@ import type { ArcadeStorage } from '../../core/storage';
 并追加：
 
 ```ts
+/** 行的语义色调，具体颜色由 CSS 的 .hall-row-* 决定 */
+export type HallTone = 'gold' | 'dim' | 'faint';
+
 export interface HallRow {
   rank: string;
   name: string;
   score: string;
-  color: string;
+  tone: HallTone;
   empty: boolean;
 }
 
@@ -548,7 +556,7 @@ export function buildHall(storage: ArcadeStorage): HallRow[] {
     rank: String(i + 1),
     name: e.name,
     score: padScore(e.best),
-    color: i === 0 ? SUNSET.accents[3] : SUNSET.dim,
+    tone: i === 0 ? 'gold' : 'dim',
     empty: false,
   }));
 
@@ -557,7 +565,7 @@ export function buildHall(storage: ArcadeStorage): HallRow[] {
       rank: String(rows.length + 1),
       name: '— EMPTY —',
       score: '······',
-      color: SUNSET.faint,
+      tone: 'faint',
       empty: true,
     });
   }
@@ -565,12 +573,12 @@ export function buildHall(storage: ArcadeStorage): HallRow[] {
 }
 ```
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 Run: `npx vitest run tests/hub-model.test.ts`
 Expected: PASS，6 个 buildHall 用例全绿。
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add src/shell/hub/model.ts tests/hub-model.test.ts
@@ -585,7 +593,7 @@ git commit -m "feat: add Hall of Fame model with dirty-data guards"
 - Modify: `src/shell/hub/model.ts`
 - Modify: `tests/hub-model.test.ts`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 顶部补导入：
 
@@ -634,12 +642,12 @@ describe('buildDaily', () => {
 });
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `npx vitest run tests/hub-model.test.ts`
 Expected: FAIL —— `buildDaily` / `CHALLENGES` 未导出。
 
-- [ ] **Step 3: 实现 buildDaily**
+- [x] **Step 3: 实现 buildDaily**
 
 在 `src/shell/hub/model.ts` 追加：
 
@@ -680,13 +688,13 @@ export function buildDaily(now: Date): DailyModel {
 }
 ```
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 Run: `npx vitest run tests/hub-model.test.ts`
 Expected: PASS。若「一个月内不会永远是同一个游戏」失败，说明 `hashDate` 的低位分布退化，
 调整 `hashDate`（例如混入 `h ^= h >>> 15`）而不是改测试。
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add src/shell/hub/model.ts tests/hub-model.test.ts
@@ -701,7 +709,7 @@ git commit -m "feat: add date-seeded daily challenge model"
 - Modify: `src/shell/hub/model.ts`
 - Modify: `tests/hub-model.test.ts`
 
-- [ ] **Step 1: 写失败测试**
+- [x] **Step 1: 写失败测试**
 
 顶部补导入：
 
@@ -790,12 +798,12 @@ describe('buildHubModel', () => {
 });
 ```
 
-- [ ] **Step 2: 跑测试确认失败**
+- [x] **Step 2: 跑测试确认失败**
 
 Run: `npx vitest run tests/hub-model.test.ts`
 Expected: FAIL —— `buildFeatured` 未导出。
 
-- [ ] **Step 3: 实现剩余 model**
+- [x] **Step 3: 实现剩余 model**
 
 在 `src/shell/hub/model.ts` 追加：
 
@@ -893,12 +901,12 @@ export function buildHubModel(storage: ArcadeStorage, now: Date): HubModel {
 }
 ```
 
-- [ ] **Step 4: 跑测试确认通过**
+- [x] **Step 4: 跑测试确认通过**
 
 Run: `npx vitest run tests/hub-model.test.ts`
 Expected: PASS，全文件通过。
 
-- [ ] **Step 5: 提交**
+- [x] **Step 5: 提交**
 
 ```bash
 git add src/shell/hub/model.ts tests/hub-model.test.ts
@@ -918,7 +926,7 @@ git commit -m "feat: add featured/cards/hub model aggregation"
 两者都用 `data-id` 会让 `e2e/smoke.spec.ts` 的 `page.click('[data-id="flappy"]')` 触发
 Playwright strict mode 报错。
 
-- [ ] **Step 1: 实现 view.ts**
+- [x] **Step 1: 实现 view.ts**
 
 创建 `src/shell/hub/view.ts`：
 
@@ -937,7 +945,7 @@ function dailyBody(prefix: string, name: string, suffix: string): string {
 
 export function hubHtml(m: HubModel): string {
   const hall = m.hall.map((r) => `
-        <div class="hall-row" style="color:${r.color}">
+        <div class="hall-row hall-row-${r.tone}">
           <span><b>${esc(r.rank)}</b> ${esc(r.name)}</span>
           <span class="hall-score">${esc(r.score)}</span>
         </div>`).join('');
@@ -993,7 +1001,7 @@ export function hubHtml(m: HubModel): string {
 }
 ```
 
-- [ ] **Step 2: 实现 index.ts**
+- [x] **Step 2: 实现 index.ts**
 
 创建 `src/shell/hub/index.ts`：
 
@@ -1015,7 +1023,7 @@ export function renderHub(root: HTMLElement, storage: ArcadeStorage): void {
 }
 ```
 
-- [ ] **Step 3: 删除旧文件**
+- [x] **Step 3: 删除旧文件**
 
 ```bash
 git rm src/shell/hub.ts
@@ -1024,18 +1032,18 @@ git rm src/shell/hub.ts
 `src/main.ts` 的 `import { renderHub } from './shell/hub'` 无需修改——会自动解析到
 `src/shell/hub/index.ts`。
 
-- [ ] **Step 4: 类型检查通过**
+- [x] **Step 4: 类型检查通过**
 
 Run: `npx tsc --noEmit`
 Expected: 无输出（无错误）。若报找不到 `./shell/hub`，检查 `src/shell/hub/index.ts` 是否
 确实导出了 `renderHub`。
 
-- [ ] **Step 5: 单测仍全绿**
+- [x] **Step 5: 单测仍全绿**
 
 Run: `npm test`
 Expected: 全部 PASS。
 
-- [ ] **Step 6: 提交**
+- [x] **Step 6: 提交**
 
 ```bash
 git add src/shell/hub/view.ts src/shell/hub/index.ts
@@ -1049,7 +1057,7 @@ git commit -m "feat: render Sunset Arcade hub from model"
 **Files:**
 - Modify: `src/main.ts:26-32`
 
-- [ ] **Step 1: 写入 lastPlayed**
+- [x] **Step 1: 写入 lastPlayed**
 
 在 `src/main.ts` 的路由回调中，找到这段：
 
@@ -1075,12 +1083,12 @@ git commit -m "feat: render Sunset Arcade hub from model"
   try {
 ```
 
-- [ ] **Step 2: 类型检查**
+- [x] **Step 2: 类型检查**
 
 Run: `npx tsc --noEmit`
 Expected: 无输出。
 
-- [ ] **Step 3: 提交**
+- [x] **Step 3: 提交**
 
 ```bash
 git add src/main.ts
@@ -1095,7 +1103,7 @@ git commit -m "feat: record lastPlayed on game launch"
 - Modify: `index.html`
 - Modify: `src/styles/arcade.css`（首页部分整体替换）
 
-- [ ] **Step 1: 引入字体**
+- [x] **Step 1: 引入字体**
 
 `index.html` 的 `<head>` 中，在 `<title>` 之前插入：
 
@@ -1105,17 +1113,40 @@ git commit -m "feat: record lastPlayed on game launch"
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bungee&family=Space+Grotesk:wght@400;500;700&display=swap" />
 ```
 
-- [ ] **Step 2: 重写 arcade.css**
+- [x] **Step 2: 重写 arcade.css**
 
-把 `src/styles/arcade.css` **整体替换**为下面内容。注意游戏框部分把深色底从 `body` 下沉到
-`.frame` 自身，且 `.frame` 改用 `flex: 1` 而不是 `height: 100%`（因为 `#app` 不再有确定高度）。
+把 `src/styles/arcade.css` **整体替换**为下面内容。三个要点：
+
+1. `:root` 里的自定义属性是首页色板的**唯一真相源**。四个 `--accent-*` 与
+   `src/core/theme.ts` 的 `SUNSET.accents` 一一对应，改一处要同步另一处；其余颜色 TS 侧不持有。
+2. Hall of Fame 的三种色调走 `.hall-row-gold` / `.hall-row-dim` / `.hall-row-faint`，
+   model 只给语义 tone。
+3. 游戏框的深色底从 `body` 下沉到 `.frame` 自身，且 `.frame` 改用 `flex: 1` 而不是
+   `height: 100%`（因为 `#app` 不再有确定高度）。
 
 ```css
+:root {
+  --paper: #f6efe3;
+  --panel: #fffaf0;
+  --panel-hover: #fff3dd;
+  --ink: #2b2118;
+  --dim: #8a7a66;
+  --faint: #b5a88f;
+  --pill-off: #e6dcc8;
+  --highlight: #ffe08a;
+  /* 与 src/core/theme.ts 的 SUNSET.accents 一一对应 */
+  --accent-teal: #0b7285;
+  --accent-magenta: #d6336c;
+  --accent-orange: #e8590c;
+  --accent-gold: #e67700;
+  --focus-ring: 0 0 0 4px rgba(232, 89, 12, .35);
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
 html, body { min-height: 100%; }
 body {
-  background: #f6efe3;
-  color: #2b2118;
+  background: var(--paper);
+  color: var(--ink);
   font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
@@ -1125,19 +1156,24 @@ button { font-family: inherit; cursor: pointer; }
 /* ---- 首页：marquee ---- */
 .hub { max-width: 1440px; margin: 0 auto; width: 100%; padding: 36px 48px 32px; }
 .marquee {
-  background: #fffaf0; border: 3px solid #2b2118; border-radius: 14px;
-  box-shadow: 8px 8px 0 #2b2118; padding: 30px 32px; text-align: center;
+  background: var(--panel); border: 3px solid var(--ink); border-radius: 14px;
+  box-shadow: 8px 8px 0 var(--ink); padding: 30px 32px; text-align: center;
 }
-.marquee-bar { height: 10px; border: 2px solid #2b2118; border-radius: 5px; }
+.marquee-bar { height: 10px; border: 2px solid var(--ink); border-radius: 5px; }
 .marquee-bar-top {
-  background: repeating-linear-gradient(90deg, #e67700 0 14px, #fffaf0 14px 28px, #d6336c 28px 42px, #fffaf0 42px 56px);
+  background: repeating-linear-gradient(90deg,
+    var(--accent-gold) 0 14px, var(--panel) 14px 28px,
+    var(--accent-magenta) 28px 42px, var(--panel) 42px 56px);
 }
 .marquee-bar-bottom {
-  background: repeating-linear-gradient(90deg, #0b7285 0 14px, #fffaf0 14px 28px, #e67700 28px 42px, #fffaf0 42px 56px);
+  background: repeating-linear-gradient(90deg,
+    var(--accent-teal) 0 14px, var(--panel) 14px 28px,
+    var(--accent-gold) 28px 42px, var(--panel) 42px 56px);
 }
 .hub-title {
   margin: 24px 0 0; font-family: 'Bungee', 'Space Grotesk', sans-serif; font-weight: 400;
-  font-size: clamp(28px, 5vw, 46px); color: #e8590c; text-shadow: 3px 3px 0 #2b2118;
+  font-size: clamp(28px, 5vw, 46px); color: var(--accent-orange);
+  text-shadow: 3px 3px 0 var(--ink);
 }
 .hub-sub {
   margin: 14px 0 24px; font-size: 14px; font-weight: 700;
@@ -1148,53 +1184,61 @@ button { font-family: inherit; cursor: pointer; }
 .hero { display: grid; grid-template-columns: 1.25fr .75fr; gap: 22px; margin-top: 26px; }
 .hero-side { display: flex; flex-direction: column; gap: 22px; }
 .panel {
-  background: #fffaf0; border: 3px solid #2b2118; border-radius: 14px;
-  box-shadow: 8px 8px 0 #2b2118; padding: 24px 28px;
+  background: var(--panel); border: 3px solid var(--ink); border-radius: 14px;
+  box-shadow: 8px 8px 0 var(--ink); padding: 24px 28px;
   display: flex; flex-direction: column; gap: 13px;
 }
 .panel-label { font-family: 'Bungee', 'Space Grotesk', sans-serif; font-size: 13px; }
 
 .continue { align-items: center; gap: 18px; padding: 28px; }
-.continue-label { color: #d6336c; }
+.continue-label { color: var(--accent-magenta); }
 .continue-well {
-  align-self: stretch; background: #f6efe3; border: 2px dashed #2b2118; border-radius: 10px;
-  padding: 32px; display: flex; flex-direction: column; align-items: center; gap: 20px;
+  align-self: stretch; background: var(--paper); border: 2px dashed var(--ink);
+  border-radius: 10px; padding: 32px;
+  display: flex; flex-direction: column; align-items: center; gap: 20px;
 }
-.continue-name { font-family: 'Bungee', 'Space Grotesk', sans-serif; font-size: 30px; text-align: center; }
+.continue-name {
+  font-family: 'Bungee', 'Space Grotesk', sans-serif; font-size: 30px; text-align: center;
+}
 .continue-meta {
-  font-size: 13px; color: #8a7a66; letter-spacing: 2px; font-weight: 500; text-align: center;
+  font-size: 13px; color: var(--dim); letter-spacing: 2px; font-weight: 500; text-align: center;
 }
 .btn-start {
   font-family: 'Bungee', 'Space Grotesk', sans-serif; font-size: 15px;
-  background: #e8590c; color: #fffaf0; border: 3px solid #2b2118; border-radius: 10px;
-  box-shadow: 4px 4px 0 #2b2118; padding: 14px 28px;
+  background: var(--accent-orange); color: var(--panel);
+  border: 3px solid var(--ink); border-radius: 10px;
+  box-shadow: 4px 4px 0 var(--ink); padding: 14px 28px;
   transition: transform .1s, box-shadow .1s;
 }
-.btn-start:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0 #2b2118; }
-.btn-start:active { transform: translate(4px, 4px); box-shadow: 0 0 0 #2b2118; }
+.btn-start:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+.btn-start:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--ink); }
 .btn-start:focus-visible {
-  outline: none; box-shadow: 4px 4px 0 #2b2118, 0 0 0 4px rgba(232, 89, 12, .35);
+  outline: none; box-shadow: 4px 4px 0 var(--ink), var(--focus-ring);
 }
 
-.daily { background: #0b7285; color: #fffaf0; }
-.daily-label { color: #ffe08a; }
+.daily { background: var(--accent-teal); color: var(--panel); }
+.daily-label { color: var(--highlight); }
 .daily-body { font-size: 16px; line-height: 1.5; font-weight: 500; }
-.daily-body b { color: #ffe08a; }
+.daily-body b { color: var(--highlight); }
 .daily-hint { font-size: 13px; font-weight: 700; }
 .btn-accept {
-  align-self: flex-start; background: #fffaf0; border: 2px solid #2b2118; border-radius: 8px;
-  color: #2b2118; padding: 9px 18px; font-size: 13px; font-weight: 700; letter-spacing: 2px;
+  align-self: flex-start; background: var(--panel); border: 2px solid var(--ink);
+  border-radius: 8px; color: var(--ink); padding: 9px 18px;
+  font-size: 13px; font-weight: 700; letter-spacing: 2px;
   transition: transform .1s, background .1s;
 }
-.btn-accept:hover { background: #ffe08a; }
+.btn-accept:hover { background: var(--highlight); }
 .btn-accept:active { transform: translateY(2px); }
 .btn-accept:focus-visible { outline: none; box-shadow: 0 0 0 4px rgba(255, 224, 138, .5); }
 
 .hall { flex: 1; }
-.hall-label { color: #e8590c; }
+.hall-label { color: var(--accent-orange); }
 .hall-row { display: flex; justify-content: space-between; font-size: 14px; font-weight: 500; }
+.hall-row-gold { color: var(--accent-gold); }
+.hall-row-dim { color: var(--dim); }
+.hall-row-faint { color: var(--faint); }
 .hall-score { font-weight: 700; }
-.hall-note { font-size: 11px; color: #b5a88f; letter-spacing: 1px; margin-top: auto; }
+.hall-note { font-size: 11px; color: var(--faint); letter-spacing: 1px; margin-top: auto; }
 
 /* ---- 首页：游戏网格 ---- */
 .grid-heading {
@@ -1203,23 +1247,25 @@ button { font-family: inherit; cursor: pointer; }
 }
 .hub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
 .card {
-  background: #fffaf0; border: 3px solid #2b2118; border-radius: 14px;
-  box-shadow: 6px 6px 0 #2b2118; padding: 24px 16px 20px;
+  background: var(--panel); border: 3px solid var(--ink); border-radius: 14px;
+  box-shadow: 6px 6px 0 var(--ink); padding: 24px 16px 20px;
   display: flex; flex-direction: column; align-items: center; gap: 14px;
-  color: #2b2118; transition: transform .1s, box-shadow .1s, background .1s;
+  color: var(--ink); transition: transform .1s, box-shadow .1s, background .1s;
 }
-.card:hover { transform: translate(3px, 3px); box-shadow: 3px 3px 0 #2b2118; background: #fff3dd; }
-.card:active { transform: translate(6px, 6px); box-shadow: 0 0 0 #2b2118; }
+.card:hover {
+  transform: translate(3px, 3px); box-shadow: 3px 3px 0 var(--ink); background: var(--panel-hover);
+}
+.card:active { transform: translate(6px, 6px); box-shadow: 0 0 0 var(--ink); }
 .card:focus-visible {
-  outline: none; box-shadow: 6px 6px 0 #2b2118, 0 0 0 4px rgba(232, 89, 12, .35);
+  outline: none; box-shadow: 6px 6px 0 var(--ink), var(--focus-ring);
 }
 .card-name { font-family: 'Bungee', 'Space Grotesk', sans-serif; font-size: 14px; }
 .card-pill {
   font-size: 11px; border-radius: 6px; padding: 3px 9px;
-  letter-spacing: 1px; font-weight: 700; border: 2px solid #2b2118;
+  letter-spacing: 1px; font-weight: 700; border: 2px solid var(--ink);
 }
-.card-pill-on { color: #fffaf0; }
-.card-pill-off { background: #e6dcc8; color: #8a7a66; border-color: #b5a88f; }
+.card-pill-on { color: var(--panel); }
+.card-pill-off { background: var(--pill-off); color: var(--dim); border-color: var(--faint); }
 
 .px { display: block; }
 .px svg { display: block; width: 100%; height: 100%; }
@@ -1227,7 +1273,7 @@ button { font-family: inherit; cursor: pointer; }
 .px-sm { width: 36px; height: 36px; }
 
 .hub-footer {
-  text-align: center; font-size: 12px; color: #8a7a66;
+  text-align: center; font-size: 12px; color: var(--dim);
   letter-spacing: 3px; font-weight: 500; margin-top: 24px;
 }
 
@@ -1267,12 +1313,12 @@ button { font-family: inherit; cursor: pointer; }
 }
 ```
 
-- [ ] **Step 3: 构建通过**
+- [x] **Step 3: 构建通过**
 
 Run: `npm run build`
 Expected: `tsc` 无错误，vite 构建成功。
 
-- [ ] **Step 4: 提交**
+- [x] **Step 4: 提交**
 
 ```bash
 git add index.html src/styles/arcade.css
@@ -1285,17 +1331,17 @@ git commit -m "feat: restyle hub as Sunset Arcade, keep game frame dark"
 
 **Files:** 无改动（除非发现问题）
 
-- [ ] **Step 1: 类型检查**
+- [x] **Step 1: 类型检查**
 
 Run: `npx tsc --noEmit`
 Expected: 无输出。
 
-- [ ] **Step 2: 单元测试**
+- [x] **Step 2: 单元测试**
 
 Run: `npm test`
 Expected: 全部 PASS。原有 14 个测试文件 + 新增 2 个，一个不许失败。
 
-- [ ] **Step 3: e2e**
+- [x] **Step 3: e2e**
 
 Run: `npm run e2e`
 Expected: 10 passed。
@@ -1305,7 +1351,7 @@ Expected: 10 passed。
 - 「进入 flappy 有画布渲染」——`[data-id="flappy"]` 必须唯一匹配到网格卡片。若报
   strict mode violation，说明 hero 按钮误用了 `data-id`，改回 `data-goto`。
 
-- [ ] **Step 4: 人工目视核对**
+- [x] **Step 4: 人工目视核对**
 
 Run: `npm run dev`，浏览器打开首页，对照
 `design_handoff_sunset_arcade_homepage/Homepage Redesigns.dc.html` 的 artboard **3a** 逐项确认：
@@ -1319,7 +1365,7 @@ Run: `npm run dev`，浏览器打开首页，对照
 - Tab 键可依次聚焦所有卡片与按钮，焦点环为橙色
 - 进入任一游戏再返回首页，Continue Playing 变为该游戏且元信息显示 `JUST NOW`
 
-- [ ] **Step 5: 提交（若有修补）**
+- [x] **Step 5: 提交（若有修补）**
 
 ```bash
 git add -A
@@ -1327,3 +1373,21 @@ git commit -m "fix: address issues found in final verification"
 ```
 
 若无改动则跳过。
+
+---
+
+## 执行后记（2026-09-05）
+
+全部 10 个任务已完成，见 `git log ab8b01c..`。计划之外还做了两轮评审跟进：
+
+- `4b45195` — Task 1 评审：色板真相源收敛到 CSS，`THEME` 守卫改成整体断言。
+- `f085c9a` — 最终评审：model 改传 accent 色调名而非 hex（`SUNSET` 随之删除，
+  `src/core/theme.ts` 与本特性开始前逐字节相同）；新增 `tests/hub-view.test.ts`
+  钉住 `data-id`/`data-goto` 分工——原先这个不变量只由 e2e 守着，而那个 e2e
+  按日期偶发失败；统一 0 分口径。
+
+验收：`tsc --noEmit` 干净，`npm test` 17 文件 194 用例全绿，`npm run e2e` 10/10，
+1440px 与 390px 均已目视核对。
+
+**已知与设计稿的差异**（源自范围决策，非缺陷）：MINES 的 `BEST 000099` 与 GOMOKU 的
+`WINS 012` 未实现——这两个游戏没有持久化战绩，显示 `NO RECORD`。

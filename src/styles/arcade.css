@@ -1,41 +1,175 @@
+:root {
+  --paper: #f6efe3;
+  --panel: #fffaf0;
+  --panel-hover: #fff3dd;
+  --ink: #2b2118;
+  --dim: #8a7a66;
+  --faint: #b5a88f;
+  --pill-off: #e6dcc8;
+  --highlight: #ffe08a;
+  /* accent 色轮。TS 只传色调名（见 model.ts 的 AccentTone），色值只有这里持有 */
+  --teal: #0b7285;
+  --magenta: #d6336c;
+  --orange: #e8590c;
+  --gold: #e67700;
+  --focus-ring: 0 0 0 4px rgba(232, 89, 12, .35);
+}
+
 * { margin: 0; padding: 0; box-sizing: border-box; }
-html, body { height: 100%; }
+html, body { min-height: 100%; }
 body {
-  background: #0d0d16;
-  color: #e8e6ff;
-  font-family: 'Courier New', ui-monospace, monospace;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
-#app { height: 100%; display: flex; flex-direction: column; }
+#app { min-height: 100vh; display: flex; flex-direction: column; }
 button { font-family: inherit; cursor: pointer; }
 
-/* ---- 首页 ---- */
-.hub { padding: 24px 16px; max-width: 720px; margin: 0 auto; width: 100%; }
+/* ---- 首页：marquee ---- */
+.hub { max-width: 1440px; margin: 0 auto; width: 100%; padding: 36px 48px 32px; }
+.marquee {
+  background: var(--panel); border: 3px solid var(--ink); border-radius: 14px;
+  box-shadow: 8px 8px 0 var(--ink); padding: 30px 32px; text-align: center;
+}
+.marquee-bar { height: 10px; border: 2px solid var(--ink); border-radius: 5px; }
+.marquee-bar-top {
+  background: repeating-linear-gradient(90deg,
+    var(--gold) 0 14px, var(--panel) 14px 28px,
+    var(--magenta) 28px 42px, var(--panel) 42px 56px);
+}
+.marquee-bar-bottom {
+  background: repeating-linear-gradient(90deg,
+    var(--teal) 0 14px, var(--panel) 14px 28px,
+    var(--gold) 28px 42px, var(--panel) 42px 56px);
+}
 .hub-title {
-  text-align: center; color: #39ff14; letter-spacing: 4px;
-  text-shadow: 0 0 10px #39ff14; font-size: clamp(18px, 5vw, 28px);
+  margin: 24px 0 0; font-family: 'Bungee', 'Space Grotesk', sans-serif; font-weight: 400;
+  font-size: clamp(28px, 5vw, 46px); color: var(--orange);
+  text-shadow: 3px 3px 0 var(--ink);
 }
-.hub-sub { text-align: center; color: #665f7a; font-size: 12px; margin: 8px 0 24px; letter-spacing: 2px; }
-.hub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 12px; }
-.card {
-  --neon: #00e5ff;
-  background: #16121f; border: 2px solid var(--neon); border-radius: 6px;
-  color: var(--neon); padding: 16px 8px; text-align: center;
-  display: flex; flex-direction: column; gap: 8px; align-items: center;
-  transition: box-shadow .15s;
+.hub-sub {
+  margin: 14px 0 24px; font-size: 14px; font-weight: 700;
+  letter-spacing: clamp(1px, .6vw, 5px);
 }
-.card:not(:disabled):hover { box-shadow: 0 0 14px var(--neon); }
-.hub-grid .card:nth-child(4n+1) { --neon: #39ff14; }
-.hub-grid .card:nth-child(4n+2) { --neon: #ff2fd6; }
-.hub-grid .card:nth-child(4n+3) { --neon: #00e5ff; }
-.hub-grid .card:nth-child(4n+4) { --neon: #ffe600; }
-.card-icon { font-size: 32px; }
-.card-name { font-weight: bold; letter-spacing: 1px; }
-.card-best { font-size: 11px; color: #665f7a; }
-.card-soon { opacity: .45; cursor: default; }
 
-/* ---- 游戏外框 ---- */
-.frame { display: flex; flex-direction: column; height: 100%; }
+/* ---- 首页：hero ---- */
+.hero { display: grid; grid-template-columns: 1.25fr .75fr; gap: 22px; margin-top: 26px; }
+.hero-side { display: flex; flex-direction: column; gap: 22px; }
+.panel {
+  background: var(--panel); border: 3px solid var(--ink); border-radius: 14px;
+  box-shadow: 8px 8px 0 var(--ink); padding: 24px 28px;
+  display: flex; flex-direction: column; gap: 13px;
+}
+.panel-label { font-family: 'Bungee', 'Space Grotesk', sans-serif; font-size: 13px; }
+
+.continue { align-items: center; gap: 18px; padding: 28px; }
+.continue-label { color: var(--magenta); }
+.continue-well {
+  align-self: stretch; background: var(--paper); border: 2px dashed var(--ink);
+  border-radius: 10px; padding: 32px;
+  display: flex; flex-direction: column; align-items: center; gap: 20px;
+}
+.continue-name {
+  font-family: 'Bungee', 'Space Grotesk', sans-serif; font-size: 30px; text-align: center;
+}
+.continue-meta {
+  font-size: 13px; color: var(--dim); letter-spacing: 2px; font-weight: 500; text-align: center;
+}
+.btn-start {
+  font-family: 'Bungee', 'Space Grotesk', sans-serif; font-size: 15px;
+  background: var(--orange); color: var(--panel);
+  border: 3px solid var(--ink); border-radius: 10px;
+  box-shadow: 4px 4px 0 var(--ink); padding: 14px 28px;
+  transition: transform .1s, box-shadow .1s;
+}
+.btn-start:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+.btn-start:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--ink); }
+.btn-start:focus-visible {
+  outline: none; box-shadow: 4px 4px 0 var(--ink), var(--focus-ring);
+}
+
+.daily { background: var(--teal); color: var(--panel); }
+.daily-label { color: var(--highlight); }
+.daily-body { font-size: 16px; line-height: 1.5; font-weight: 500; }
+.daily-body b { color: var(--highlight); }
+.daily-hint { font-size: 13px; font-weight: 700; }
+.btn-accept {
+  align-self: flex-start; background: var(--panel); border: 2px solid var(--ink);
+  border-radius: 8px; color: var(--ink); padding: 9px 18px;
+  font-size: 13px; font-weight: 700; letter-spacing: 2px;
+  transition: transform .1s, background .1s;
+}
+.btn-accept:hover { background: var(--highlight); }
+.btn-accept:active { transform: translateY(2px); }
+.btn-accept:focus-visible { outline: none; box-shadow: 0 0 0 4px rgba(255, 224, 138, .5); }
+
+.hall { flex: 1; }
+.hall-label { color: var(--orange); }
+.hall-row { display: flex; justify-content: space-between; font-size: 14px; font-weight: 500; }
+.hall-row-gold { color: var(--gold); }
+.hall-row-dim { color: var(--dim); }
+.hall-row-faint { color: var(--faint); }
+.hall-score { font-weight: 700; }
+.hall-note { font-size: 11px; color: var(--faint); letter-spacing: 1px; margin-top: auto; }
+
+/* ---- 首页：游戏网格 ---- */
+.grid-heading {
+  text-align: center; font-family: 'Bungee', 'Space Grotesk', sans-serif;
+  font-size: 14px; margin: 34px 0 18px;
+}
+.hub-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 20px; }
+.card {
+  background: var(--panel); border: 3px solid var(--ink); border-radius: 14px;
+  box-shadow: 6px 6px 0 var(--ink); padding: 24px 16px 20px;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+  color: var(--ink); transition: transform .1s, box-shadow .1s, background .1s;
+}
+.card:hover {
+  transform: translate(3px, 3px); box-shadow: 3px 3px 0 var(--ink); background: var(--panel-hover);
+}
+.card:active { transform: translate(6px, 6px); box-shadow: 0 0 0 var(--ink); }
+.card:focus-visible {
+  outline: none; box-shadow: 6px 6px 0 var(--ink), var(--focus-ring);
+}
+.card-name { font-family: 'Bungee', 'Space Grotesk', sans-serif; font-size: 14px; }
+.card-pill {
+  font-size: 11px; border-radius: 6px; padding: 3px 9px;
+  letter-spacing: 1px; font-weight: 700; border: 2px solid var(--ink);
+}
+.card-pill-on { background: var(--accent); color: var(--panel); }
+.card-pill-off { background: var(--pill-off); color: var(--dim); border-color: var(--faint); }
+
+/* TS 传色调名，这里映射成局部 --accent，供图标与药丸取用 */
+.accent-teal { --accent: var(--teal); }
+.accent-magenta { --accent: var(--magenta); }
+.accent-orange { --accent: var(--orange); }
+.accent-gold { --accent: var(--gold); }
+
+.px { display: block; color: var(--accent); }
+.px svg { display: block; width: 100%; height: 100%; }
+.px-lg { width: 64px; height: 64px; }
+.px-sm { width: 36px; height: 36px; }
+
+.hub-footer {
+  text-align: center; font-size: 12px; color: var(--dim);
+  letter-spacing: 3px; font-weight: 500; margin-top: 24px;
+}
+
+@media (max-width: 900px) {
+  .hub { padding: 24px 20px 28px; }
+  .hero { grid-template-columns: 1fr; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn-start, .btn-accept, .card { transition: none; }
+}
+
+/* ---- 游戏外框：保持原深色，底色下沉到 .frame 自身 ---- */
+.frame {
+  flex: 1; min-height: 0; display: flex; flex-direction: column;
+  background: #0d0d16; color: #e8e6ff;
+  font-family: 'Courier New', ui-monospace, monospace;
+}
 .frame-bar {
   display: flex; align-items: center; justify-content: space-between;
   padding: 8px 12px; background: #16121f; border-bottom: 1px solid #2a2438;
@@ -51,6 +185,8 @@ button { font-family: inherit; cursor: pointer; }
 
 /* ---- 错误兜底 ---- */
 .frame-error {
-  height: 100%; display: flex; flex-direction: column; gap: 16px;
-  align-items: center; justify-content: center; color: #ff2fd6;
+  flex: 1; display: flex; flex-direction: column; gap: 16px;
+  align-items: center; justify-content: center;
+  background: #0d0d16; color: #ff2fd6;
+  font-family: 'Courier New', ui-monospace, monospace;
 }

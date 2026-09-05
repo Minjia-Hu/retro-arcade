@@ -6,6 +6,8 @@ export interface GameMeta {
   id: string;
   name: string;
   icon: string;
+  /** 首页展示用的英文大写名；缺省时回退到 name */
+  displayName?: string;
 }
 
 export interface GameContext {
