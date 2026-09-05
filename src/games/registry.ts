@@ -6,7 +6,11 @@ export interface GameEntry {
    * displayName 是首页专用的展示字段，游戏模块内不需要，故只在这里出现。
    */
   meta: GameMeta;
-  /** 未实装的游戏没有 load，首页显示 COMING SOON */
+  /**
+   * 未实装的游戏没有 load。首页不再渲染 COMING SOON 状态（设计稿里没有这一态），
+   * 这类条目的卡片仍可点击，但 main.ts 会把路由弹回首页。若将来真要加未实装的游戏，
+   * 需要先给设计补一个禁用态。
+   */
   load?: () => Promise<Game>;
 }
 

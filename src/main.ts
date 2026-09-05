@@ -25,6 +25,8 @@ startRouter(async (route) => {
     location.hash = '#/';
     return;
   }
+  // 写在这里而不是 frame：frame 不知道 id 的来源，且加载可能失败
+  storage.set('lastPlayed', { id: entry.meta.id, at: Date.now() });
   try {
     const game = await entry.load();
     if (token !== nav) return; // 期间用户已跳走
