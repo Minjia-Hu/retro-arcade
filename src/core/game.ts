@@ -31,6 +31,8 @@ export interface GameContext {
   input: InputService;
   /** 注册容器尺寸变化回调，返回解除函数 */
   onResize(cb: () => void): () => void;
+  /** 上报结算状态；传 null 收起浮层 */
+  settle(view: SettleView | null): void;
 }
 
 export interface Game {

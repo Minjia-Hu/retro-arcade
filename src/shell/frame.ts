@@ -1,33 +1,27 @@
-import type { Game, GameContext } from '../core/game';
+import type { Game, GameContext, SettleView } from '../core/game';
 import type { AudioFx } from '../core/audio';
 import type { ArcadeStorage } from '../core/storage';
 import { InputService } from '../core/input';
+import { cabinetHtml, settleHtml } from './cabinet-view';
 
 export class GameFrame {
   private game: Game | null = null;
   private input: InputService | null = null;
   private observer: ResizeObserver | null = null;
   private paused = false;
+  private screenEl: HTMLElement | null = null;
+  private settleEl: HTMLElement | null = null;
 
   constructor(private audio: AudioFx, private storage: ArcadeStorage) {}
 
   open(root: HTMLElement, game: Game): void {
     this.close();
     this.paused = false;
-    root.innerHTML = `
-      <div class="frame">
-        <div class="frame-bar">
-          <button class="btn" data-act="back">◀ 返回</button>
-          <span class="frame-title">${game.meta.icon} ${game.meta.name}</span>
-          <span class="frame-right">
-            <button class="btn" data-act="pause">⏸</button>
-            <button class="btn" data-act="mute">${this.audio.isMuted() ? '🔇' : '🔊'}</button>
-          </span>
-        </div>
-        <div class="frame-body"></div>
-      </div>`;
+    root.innerHTML = cabinetHtml(game.meta, this.audio.isMuted());
 
-    const body = root.querySelector<HTMLElement>('.frame-body')!;
+    const body = root.querySelector<HTMLElement>('.screen-body')!;
+    this.screenEl = root.querySelector<HTMLElement>('.screen');
+    this.settleEl = root.querySelector<HTMLElement>('.settle');
     const btn = (act: string) => root.querySelector<HTMLButtonElement>(`[data-act="${act}"]`)!;
 
     // 点击后移除焦点，避免残留焦点让空格键误触按钮
@@ -45,13 +39,13 @@ export class GameFrame {
     });
     wire('mute', () => {
       const muted = this.audio.toggleMuted();
-      btn('mute').textContent = muted ? '🔇' : '🔊';
+      btn('mute').classList.toggle('is-off', muted);
       this.audio.play('click');
     });
     wire('pause', () => {
       if (!this.game) return;
       this.paused = !this.paused;
-      btn('pause').textContent = this.paused ? '▶' : '⏸';
+      btn('pause').textContent = this.paused ? '▶' : '❚❚';
       try {
         if (this.paused) this.game.pause();
         else this.game.resume();
@@ -73,6 +67,7 @@ export class GameFrame {
         resizeCbs.add(cb);
         return () => resizeCbs.delete(cb);
       },
+      settle: (view) => this.showSettle(view),
     };
 
     try {
@@ -100,13 +95,41 @@ export class GameFrame {
     this.input = null;
     this.observer?.disconnect();
     this.observer = null;
+    this.screenEl = null;
+    this.settleEl = null;
+  }
+
+  /**
+   * 渲染或收起结算浮层。不自动聚焦主按钮——游戏的 Space 处理器仍在监听，
+   * 自动聚焦会让一次 Space 同时触发按钮点击和游戏自身的重开逻辑。
+   */
+  private showSettle(view: SettleView | null): void {
+    const el = this.settleEl;
+    if (!el) return;
+    if (!view) {
+      el.hidden = true;
+      el.innerHTML = '';
+      this.screenEl?.classList.remove('is-settled');
+      return;
+    }
+    el.innerHTML = settleHtml(view);
+    el.hidden = false;
+    this.screenEl?.classList.add('is-settled');
+    el.querySelector('[data-act="settle-action"]')!.addEventListener('click', () => {
+      this.audio.play('click');
+      view.action.onPress();
+    });
+    el.querySelector('[data-act="settle-quit"]')!.addEventListener('click', () => {
+      location.hash = '#/';
+    });
   }
 
   private showError(root: HTMLElement): void {
+    // 用 cab-btn 而非旧的 .btn —— 机柜样式落地后 .btn 规则将不复存在
     root.innerHTML = `
       <div class="frame-error">
         <p>💥 GAME ERROR · 游戏出错了</p>
-        <button class="btn" data-act="home">返回首页</button>
+        <button class="cab-btn" data-act="home">返回首页</button>
       </div>`;
     root.querySelector('[data-act="home"]')!.addEventListener('click', () => {
       location.hash = '#/';
