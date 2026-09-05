@@ -9,6 +9,7 @@ describe('accentAt', () => {
     expect(accentAt(2)).toBe('orange');
     expect(accentAt(3)).toBe('gold');
     expect(accentAt(4)).toBe('teal');
+    expect(accentAt(7)).toBe('gold');
   });
 });
 

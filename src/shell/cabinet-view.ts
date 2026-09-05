@@ -1,11 +1,8 @@
 import { pixelIconSvg } from './pixel-icons';
 import { accentOf } from './accent';
 import type { GameMeta, SettleView } from '../core/game';
+import { esc } from './escape';
 
-const ESCAPES: Record<string, string> = {
-  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;',
-};
-const esc = (s: string): string => s.replace(/[&<>"]/g, (c) => ESCAPES[c]);
 
 const TITLE_CLASS: Record<SettleView['tone'], string> = {
   lose: 'settle-title-lose',
@@ -13,34 +10,39 @@ const TITLE_CLASS: Record<SettleView['tone'], string> = {
   record: 'settle-title-record',
 };
 
+/** 底部按键提示条；没有提示时返回空串（不渲染该条） */
+export function hintsBarHtml(hints: string[]): string {
+  if (!hints.length) return '';
+  const items = hints
+    .map((h) => `<span>${esc(h)}</span>`)
+    .join('<span class="cab-dot">·</span>');
+  return `<p class="cab-hints">${items}</p>`;
+}
+
 /** 机柜外壳。游戏挂载到 .screen-body，结算浮层由 settleHtml 填进 .settle */
 export function cabinetHtml(meta: GameMeta, muted: boolean): string {
   const name = meta.displayName ?? meta.name;
-  const hints = meta.hints ?? [];
-  const hintsHtml = hints.length
-    ? `<p class="cab-hints">${hints
-        .map((h) => `<span>${esc(h)}</span>`)
-        .join('<span class="cab-dot">·</span>')}</p>`
-    : '';
+  const hintsHtml = hintsBarHtml(meta.hints ?? []);
 
   return `
     <div class="cabinet accent-${accentOf(meta.id)}">
       <div class="cab-bar">
         <button class="cab-btn" data-act="back">◀ BACK</button>
         <span class="cab-id">
+          <!-- pixelIconSvg 的输出只由白名单查表与数字构成，不含任何入参文本，故不转义 -->
           <span class="px px-xs">${pixelIconSvg(meta.id)}</span>
           <span class="cab-name">${esc(name)}</span>
         </span>
         <span class="cab-tools">
-          <button class="cab-btn" data-act="pause">❚❚</button>
-          <button class="cab-btn${muted ? ' is-off' : ''}" data-act="mute">SND</button>
+          <button class="cab-btn" data-act="pause" aria-label="暂停">❚❚</button>
+          <button class="cab-btn${muted ? ' is-off' : ''}" data-act="mute" aria-pressed="${muted}" aria-label="音效">SND</button>
         </span>
       </div>
       <div class="cab-screen">
         <div class="screen screen-${meta.screen ?? 'dark'}">
           <div class="screen-body"></div>
           <div class="screen-glass"></div>
-          <div class="settle" hidden></div>
+          <div class="settle" role="status" aria-live="polite" hidden></div>
         </div>
       </div>
       ${hintsHtml}

@@ -2,7 +2,6 @@ import { describe, it, expect } from 'vitest';
 import { THEME } from '../src/core/theme';
 import { GAMES } from '../src/games/registry';
 import { padScore, relativeTime, dateKey, hashDate } from '../src/shell/hub/model';
-import { accentAt } from '../src/shell/accent';
 import { ArcadeStorage, memoryBackend } from '../src/core/storage';
 import { buildHall } from '../src/shell/hub/model';
 import { buildDaily, CHALLENGES } from '../src/shell/hub/model';
@@ -46,17 +45,6 @@ describe('padScore', () => {
   it('负数和小数向下取整到非负整数', () => {
     expect(padScore(-5)).toBe('000000');
     expect(padScore(47.9)).toBe('000047');
-  });
-});
-
-describe('accentAt', () => {
-  it('四色调轮转', () => {
-    expect(accentAt(0)).toBe('teal');
-    expect(accentAt(1)).toBe('magenta');
-    expect(accentAt(2)).toBe('orange');
-    expect(accentAt(3)).toBe('gold');
-    expect(accentAt(4)).toBe('teal');
-    expect(accentAt(7)).toBe('gold');
   });
 });
 

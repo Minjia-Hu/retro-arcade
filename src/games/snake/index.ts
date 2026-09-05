@@ -35,6 +35,15 @@ export function createSnake(): Game {
     return String(Math.max(0, Math.floor(n))).padStart(width, '0');
   }
 
+  /**
+   * 浮层 RETRY 按钮的入口。与键盘/点按路径共用 paused 卫语句，但**不**走 tapAction
+   * 的 400ms 防连点去抖——那是给画布误触准备的，一次明确的按钮点击不该被吞掉。
+   */
+  function retry(): void {
+    if (paused) return;
+    restart();
+  }
+
   function restart(): void {
     state = L.createState();
     deadHandled = false;
@@ -72,7 +81,8 @@ export function createSnake(): Game {
         title: record ? 'NEW HIGH SCORE' : 'GAME OVER',
         tone: record ? 'record' : 'lose',
         lines: [`SCORE ${pad(state.score, 4)}`, `BEST ${pad(best, 6)}`],
-        action: { label: '▶ RETRY', onPress: restart },
+        action: { label: '▶ RETRY', onPress: retry },
+        hints: ['SPACE / TAP TO RETRY'],
       });
     }
   }

@@ -23,6 +23,12 @@ export interface SettleView {
   lines: string[];
   /** 主操作按钮 */
   action: { label: string; onPress: () => void };
+  /**
+   * 结算态的底部按键提示，覆盖 meta.hints。设计稿 artboard 1b 的提示条与
+   * 游戏态（1a）不同：游戏中是 "SPACE START"，结算时是 "SPACE / TAP TO RETRY"。
+   * 不给则沿用 meta.hints。
+   */
+  hints?: string[];
 }
 
 export interface GameContext {

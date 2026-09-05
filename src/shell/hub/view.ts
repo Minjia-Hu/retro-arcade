@@ -1,10 +1,7 @@
 import { pixelIconSvg } from '../pixel-icons';
 import type { HubModel } from './model';
+import { esc } from '../escape';
 
-const ESCAPES: Record<string, string> = {
-  '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;',
-};
-const esc = (s: string): string => s.replace(/[&<>"]/g, (c) => ESCAPES[c]);
 
 function dailyBody(prefix: string, name: string, suffix: string): string {
   return [esc(prefix), `<b>${esc(name)}</b>`, esc(suffix)].filter(Boolean).join(' ');

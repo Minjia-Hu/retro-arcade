@@ -13,7 +13,7 @@
   --orange: #e8590c;
   --gold: #e67700;
   --well: #efe5d3;
-  --screen-ground: #1a1410;
+  --screen-ground: #1a1410; /* 与 src/core/theme.ts 的 SCREEN.ground 对应，改一处要同步另一处 */
   --mono: 'JetBrains Mono', ui-monospace, monospace;
   --focus-ring: 0 0 0 4px rgba(232, 89, 12, .35);
 }
@@ -143,7 +143,11 @@ button { font-family: inherit; cursor: pointer; }
 .card-pill-on { background: var(--accent); color: var(--panel); }
 .card-pill-off { background: var(--pill-off); color: var(--dim); border-color: var(--faint); }
 
-/* TS 传色调名，这里映射成局部 --accent，供图标与药丸取用 */
+/*
+ * TS 传色调名，这里映射成局部 --accent，供图标与药丸取用。
+ * --glow 不是 --accent 的半透明版：--accent 是纸面深色（顶栏图标、药丸底），
+ * --glow 是屏幕内的暖霓虹色（机柜屏幕井的内描边），两套色板刻意不同源，别"修正"它。
+ */
 .accent-teal { --accent: var(--teal); --glow: rgba(46, 230, 200, .35); }
 .accent-magenta { --accent: var(--magenta); --glow: rgba(255, 92, 158, .35); }
 .accent-orange { --accent: var(--orange); --glow: rgba(255, 140, 66, .35); }
@@ -215,9 +219,9 @@ button { font-family: inherit; cursor: pointer; }
 /* 暗角必须盖在 canvas 之上：CSS 的 inset 阴影画在内容之下，会被 canvas 位图整个遮住 */
 .screen-glass {
   position: absolute; inset: 0; pointer-events: none; border-radius: 7px;
-  box-shadow: inset 0 0 0 2px var(--glow), inset 0 0 40px rgba(0, 0, 0, .6);
+  box-shadow: inset 0 0 0 2px var(--glow, transparent), inset 0 0 40px rgba(0, 0, 0, .6);
 }
-.screen-paper .screen-glass { box-shadow: inset 0 0 0 2px var(--glow); }
+.screen-paper .screen-glass { box-shadow: inset 0 0 0 2px var(--glow, transparent); }
 .screen.is-settled .screen-body { opacity: .25; }
 .screen-paper.is-settled .screen-body { opacity: .45; }
 

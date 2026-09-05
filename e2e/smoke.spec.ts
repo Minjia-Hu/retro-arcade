@@ -82,3 +82,31 @@ test('全部 8 张卡片均可进入（无禁用）', async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('.card:not([disabled])')).toHaveCount(8);
 });
+
+test('SNAKE 死亡后弹出结算浮层，RETRY 收起并重开', async ({ page }) => {
+  await page.goto('/#/snake');
+  await expect(page.locator('canvas')).toBeVisible();
+
+  // 蛇初始朝右，按上是垂直转向（按左会被当作 180° 掉头拒绝），一路撞顶墙
+  await page.keyboard.press('ArrowUp');
+  await expect(page.locator('.settle-card')).toBeVisible({ timeout: 20000 });
+
+  await expect(page.locator('.settle-title')).toHaveText('GAME OVER');
+  await expect(page.locator('.screen')).toHaveClass(/is-settled/);
+  // 结算态的提示条与游戏态不同（设计稿 artboard 1a vs 1b）
+  await expect(page.locator('.cab-hints')).toHaveText('SPACE / TAP TO RETRY');
+
+  await page.click('[data-act="settle-action"]');
+  await expect(page.locator('.settle-card')).toBeHidden();
+  await expect(page.locator('.screen')).not.toHaveClass(/is-settled/);
+  await expect(page.locator('.cab-hints')).toContainText('SPACE START');
+});
+
+test('结算浮层的 QUIT TO HUB 回首页', async ({ page }) => {
+  await page.goto('/#/snake');
+  await expect(page.locator('canvas')).toBeVisible();
+  await page.keyboard.press('ArrowUp');
+  await expect(page.locator('.settle-card')).toBeVisible({ timeout: 20000 });
+  await page.click('[data-act="settle-quit"]');
+  await expect(page.locator('.hub-title')).toBeVisible();
+});

@@ -15,7 +15,7 @@ export const THEME = {
  * 逐个游戏从 THEME 迁移过来（A 迁 SNAKE，B 迁其余三款），迁完后删除 THEME。
  */
 export const SCREEN = {
-  ground: '#1a1410',
+  ground: '#1a1410', // 与 arcade.css 的 --screen-ground 对应，改一处要同步另一处
   teal: '#2ee6c8',
   gold: '#ffc93c',
   pink: '#ff5c9e',

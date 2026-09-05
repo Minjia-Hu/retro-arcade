@@ -2,7 +2,7 @@ import type { Game, GameContext, SettleView } from '../core/game';
 import type { AudioFx } from '../core/audio';
 import type { ArcadeStorage } from '../core/storage';
 import { InputService } from '../core/input';
-import { cabinetHtml, settleHtml } from './cabinet-view';
+import { cabinetHtml, hintsBarHtml, settleHtml } from './cabinet-view';
 
 export class GameFrame {
   private game: Game | null = null;
@@ -11,6 +11,8 @@ export class GameFrame {
   private paused = false;
   private screenEl: HTMLElement | null = null;
   private settleEl: HTMLElement | null = null;
+  private cabinetEl: HTMLElement | null = null;
+  private baseHints: string[] = []; // 游戏态的按键提示，结算浮层收起时还原
 
   constructor(private audio: AudioFx, private storage: ArcadeStorage) {}
 
@@ -20,8 +22,10 @@ export class GameFrame {
     root.innerHTML = cabinetHtml(game.meta, this.audio.isMuted());
 
     const body = root.querySelector<HTMLElement>('.screen-body')!;
+    this.cabinetEl = root.querySelector<HTMLElement>('.cabinet');
     this.screenEl = root.querySelector<HTMLElement>('.screen');
     this.settleEl = root.querySelector<HTMLElement>('.settle');
+    this.baseHints = game.meta.hints ?? [];
     const btn = (act: string) => root.querySelector<HTMLButtonElement>(`[data-act="${act}"]`)!;
 
     // 点击后移除焦点，避免残留焦点让空格键误触按钮
@@ -39,7 +43,9 @@ export class GameFrame {
     });
     wire('mute', () => {
       const muted = this.audio.toggleMuted();
+      // class 只管样式；aria-pressed 才让屏幕阅读器知道当前是开还是关
       btn('mute').classList.toggle('is-off', muted);
+      btn('mute').setAttribute('aria-pressed', String(muted));
       this.audio.play('click');
     });
     wire('pause', () => {
@@ -91,12 +97,33 @@ export class GameFrame {
       console.error('[arcade] game crashed on destroy:', err);
     }
     this.game = null;
+    // 先收浮层再断引用：浮层按钮持有已 destroy 游戏的 onPress 闭包，而路由切换到
+    // 下一次 open() 之间隔着 await entry.load()，不收会在这个窗口里留下可点的死按钮
+    this.clearSettle();
     this.input?.dispose();
     this.input = null;
     this.observer?.disconnect();
     this.observer = null;
+    this.cabinetEl = null;
     this.screenEl = null;
     this.settleEl = null;
+    this.baseHints = [];
+  }
+
+  private clearSettle(): void {
+    if (this.settleEl) {
+      this.settleEl.hidden = true;
+      this.settleEl.innerHTML = '';
+    }
+    this.screenEl?.classList.remove('is-settled');
+  }
+
+  /** 替换底部按键提示条；结算态与游戏态的文案不同（设计稿 artboard 1a vs 1b） */
+  private setHints(hints: string[]): void {
+    const html = hintsBarHtml(hints);
+    const bar = this.cabinetEl?.querySelector('.cab-hints');
+    if (bar) bar.outerHTML = html;
+    else if (html) this.cabinetEl?.insertAdjacentHTML('beforeend', html);
   }
 
   /**
@@ -107,19 +134,28 @@ export class GameFrame {
     const el = this.settleEl;
     if (!el) return;
     if (!view) {
-      el.hidden = true;
-      el.innerHTML = '';
-      this.screenEl?.classList.remove('is-settled');
+      this.clearSettle();
+      this.setHints(this.baseHints);
       return;
     }
     el.innerHTML = settleHtml(view);
     el.hidden = false;
     this.screenEl?.classList.add('is-settled');
-    el.querySelector('[data-act="settle-action"]')!.addEventListener('click', () => {
+    this.setHints(view.hints ?? this.baseHints);
+
+    // 点完就 blur：与顶栏 wire() 同一约定，避免残留焦点让空格键既触发按钮又触发游戏逻辑
+    const onClick = (act: string, fn: () => void) => {
+      const b = el.querySelector<HTMLButtonElement>(`[data-act="${act}"]`)!;
+      b.addEventListener('click', () => {
+        b.blur();
+        fn();
+      });
+    };
+    onClick('settle-action', () => {
       this.audio.play('click');
       view.action.onPress();
     });
-    el.querySelector('[data-act="settle-quit"]')!.addEventListener('click', () => {
+    onClick('settle-quit', () => {
       location.hash = '#/';
     });
   }
