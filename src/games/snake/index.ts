@@ -1,6 +1,6 @@
 import type { Game, GameContext } from '../../core/game';
 import { GameLoop } from '../../core/loop';
-import { THEME } from '../../core/theme';
+import { SCREEN } from '../../core/theme';
 import * as L from './logic';
 
 const CELL = 16; // COLS×16 = 320，ROWS×16 = 480，与逻辑网格一一对应
@@ -24,18 +24,38 @@ export function createSnake(): Game {
   let deadHandled = false;
   let paused = false;
   let diedAt = 0;
+  let bestAtStart = 0; // 本局开始前的最高分，用来判断是否刷新纪录
 
   function handleDir(dir: L.Dir): void {
     if (paused || state.status === 'dead') return;
     L.setDirection(state, dir);
   }
 
+  function pad(n: number, width: number): string {
+    return String(Math.max(0, Math.floor(n))).padStart(width, '0');
+  }
+
+  /**
+   * 浮层 RETRY 按钮的入口。与键盘/点按路径共用 paused 卫语句，但**不**走 tapAction
+   * 的 400ms 防连点去抖——那是给画布误触准备的，一次明确的按钮点击不该被吞掉。
+   */
+  function retry(): void {
+    if (paused) return;
+    restart();
+  }
+
+  function restart(): void {
+    state = L.createState();
+    deadHandled = false;
+    bestAtStart = best;
+    ctx?.settle(null);
+  }
+
   function tapAction(): void {
     if (paused) return;
     if (state.status === 'dead') {
       if (performance.now() - diedAt < 400) return; // 死亡瞬间常有连点
-      state = L.createState();
-      deadHandled = false;
+      restart();
       return;
     }
     if (state.status === 'ready') {
@@ -56,60 +76,72 @@ export function createSnake(): Game {
       deadHandled = true;
       diedAt = performance.now();
       ctx?.audio.play('over');
+      const record = state.score > bestAtStart;
+      ctx?.settle({
+        title: record ? 'NEW HIGH SCORE' : 'GAME OVER',
+        tone: record ? 'record' : 'lose',
+        lines: [`SCORE ${pad(state.score, 4)}`, `BEST ${pad(best, 6)}`],
+        action: { label: '▶ RETRY', onPress: retry },
+        hints: ['SPACE / TAP TO RETRY'],
+      });
     }
   }
 
   function render(): void {
     if (!g) return;
-    g.fillStyle = THEME.bg;
+    g.fillStyle = SCREEN.ground;
     g.fillRect(0, 0, W, H);
 
-    // 边界墙：撞上即死，必须肉眼可见（画布背景与页面同色，无此描边则边界隐形）
-    g.strokeStyle = THEME.neonCyan;
+    // 边界墙：撞上即死，必须肉眼可见（画布背景与屏幕井同色，无此描边则边界隐形）
+    g.strokeStyle = SCREEN.teal;
     g.lineWidth = 2;
     g.strokeRect(1, 1, W - 2, H - 2);
 
-    // 食物：霓虹粉方块
-    g.fillStyle = THEME.neonPink;
-    g.shadowColor = THEME.neonPink;
-    g.shadowBlur = 8;
-    g.fillRect(state.food.x * CELL + 2, state.food.y * CELL + 2, CELL - 4, CELL - 4);
+    // 食物：暖霓虹粉，圆角 3
+    g.fillStyle = SCREEN.pink;
+    g.shadowColor = SCREEN.glow.pink;
+    g.shadowBlur = 10;
+    g.beginPath();
+    g.roundRect(state.food.x * CELL + 2, state.food.y * CELL + 2, CELL - 4, CELL - 4, 3);
+    g.fill();
 
-    // 蛇身：霓虹绿，蛇头：霓虹黄
-    g.shadowColor = THEME.neonGreen;
+    // 蛇身：teal，蛇头：gold
+    g.shadowBlur = 8;
     for (let i = state.snake.length - 1; i >= 0; i--) {
       const c = state.snake[i];
-      g.fillStyle = i === 0 ? THEME.neonYellow : THEME.neonGreen;
-      if (i === 0) g.shadowColor = THEME.neonYellow;
+      const head = i === 0;
+      g.fillStyle = head ? SCREEN.gold : SCREEN.teal;
+      g.shadowColor = head ? SCREEN.glow.gold : SCREEN.glow.teal;
       g.fillRect(c.x * CELL + 1, c.y * CELL + 1, CELL - 2, CELL - 2);
     }
+
+    // 分数：设计稿补零到 4 位
+    g.fillStyle = SCREEN.gold;
+    g.shadowColor = SCREEN.glow.gold;
+    g.shadowBlur = 10;
+    g.font = `700 24px ${SCREEN.mono}`;
+    g.textAlign = 'center';
+    g.fillText(pad(state.score, 4), W / 2, 40);
     g.shadowBlur = 0;
 
-    // 分数
-    g.fillStyle = THEME.text;
-    g.font = `bold 24px ${THEME.font}`;
-    g.textAlign = 'center';
-    g.fillText(String(state.score), W / 2, 36);
-
-    g.font = `14px ${THEME.font}`;
-    if (state.status === 'ready') {
-      g.fillStyle = THEME.neonCyan;
-      g.fillText('滑动 / 方向键 开始', W / 2, H / 2 + 60);
-    } else if (state.status === 'dead') {
-      g.fillStyle = THEME.neonPink;
-      g.font = `bold 24px ${THEME.font}`;
-      g.fillText('GAME OVER', W / 2, H / 2 - 20);
-      g.font = `14px ${THEME.font}`;
-      g.fillText(`BEST ${best} · 点按重来`, W / 2, H / 2 + 12);
-    }
+    // GAME OVER 与开局提示不再画在画布里：前者走 ctx.settle 的 DOM 浮层，
+    // 后者放在机柜底部的按键提示条
   }
 
   return {
-    meta: { id: 'snake', name: '贪吃蛇', icon: '🐍' },
+    meta: {
+      id: 'snake',
+      name: '贪吃蛇',
+      icon: '🐍',
+      displayName: 'SNAKE',
+      hints: ['↑↓←→ / WASD MOVE', 'SPACE START'],
+      screen: 'dark',
+    },
 
     mount(container: HTMLElement, context: GameContext): void {
       ctx = context;
       best = ctx.storage.get('best.snake', 0);
+      bestAtStart = best;
       canvas = document.createElement('canvas');
       const dpr = Math.min(window.devicePixelRatio || 1, 3);
       canvas.width = W * dpr;

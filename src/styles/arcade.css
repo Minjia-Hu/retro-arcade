@@ -12,6 +12,9 @@
   --magenta: #d6336c;
   --orange: #e8590c;
   --gold: #e67700;
+  --well: #efe5d3;
+  --screen-ground: #1a1410; /* 与 src/core/theme.ts 的 SCREEN.ground 对应，改一处要同步另一处 */
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
   --focus-ring: 0 0 0 4px rgba(232, 89, 12, .35);
 }
 
@@ -140,16 +143,21 @@ button { font-family: inherit; cursor: pointer; }
 .card-pill-on { background: var(--accent); color: var(--panel); }
 .card-pill-off { background: var(--pill-off); color: var(--dim); border-color: var(--faint); }
 
-/* TS 传色调名，这里映射成局部 --accent，供图标与药丸取用 */
-.accent-teal { --accent: var(--teal); }
-.accent-magenta { --accent: var(--magenta); }
-.accent-orange { --accent: var(--orange); }
-.accent-gold { --accent: var(--gold); }
+/*
+ * TS 传色调名，这里映射成局部 --accent，供图标与药丸取用。
+ * --glow 不是 --accent 的半透明版：--accent 是纸面深色（顶栏图标、药丸底），
+ * --glow 是屏幕内的暖霓虹色（机柜屏幕井的内描边），两套色板刻意不同源，别"修正"它。
+ */
+.accent-teal { --accent: var(--teal); --glow: rgba(46, 230, 200, .35); }
+.accent-magenta { --accent: var(--magenta); --glow: rgba(255, 92, 158, .35); }
+.accent-orange { --accent: var(--orange); --glow: rgba(255, 140, 66, .35); }
+.accent-gold { --accent: var(--gold); --glow: rgba(255, 201, 60, .35); }
 
 .px { display: block; color: var(--accent); }
 .px svg { display: block; width: 100%; height: 100%; }
 .px-lg { width: 64px; height: 64px; }
 .px-sm { width: 36px; height: 36px; }
+.px-xs { width: 20px; height: 20px; }
 
 .hub-footer {
   text-align: center; font-size: 12px; color: var(--dim);
@@ -161,32 +169,103 @@ button { font-family: inherit; cursor: pointer; }
   .hero { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .btn-start, .btn-accept, .card { transition: none; }
+  .btn-start, .btn-accept, .card, .cab-btn, .settle-action { transition: none; }
 }
 
-/* ---- 游戏外框：保持原深色，底色下沉到 .frame 自身 ---- */
-.frame {
-  flex: 1; min-height: 0; display: flex; flex-direction: column;
-  background: #0d0d16; color: #e8e6ff;
-  font-family: 'Courier New', ui-monospace, monospace;
+/* ---- 游戏机柜 ---- */
+.cabinet {
+  margin: 28px auto;
+  width: 100%;
+  max-width: 464px;
+  background: var(--panel);
+  border: 3px solid var(--ink);
+  border-radius: 14px;
+  box-shadow: 8px 8px 0 var(--ink);
+  overflow: hidden;
 }
-.frame-bar {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 8px 12px; background: #16121f; border-bottom: 1px solid #2a2438;
+.cab-bar {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 14px 18px; border-bottom: 3px solid var(--ink);
 }
-.frame-title { color: #e8e6ff; letter-spacing: 2px; font-size: 14px; }
-.frame-right { display: flex; gap: 8px; }
-.btn {
-  background: none; border: 1px solid #00e5ff; border-radius: 4px;
-  color: #00e5ff; padding: 4px 10px; font-size: 13px;
+.cab-id { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.cab-name {
+  font-family: 'Bungee', 'Space Grotesk', sans-serif; font-size: 17px; color: var(--ink);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.frame-body { flex: 1; display: flex; align-items: center; justify-content: center; overflow: hidden; }
-.frame-body canvas { max-width: 100%; max-height: 100%; object-fit: contain; }
+.cab-tools { display: flex; gap: 8px; }
+.cab-btn {
+  font-size: 13px; font-weight: 700; letter-spacing: 1px;
+  background: var(--paper); border: 2px solid var(--ink); border-radius: 8px;
+  box-shadow: 3px 3px 0 var(--ink); padding: 8px 14px; color: var(--ink);
+  transition: transform .1s, box-shadow .1s, opacity .1s;
+}
+.cab-btn:hover { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+.cab-btn:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
+.cab-btn:focus-visible { outline: none; box-shadow: 3px 3px 0 var(--ink), var(--focus-ring); }
+/* 静音：按钮压平并变淡，表示已关闭 */
+.cab-btn.is-off {
+  transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink);
+  color: var(--faint); border-color: var(--faint);
+}
+
+.cab-screen { padding: 22px; display: flex; justify-content: center; background: var(--well); }
+.screen {
+  position: relative; border: 3px solid var(--ink); border-radius: 10px; overflow: hidden;
+}
+.screen-dark { background: var(--screen-ground); }
+.screen-paper { background: var(--paper); }
+.screen-body { display: block; line-height: 0; }
+.screen-body canvas { display: block; max-width: 100%; height: auto; }
+/* 暗角必须盖在 canvas 之上：CSS 的 inset 阴影画在内容之下，会被 canvas 位图整个遮住 */
+.screen-glass {
+  position: absolute; inset: 0; pointer-events: none; border-radius: 7px;
+  box-shadow: inset 0 0 0 2px var(--glow, transparent), inset 0 0 40px rgba(0, 0, 0, .6);
+}
+.screen-paper .screen-glass { box-shadow: inset 0 0 0 2px var(--glow, transparent); }
+.screen.is-settled .screen-body { opacity: .25; }
+.screen-paper.is-settled .screen-body { opacity: .45; }
+
+.cab-hints {
+  display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
+  padding: 12px; border-top: 3px solid var(--ink);
+  font-family: var(--mono); font-size: 11px; color: var(--dim); letter-spacing: 1px;
+}
+.cab-dot { color: var(--faint); }
+
+/* ---- 结算浮层 ---- */
+.settle { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.settle[hidden] { display: none; }
+.settle-card {
+  width: 280px; max-width: calc(100% - 32px);
+  background: var(--panel); border: 3px solid var(--ink); border-radius: 14px;
+  box-shadow: 6px 6px 0 rgba(0, 0, 0, .55); padding: 26px 24px;
+  display: flex; flex-direction: column; align-items: center; gap: 14px;
+}
+.settle-title { font-family: 'Bungee', 'Space Grotesk', sans-serif; font-size: 24px; }
+.settle-title-lose { color: var(--magenta); }
+.settle-title-win { color: var(--teal); }
+.settle-title-record { color: var(--gold); }
+.settle-line { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--ink); }
+.settle-line ~ .settle-line { font-size: 12px; font-weight: 400; color: var(--dim); }
+.settle-action {
+  font-family: 'Bungee', 'Space Grotesk', sans-serif; font-size: 14px;
+  background: var(--orange); color: var(--panel);
+  border: 3px solid var(--ink); border-radius: 10px;
+  box-shadow: 4px 4px 0 var(--ink); padding: 12px 26px; margin-top: 6px;
+  transition: transform .1s, box-shadow .1s;
+}
+.settle-action:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
+.settle-action:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--ink); }
+.settle-action:focus-visible { outline: none; box-shadow: 4px 4px 0 var(--ink), var(--focus-ring); }
+.settle-quit {
+  font-size: 12px; font-weight: 700; letter-spacing: 2px;
+  background: none; border: none; color: var(--dim); text-decoration: underline;
+}
+.settle-quit:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 4px; }
 
 /* ---- 错误兜底 ---- */
 .frame-error {
   flex: 1; display: flex; flex-direction: column; gap: 16px;
   align-items: center; justify-content: center;
-  background: #0d0d16; color: #ff2fd6;
-  font-family: 'Courier New', ui-monospace, monospace;
+  color: var(--magenta); font-family: var(--mono);
 }

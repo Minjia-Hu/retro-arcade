@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { pixelIconSvg, PIXELS } from '../src/shell/hub/icons';
+import { pixelIconSvg, PIXELS } from '../src/shell/pixel-icons';
 import { GAMES } from '../src/games/registry';
 
 describe('pixelIconSvg', () => {

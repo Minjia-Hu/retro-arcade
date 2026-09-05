@@ -230,8 +230,21 @@ neonYellow`，被 8 个游戏引用 163 次。只改值不改名会让 `neonCyan
 删除：
 - `src/shell/hub/icons.ts`
 
+## 交接文档自相矛盾之处（已按 artboard 实现，勿"修正"）
+
+`design_handoff_sunset_arcade_homepage_2/README.md` 的散文说结算浮层主按钮是 "accent bg"，
+但 artboard 1b 的实际内联样式是 `background:#e8590c`（固定橙）。**artboard 是权威**，
+实现用的是固定橙。将来读 README 的人可能会把它"改成" `var(--accent)`，那是错的。
+
 ## 留给 B/C 的已知问题
 
 - 机柜内容区限宽 464px。TETRIS 有侧栏（NEXT / SCORE / LEVEL / BEST），B 里很可能需要更宽的变体。
 - `SND` 按钮在静音时的样式设计稿未给。A 采用压平 + 变暗表示关闭，B/C 沿用。
 - `THEME` 待 8 个游戏全部迁移到 `SCREEN` 或纸盘配色后删除。
+- `SCREEN.orange` / `SCREEN.white` 在 A 中无消费者（BREAKOUT 的球用 white、砖块用 orange，B 会用到）。
+  它们**没被任何渲染验证过**，B 里第一个用到的游戏要留意视觉核对。
+- `.settle-action` 目前是把 `.btn-start` 的声明抄了一遍（只差 font-size 与 padding）。
+  B/C 若再动这块，考虑提取共用规则。
+- `cabinetHtml` 内部调 `accentOf(meta.id)` 而非按参数接收 accent，因此
+  `tests/cabinet-view.test.ts` 隐式依赖 `GAMES` 的排序。不算错（`accent.test.ts` 已锁住该不变量），
+  但重排 registry 会让两个测试文件一起红。

@@ -1,20 +1,14 @@
 import { GAMES } from '../../games/registry';
 import type { GameEntry } from '../../games/registry';
 import type { ArcadeStorage } from '../../core/storage';
+import { accentAt } from '../accent';
+import type { AccentTone } from '../accent';
+
+export type { AccentTone };
 
 /** 分数补零到 6 位；位数不够时保留原样，不截断 */
 export function padScore(n: number): string {
   return String(Math.max(0, Math.floor(n))).padStart(6, '0');
-}
-
-/** accent 色调名。具体色值由 CSS 的 .accent-* 持有，TS 不碰 hex */
-export type AccentTone = 'teal' | 'magenta' | 'orange' | 'gold';
-
-const ACCENTS: AccentTone[] = ['teal', 'magenta', 'orange', 'gold'];
-
-/** 按 registry 下标轮转 accent 色调 */
-export function accentAt(index: number): AccentTone {
-  return ACCENTS[index % ACCENTS.length];
 }
 
 /** 相对时间文案，全大写以配合街机风格 */
