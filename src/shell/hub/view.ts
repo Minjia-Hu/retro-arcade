@@ -1,4 +1,4 @@
-import { pixelIconSvg } from './icons';
+import { pixelIconSvg } from '../pixel-icons';
 import type { HubModel } from './model';
 
 const ESCAPES: Record<string, string> = {

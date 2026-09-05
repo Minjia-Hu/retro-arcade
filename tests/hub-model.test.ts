@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { THEME } from '../src/core/theme';
 import { GAMES } from '../src/games/registry';
-import { padScore, accentAt, relativeTime, dateKey, hashDate } from '../src/shell/hub/model';
+import { padScore, relativeTime, dateKey, hashDate } from '../src/shell/hub/model';
+import { accentAt } from '../src/shell/accent';
 import { ArcadeStorage, memoryBackend } from '../src/core/storage';
 import { buildHall } from '../src/shell/hub/model';
 import { buildDaily, CHALLENGES } from '../src/shell/hub/model';
