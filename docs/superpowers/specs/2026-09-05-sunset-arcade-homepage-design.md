@@ -106,7 +106,15 @@ storage.set('lastPlayed', { id: route.id, at: Date.now() });
 
 ## 设计令牌
 
-`src/core/theme.ts` 的 `THEME` 整体替换：
+handoff 写的是「替换 `src/core/theme.ts` 的 THEME」，但 `THEME` 实际是**游戏画布的调色板**——
+被 8 个游戏的 canvas 渲染代码引用 163 次（`THEME.font` 53 次、`THEME.neonCyan` 36 次、
+`neonPink` / `neonGreen` / `neonYellow` / `bg` / `text` / `dim` 共 74 次）。整体替换会删掉
+`neon*` 键，导致 8 个游戏模块编译失败，并把所有画布刷成奶油底。
+
+因此改为**新增** `export const SUNSET`，`THEME` 原样保留。首页只用 `SUNSET`，游戏画布继续用
+`THEME`。这是 handoff 作者不知情的约束，属于必要偏差。
+
+`SUNSET` 内容：
 
 | 名称 | 值 |
 |---|---|
@@ -190,7 +198,7 @@ flappy / g2048 / mines / sudoku / gomoku）。生产环境渲染为 inline SVG�
 ## 文件清单
 
 修改：
-- `src/core/theme.ts` — 替换 THEME
+- `src/core/theme.ts` — 新增 `SUNSET` 导出，`THEME` 不动
 - `src/core/game.ts` — `GameMeta` 增加可选 `displayName`
 - `src/games/registry.ts` — 8 条 meta 补 `displayName`
 - `src/main.ts` — 写入 `lastPlayed`
