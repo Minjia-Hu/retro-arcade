@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { SUNSET } from '../src/core/theme';
-import { THEME } from '../src/core/theme';
+import { SUNSET, THEME } from '../src/core/theme';
 import { GAMES } from '../src/games/registry';
 import { padScore, accentAt, relativeTime, dateKey, hashDate } from '../src/shell/hub/model';
 
@@ -9,9 +8,19 @@ describe('SUNSET 令牌', () => {
     expect(SUNSET.accents).toEqual(['#0b7285', '#d6336c', '#e8590c', '#e67700']);
   });
 
+  // THEME 被 8 个游戏的 canvas 渲染引用 163 次，首页重设计期间一个键都不许动
   it('不破坏游戏画布使用的 THEME', () => {
-    expect(THEME.neonCyan).toBe('#00e5ff');
-    expect(THEME.font).toContain('Courier New');
+    expect(THEME).toEqual({
+      bg: '#0d0d16',
+      panel: '#16121f',
+      text: '#e8e6ff',
+      dim: '#665f7a',
+      neonGreen: '#39ff14',
+      neonPink: '#ff2fd6',
+      neonCyan: '#00e5ff',
+      neonYellow: '#ffe600',
+      font: "'Courier New', ui-monospace, monospace",
+    });
   });
 });
 
