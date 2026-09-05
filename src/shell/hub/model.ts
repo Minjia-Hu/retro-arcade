@@ -1,4 +1,7 @@
 import { SUNSET } from '../../core/theme';
+import { GAMES } from '../../games/registry';
+import type { GameEntry } from '../../games/registry';
+import type { ArcadeStorage } from '../../core/storage';
 
 /** 分数补零；位数不够时保留原样，不截断 */
 export function padScore(n: number, width = 6): string {
@@ -36,4 +39,53 @@ export function hashDate(key: string): number {
   let h = 5381;
   for (let i = 0; i < key.length; i++) h = ((h * 33) ^ key.charCodeAt(i)) >>> 0;
   return h >>> 0;
+}
+
+/** 行的语义色调，具体颜色由 CSS 的 .hall-row-* 决定 */
+export type HallTone = 'gold' | 'dim' | 'faint';
+
+export interface HallRow {
+  rank: string;
+  name: string;
+  score: string;
+  tone: HallTone;
+  empty: boolean;
+}
+
+/** 首页展示名，缺 displayName 时回退中文名 */
+function label(entry: GameEntry): string {
+  return entry.meta.displayName ?? entry.meta.name;
+}
+
+/** 读单个游戏最高分；存量脏数据一律当作没有成绩 */
+function bestOf(storage: ArcadeStorage, id: string): number | null {
+  const raw = storage.get<unknown>(`best.${id}`, null);
+  return typeof raw === 'number' && Number.isFinite(raw) ? raw : null;
+}
+
+export function buildHall(storage: ArcadeStorage): HallRow[] {
+  const top = GAMES
+    .map((entry, index) => ({ index, name: label(entry), best: bestOf(storage, entry.meta.id) }))
+    .filter((e): e is { index: number; name: string; best: number } => e.best !== null && e.best > 0)
+    .sort((a, b) => b.best - a.best || a.index - b.index)
+    .slice(0, 3);
+
+  const rows: HallRow[] = top.map((e, i) => ({
+    rank: String(i + 1),
+    name: e.name,
+    score: padScore(e.best),
+    tone: i === 0 ? 'gold' : 'dim',
+    empty: false,
+  }));
+
+  while (rows.length < 3) {
+    rows.push({
+      rank: String(rows.length + 1),
+      name: '— EMPTY —',
+      score: '······',
+      tone: 'faint',
+      empty: true,
+    });
+  }
+  return rows;
 }

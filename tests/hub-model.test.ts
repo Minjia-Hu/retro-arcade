@@ -2,6 +2,8 @@ import { describe, it, expect } from 'vitest';
 import { SUNSET, THEME } from '../src/core/theme';
 import { GAMES } from '../src/games/registry';
 import { padScore, accentAt, relativeTime, dateKey, hashDate } from '../src/shell/hub/model';
+import { ArcadeStorage, memoryBackend } from '../src/core/storage';
+import { buildHall } from '../src/shell/hub/model';
 
 describe('SUNSET 令牌', () => {
   it('提供四个 accent 颜色，顺序为 teal/magenta/orange/gold', () => {
@@ -98,5 +100,52 @@ describe('dateKey / hashDate', () => {
   it('hashDate 对不同输入给出不同结果', () => {
     expect(hashDate('2026-09-05')).not.toBe(hashDate('2026-09-06'));
     expect(hashDate('2026-09-05')).not.toBe(hashDate('2026-09-05:new'));
+  });
+});
+
+function freshStorage(seed: Record<string, unknown> = {}): ArcadeStorage {
+  const backend = memoryBackend();
+  for (const [k, v] of Object.entries(seed)) backend.setItem(`arcade.${k}`, JSON.stringify(v));
+  return new ArcadeStorage(backend);
+}
+
+describe('buildHall', () => {
+  it('没有任何成绩时给出三行空位', () => {
+    const rows = buildHall(freshStorage());
+    expect(rows).toHaveLength(3);
+    expect(rows.every((r) => r.empty)).toBe(true);
+    expect(rows[0]).toEqual({ rank: '1', name: '— EMPTY —', score: '······', tone: 'faint', empty: true });
+  });
+
+  it('按分数降序取前三，并补齐到三行', () => {
+    const rows = buildHall(freshStorage({ 'best.snake': 3840, 'best.tetris': 12750 }));
+    expect(rows.map((r) => r.name)).toEqual(['TETRIS', 'SNAKE', '— EMPTY —']);
+    expect(rows.map((r) => r.score)).toEqual(['012750', '003840', '······']);
+    expect(rows[2].empty).toBe(true);
+  });
+
+  it('第一名是 gold 色调，二三名是 dim 色调', () => {
+    const rows = buildHall(freshStorage({ 'best.snake': 100, 'best.tetris': 200 }));
+    expect(rows.map((r) => r.tone)).toEqual(['gold', 'dim', 'faint']);
+  });
+
+  it('只取前三名', () => {
+    const rows = buildHall(freshStorage({
+      'best.snake': 10, 'best.tetris': 20, 'best.breakout': 30, 'best.flappy': 40,
+    }));
+    expect(rows).toHaveLength(3);
+    expect(rows.map((r) => r.name)).toEqual(['FLAPPY', 'BREAKOUT', 'TETRIS']);
+  });
+
+  it('同分时按 registry 顺序排', () => {
+    const rows = buildHall(freshStorage({ 'best.tetris': 500, 'best.snake': 500 }));
+    expect(rows.map((r) => r.name)).toEqual(['SNAKE', 'TETRIS', '— EMPTY —']);
+  });
+
+  it('忽略脏数据与 0 分', () => {
+    const rows = buildHall(freshStorage({
+      'best.snake': 'oops', 'best.tetris': null, 'best.breakout': 0, 'best.flappy': 47,
+    }));
+    expect(rows.map((r) => r.name)).toEqual(['FLAPPY', '— EMPTY —', '— EMPTY —']);
   });
 });
