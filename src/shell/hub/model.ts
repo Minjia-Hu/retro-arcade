@@ -89,3 +89,38 @@ export function buildHall(storage: ArcadeStorage): HallRow[] {
   }
   return rows;
 }
+
+export interface DailyModel {
+  dateLabel: string;
+  prefix: string;
+  name: string;
+  suffix: string;
+  id: string;
+}
+
+/** 渲染为「prefix 游戏名 suffix」，suffix 可为空 */
+export const CHALLENGES: Record<string, { prefix: string; suffix: string }> = {
+  snake: { prefix: 'SURVIVE', suffix: 'FOR 20 APPLES STRAIGHT' },
+  tetris: { prefix: 'CLEAR 10 LINES IN', suffix: '' },
+  breakout: { prefix: 'BREAK 60 BRICKS IN', suffix: 'ON ONE LIFE' },
+  flappy: { prefix: 'PASS 15 PIPES IN', suffix: 'WITHOUT A SCRATCH' },
+  g2048: { prefix: 'REACH THE 512 TILE IN', suffix: '' },
+  minesweeper: { prefix: 'CLEAR', suffix: 'IN UNDER 60 SECONDS' },
+  sudoku: { prefix: 'FINISH', suffix: 'WITH ZERO MISTAKES' },
+  gomoku: { prefix: 'BEAT THE AI AT', suffix: 'AS BLACK' },
+};
+
+const WEEKDAYS = ['SUN', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT'];
+
+export function buildDaily(now: Date): DailyModel {
+  const entry = GAMES[hashDate(dateKey(now)) % GAMES.length];
+  const copy = CHALLENGES[entry.meta.id] ?? { prefix: 'PLAY', suffix: 'TODAY' };
+  const day = String(now.getDate()).padStart(2, '0');
+  return {
+    dateLabel: `DAILY CHALLENGE · ${WEEKDAYS[now.getDay()]} ${day}`,
+    prefix: copy.prefix,
+    name: label(entry),
+    suffix: copy.suffix,
+    id: entry.meta.id,
+  };
+}

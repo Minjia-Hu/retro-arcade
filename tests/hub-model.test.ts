@@ -4,6 +4,7 @@ import { GAMES } from '../src/games/registry';
 import { padScore, accentAt, relativeTime, dateKey, hashDate } from '../src/shell/hub/model';
 import { ArcadeStorage, memoryBackend } from '../src/core/storage';
 import { buildHall } from '../src/shell/hub/model';
+import { buildDaily, CHALLENGES } from '../src/shell/hub/model';
 
 describe('SUNSET 令牌', () => {
   it('提供四个 accent 颜色，顺序为 teal/magenta/orange/gold', () => {
@@ -147,5 +148,42 @@ describe('buildHall', () => {
       'best.snake': 'oops', 'best.tetris': null, 'best.breakout': 0, 'best.flappy': 47,
     }));
     expect(rows.map((r) => r.name)).toEqual(['FLAPPY', '— EMPTY —', '— EMPTY —']);
+  });
+});
+
+describe('buildDaily', () => {
+  it('八个游戏都有挑战文案', () => {
+    for (const g of GAMES) {
+      expect(CHALLENGES[g.meta.id], `缺少 ${g.meta.id} 的挑战文案`).toBeDefined();
+      expect(CHALLENGES[g.meta.id].prefix.length).toBeGreaterThan(0);
+    }
+  });
+
+  it('同一天两次调用结果完全相同', () => {
+    const a = buildDaily(new Date(2026, 8, 5, 9, 0));
+    const b = buildDaily(new Date(2026, 8, 5, 23, 30));
+    expect(a).toEqual(b);
+  });
+
+  it('日期标签是 星期缩写 + 两位日', () => {
+    // 2026-09-05 是星期六
+    expect(buildDaily(new Date(2026, 8, 5)).dateLabel).toBe('DAILY CHALLENGE · SAT 05');
+  });
+
+  it('选中的游戏 id 一定在 registry 中', () => {
+    for (let d = 1; d <= 28; d++) {
+      const daily = buildDaily(new Date(2026, 8, d));
+      expect(GAMES.some((g) => g.meta.id === daily.id)).toBe(true);
+    }
+  });
+
+  it('一个月内不会永远是同一个游戏', () => {
+    const ids = new Set<string>();
+    for (let d = 1; d <= 28; d++) ids.add(buildDaily(new Date(2026, 8, d)).id);
+    expect(ids.size).toBeGreaterThan(1);
+  });
+
+  it('轮到扫雷时文案与设计稿一致', () => {
+    expect(CHALLENGES.minesweeper).toEqual({ prefix: 'CLEAR', suffix: 'IN UNDER 60 SECONDS' });
   });
 });
