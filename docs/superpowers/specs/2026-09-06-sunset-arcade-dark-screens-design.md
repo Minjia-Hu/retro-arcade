@@ -1,0 +1,162 @@
+# 子项目 B：深色屏三款（TETRIS / BREAKOUT / FLAPPY）
+
+来源：`design_handoff_sunset_arcade_homepage_2/README.md` 的 Game Screens 一节，
+以及 `Game Screens.dc.html` 的 artboard **2a**（TETRIS）、**2b**（BREAKOUT）、**2c**（FLAPPY）。
+
+## 前置
+
+子项目 A（机柜外壳 + 结算浮层 + `SCREEN` 暖霓虹调色板，以 SNAKE 为样板）已合并（`a53780d`）。
+B 沿用 A 建立的全部基础设施：`cabinetHtml` / `settleHtml` / `GameContext.settle` /
+`GameMeta.hints|screen|displayName` / `SCREEN`。
+
+B 完成后 `THEME` 只剩 4 款纸盘游戏在用，C 做完即可删除。
+
+## 已确认的范围决策
+
+1. **TETRIS 侧栏改 DOM 五张卡**（NEXT / HOLD / SCORE / LEVEL / BEST）。设计稿只画了四张，
+   现有游戏的 HOLD 玩法按同样式补第五张——**不删功能**。
+2. **机柜同时支持「隐藏暂停」与「动态提示条」**，两个能力 B/C 的其他游戏也用得上。
+3. **保持现有画布逻辑尺寸**，只换配色不动网格。设计稿的 BREAKOUT 360×480 与 FLAPPY 360×540
+   是等比放大，改尺寸会动到碰撞与难度手感，风险不值得。这与 A 里 SNAKE 的处理一致。
+
+## 机柜的三处扩展
+
+A 的外壳是按 SNAKE 那种「一块画布 + 静态提示」设计的，B 的三个游戏各撞破一条。
+
+### 1. 侧栏插槽
+
+`GameMeta` 增加：
+
+```ts
+/** 需要屏幕井右侧的侧栏时置 true，内容由游戏自己填 */
+side?: boolean;
+```
+
+`GameContext` 增加：
+
+```ts
+/** 侧栏容器；meta.side 为 true 时可用，否则为 null */
+side: HTMLElement | null;
+```
+
+frame 只负责渲染空的 `.cab-side` 容器并提供卡片样式（`.side-card` / `.side-label` /
+`.side-value`），**不定义内容结构**。只有 TETRIS 一个消费者，此时抽象「统计卡片」数据结构
+属于过度设计；等 C 出现第二个消费者再看是否需要共用件。
+
+### 2. 可选暂停
+
+`GameMeta` 增加：
+
+```ts
+/** 顶栏是否渲染暂停按钮，缺省 true。FLAPPY 按设计稿不显示 */
+pausable?: boolean;
+```
+
+`cabinetHtml` 据此决定是否渲染 `[data-act="pause"]`，`frame.ts` 的按钮绑定相应改为可缺省
+（现在 `btn(act)` 用的是非空断言，必须改）。
+
+### 3. 动态提示条
+
+`GameContext` 增加：
+
+```ts
+/** 替换底部按键提示条 */
+setHints(hints: string[]): void;
+```
+
+把 A 里已有的私有 `setHints` 开放出去。**关键细节**：公开版本必须同时更新 frame 内部的
+`baseHints`，否则结算浮层收起时 `setHints(this.baseHints)` 会把游戏动态设置的文案冲掉。
+
+## 版面核算
+
+TETRIS 是三者中唯一有侧栏的，需要确认不超出机柜 464px 的内容区上限：
+
+```
+屏幕 220 + 边框 6 = 226
+侧栏 110
+间隙 16
+屏幕井左右内边距 22 × 2 = 44
+合计 396 ≤ 464 ✓
+```
+
+**不需要加宽变体**。A 的 spec 里留的那条「TETRIS 可能需要更宽的机柜」预警不成立，可以划掉。
+
+## TETRIS（artboard 2a）
+
+- **画布缩成纯棋盘** `220×440`（`COLS 10 × CELL 22`、`ROWS 20 × CELL 22`），
+  去掉原来的 `BOARD_X/BOARD_Y` 内边距与 `SIDE_X` 侧栏绘制。边框圆角由 `.screen` 提供。
+- 方块配色由 `PIECE_COLORS` 的冷色盘换成暖霓虹，七种方块循环取
+  `SCREEN` 的 teal / gold / pink / orange 四色（设计稿的 `NE` 对象就是这四色）。
+- 每格加设计稿的斜面与辉光：
+  `inset -3px -3px rgba(0,0,0,.3)` + `inset 3px 3px rgba(255,255,255,.25)` + `0 0 8px <同色>`。
+  canvas 没有 inset 阴影，用两条半透明矩形（右下暗、左上亮）模拟，辉光用 `shadowBlur`。
+- **侧栏五张 DOM 卡**，自上而下 NEXT / HOLD / SCORE / LEVEL / BEST。卡片样式：
+  `#fffaf0` 底、2px ink 描边、radius 10、投影 `3px 3px 0`、padding 12、纵向居中。
+  标签 Bungee 10px `--dim`；数值 JetBrains Mono 700 16px ink，LEVEL 用 `--orange`，
+  BEST 用 14px `--dim`。NEXT / HOLD 的迷你方块用 DOM 小方块拼（44×30 区域，13px 格）。
+- hints：`['←→ MOVE', '↑ ROTATE', '↓ DROP', 'SPACE HARD DROP']`
+- 结算：`GAME OVER`（`lose`）/ `NEW HIGH SCORE`（`record`），
+  lines 为 `SCORE ??????` 与 `LINES ???`、`BEST ??????`，主按钮 `▶ RETRY`，
+  结算态 hints 为 `['SPACE / TAP TO RETRY']`。
+
+## BREAKOUT（artboard 2b）
+
+全部留在画布，不需要侧栏。
+
+- 砖块四行由上至下 pink / orange / gold / teal（现有 `ROW_COLORS` 是 5 色，改为 4 色循环）。
+  砖块加与 TETRIS 同款斜面 + 同色辉光，radius 3。
+- 球 `SCREEN.white` 圆形，辉光 `rgba(255,250,240,.8)`；挡板 `SCREEN.teal`，radius 6，
+  辉光 teal 50%，加右下暗面。
+- HUD 留在画布内：`SCORE 0980` 金色 JetBrains Mono 700 15px 左上（12,16），
+  `♥♥♡` 粉色右上——实心数量取 `state.lives`，总数 3。
+- hints：`['←→ / MOUSE MOVE', 'SPACE LAUNCH']`
+- 结算：只有 `GAME OVER` / `NEW HIGH SCORE`。**清关不是结束**——
+  `logic.ts` 里 `bricks.every(!alive)` 走的是 `level += 1` 换布局继续，
+  所以 B 里用不到 `tone: 'win'`（留给 C 的 SUDOKU）。
+
+## FLAPPY（artboard 2c）
+
+- 背景改竖向渐变 `#1a1410` 0–60% → `#241a12` 100%。
+- 管道 `#0b7285` 填充 + `#075a68` 3px 描边，左侧 `inset 4px 0 rgba(255,255,255,.12)` 高光
+  （canvas 用一条半透明竖条模拟）。
+- 小鸟：身体 `SCREEN.gold` radius 5，喙 `SCREEN.orange`，眼 `SCREEN.ground` 圆点，
+  辉光 gold 60%。
+- 地面：高 28px，`#3a2c1c` / `#2e2316` 18px 交替条纹，顶边 3px ink。
+- 分数：Bungee 34px `SCREEN.white`，`3px 3px 0` 墨色投影，居中靠上。
+- idle 提示 `TAP / SPACE TO FLAP`，JetBrains Mono 700 14px `SCREEN.gold`，ls 2px。
+- **顶栏无暂停**（`pausable: false`）。
+- **底部提示条显示实时 `BEST ??????`**，通过 `ctx.setHints()` 在挂载时与刷新纪录时更新。
+- 结算：`GAME OVER` / `NEW HIGH SCORE`，结算态 hints 为 `['SPACE / TAP TO RETRY']`。
+
+## 会推翻的现有断言
+
+- 三个游戏拿到 `displayName`（`TETRIS` / `BREAKOUT` / `FLAPPY`），
+  `e2e/smoke.spec.ts` 中对应断言由中文改英文。FLAPPY 那条本来就断言 `'FLAPPY'`，不受影响。
+- `tests/cabinet-view.test.ts` 需要补：`pausable: false` 时不渲染 pause 按钮、
+  `side: true` 时渲染 `.cab-side`。
+
+## 测试
+
+- `tests/cabinet-view.test.ts` 补上述两条能力。
+- 新增 e2e：进入 TETRIS 断言 `.cab-side` 里有 5 张 `.side-card`；
+  进入 FLAPPY 断言顶栏没有 `[data-act="pause"]` 且 `.cab-hints` 含 `BEST`。
+- 三个游戏各自的既有逻辑单测（`tetris-logic` / `breakout-logic` / `flappy-logic`）
+  **不应有任何改动**——本子项目只改渲染与外壳，不动玩法。这是判断有没有越界的判据。
+
+## 文件清单
+
+修改：
+- `src/core/game.ts` — `GameMeta` 加 `side`/`pausable`；`GameContext` 加 `side`/`setHints`
+- `src/shell/cabinet-view.ts` — 可选 pause、侧栏容器
+- `src/shell/frame.ts` — 侧栏引用、pause 可缺省、开放 setHints
+- `src/styles/arcade.css` — `.cab-side` 与 `.side-card` 系列
+- `src/games/tetris/index.ts`、`src/games/breakout/index.ts`、`src/games/flappy/index.ts`
+- `e2e/smoke.spec.ts`、`tests/cabinet-view.test.ts`
+
+## 留给 C 的已知问题
+
+- `THEME` 在 B 之后只剩 SUDOKU / 2048 / MINES / GOMOKU 引用，C 迁完即可删除。
+- 侧栏当前无抽象，只有 TETRIS 使用。C 的 SUDOKU 数字键盘、MINES 的 HUD、GOMOKU 的回合筹
+  若形态相近，届时再考虑抽公共件。
+- `SCREEN.orange` / `white` 在 B 中首次被真正渲染（BREAKOUT 的砖块与球、FLAPPY 的喙），
+  需要目视核对——A 里它们没有任何消费者。
