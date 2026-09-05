@@ -102,7 +102,10 @@ describe('色调名与样式表的对应', () => {
   // 漂移的表现会很别扭：图标没颜色，药丸底色也丢了。
   it('每个 AccentTone 在 arcade.css 里都有对应的 class', () => {
     for (const tone of ['teal', 'magenta', 'orange', 'gold']) {
-      expect(css, `缺少 .accent-${tone}`).toContain(`.accent-${tone} { --accent: var(--${tone}); }`);
+      // 只断言映射关系，不锁死同一条规则里还写了什么（机柜的 --glow 就写在这里）
+      expect(css, `缺少 .accent-${tone}`).toMatch(
+        new RegExp(`\\.accent-${tone}\\s*\\{[^}]*--accent:\\s*var\\(--${tone}\\)`),
+      );
     }
   });
 

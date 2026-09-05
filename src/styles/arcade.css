@@ -144,14 +144,10 @@ button { font-family: inherit; cursor: pointer; }
 .card-pill-off { background: var(--pill-off); color: var(--dim); border-color: var(--faint); }
 
 /* TS 传色调名，这里映射成局部 --accent，供图标与药丸取用 */
-.accent-teal { --accent: var(--teal); }
-.accent-teal { --glow: rgba(46, 230, 200, .35); }
-.accent-magenta { --accent: var(--magenta); }
-.accent-magenta { --glow: rgba(255, 92, 158, .35); }
-.accent-orange { --accent: var(--orange); }
-.accent-orange { --glow: rgba(255, 140, 66, .35); }
-.accent-gold { --accent: var(--gold); }
-.accent-gold { --glow: rgba(255, 201, 60, .35); }
+.accent-teal { --accent: var(--teal); --glow: rgba(46, 230, 200, .35); }
+.accent-magenta { --accent: var(--magenta); --glow: rgba(255, 92, 158, .35); }
+.accent-orange { --accent: var(--orange); --glow: rgba(255, 140, 66, .35); }
+.accent-gold { --accent: var(--gold); --glow: rgba(255, 201, 60, .35); }
 
 .px { display: block; color: var(--accent); }
 .px svg { display: block; width: 100%; height: 100%; }
