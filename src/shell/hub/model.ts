@@ -1,17 +1,20 @@
-import { SUNSET } from '../../core/theme';
 import { GAMES } from '../../games/registry';
 import type { GameEntry } from '../../games/registry';
 import type { ArcadeStorage } from '../../core/storage';
 
-/** 分数补零；位数不够时保留原样，不截断 */
-export function padScore(n: number, width = 6): string {
-  const safe = Math.max(0, Math.floor(n));
-  return String(safe).padStart(width, '0');
+/** 分数补零到 6 位；位数不够时保留原样，不截断 */
+export function padScore(n: number): string {
+  return String(Math.max(0, Math.floor(n))).padStart(6, '0');
 }
 
-/** 按 registry 下标轮转 accent 颜色 */
-export function accentAt(index: number): string {
-  return SUNSET.accents[index % SUNSET.accents.length];
+/** accent 色调名。具体色值由 CSS 的 .accent-* 持有，TS 不碰 hex */
+export type AccentTone = 'teal' | 'magenta' | 'orange' | 'gold';
+
+const ACCENTS: AccentTone[] = ['teal', 'magenta', 'orange', 'gold'];
+
+/** 按 registry 下标轮转 accent 色调 */
+export function accentAt(index: number): AccentTone {
+  return ACCENTS[index % ACCENTS.length];
 }
 
 /** 相对时间文案，全大写以配合街机风格 */
@@ -49,7 +52,6 @@ export interface HallRow {
   name: string;
   score: string;
   tone: HallTone;
-  empty: boolean;
 }
 
 /** 首页展示名，缺 displayName 时回退中文名 */
@@ -57,16 +59,20 @@ function label(entry: GameEntry): string {
   return entry.meta.displayName ?? entry.meta.name;
 }
 
-/** 读单个游戏最高分；存量脏数据一律当作没有成绩 */
+/**
+ * 读单个游戏最高分。存量脏数据和 0 分一律当作没有成绩——各游戏都是 `score > best`
+ * 才写盘且 best 初值为 0，所以 0 本就不该被持久化。这里统一口径，避免卡片显示
+ * BEST 000000 而 Hall of Fame 又把它排除。
+ */
 function bestOf(storage: ArcadeStorage, id: string): number | null {
   const raw = storage.get<unknown>(`best.${id}`, null);
-  return typeof raw === 'number' && Number.isFinite(raw) ? raw : null;
+  return typeof raw === 'number' && Number.isFinite(raw) && raw > 0 ? raw : null;
 }
 
 export function buildHall(storage: ArcadeStorage): HallRow[] {
   const top = GAMES
     .map((entry, index) => ({ index, name: label(entry), best: bestOf(storage, entry.meta.id) }))
-    .filter((e): e is { index: number; name: string; best: number } => e.best !== null && e.best > 0)
+    .filter((e): e is { index: number; name: string; best: number } => e.best !== null)
     .sort((a, b) => b.best - a.best || a.index - b.index)
     .slice(0, 3);
 
@@ -75,7 +81,6 @@ export function buildHall(storage: ArcadeStorage): HallRow[] {
     name: e.name,
     score: padScore(e.best),
     tone: i === 0 ? 'gold' : 'dim',
-    empty: false,
   }));
 
   while (rows.length < 3) {
@@ -84,7 +89,6 @@ export function buildHall(storage: ArcadeStorage): HallRow[] {
       name: '— EMPTY —',
       score: '······',
       tone: 'faint',
-      empty: true,
     });
   }
   return rows;
@@ -131,14 +135,14 @@ export interface FeaturedModel {
   button: string;
   id: string;
   name: string;
-  accent: string;
+  accent: AccentTone;
   meta: string;
 }
 
 export interface CardModel {
   id: string;
   name: string;
-  accent: string;
+  accent: AccentTone;
   pill: string;
   hasRecord: boolean;
 }
@@ -207,7 +211,7 @@ export function buildCards(storage: ArcadeStorage): CardModel[] {
 }
 
 export function buildHubModel(storage: ArcadeStorage, now: Date): HubModel {
-  const muted = storage.get<unknown>('muted', false);
+  const muted = storage.get<boolean>('muted', false); // 读法与 audio.ts 保持一致
   return {
     featured: buildFeatured(storage, now),
     daily: buildDaily(now),

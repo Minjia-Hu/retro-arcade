@@ -18,12 +18,10 @@ export function hubHtml(m: HubModel): string {
         </div>`).join('');
 
   const cards = m.cards.map((c) => `
-        <button class="card" data-id="${esc(c.id)}">
-          <span class="px px-sm" style="color:${c.accent}">${pixelIconSvg(c.id)}</span>
+        <button class="card accent-${c.accent}" data-id="${esc(c.id)}">
+          <span class="px px-sm">${pixelIconSvg(c.id)}</span>
           <span class="card-name">${esc(c.name)}</span>
-          <span class="card-pill ${c.hasRecord ? 'card-pill-on' : 'card-pill-off'}"${
-            c.hasRecord ? ` style="background:${c.accent}"` : ''
-          }>${esc(c.pill)}</span>
+          <span class="card-pill ${c.hasRecord ? 'card-pill-on' : 'card-pill-off'}">${esc(c.pill)}</span>
         </button>`).join('');
 
   return `
@@ -36,10 +34,10 @@ export function hubHtml(m: HubModel): string {
       </header>
 
       <section class="hero">
-        <div class="panel continue">
+        <div class="panel continue accent-${m.featured.accent}">
           <span class="panel-label continue-label">${esc(m.featured.label)}</span>
           <div class="continue-well">
-            <span class="px px-lg" style="color:${m.featured.accent}">${pixelIconSvg(m.featured.id)}</span>
+            <span class="px px-lg">${pixelIconSvg(m.featured.id)}</span>
             <span class="continue-name">${esc(m.featured.name)}</span>
             <button class="btn-start" data-goto="${esc(m.featured.id)}">${esc(m.featured.button)}</button>
             <span class="continue-meta">${esc(m.featured.meta)}</span>
@@ -61,7 +59,7 @@ export function hubHtml(m: HubModel): string {
         </div>
       </section>
 
-      <p class="grid-heading">◆ SELECT YOUR CABINET ◆</p>
+      <h2 class="grid-heading">◆ SELECT YOUR CABINET ◆</h2>
       <div class="hub-grid">${cards}</div>
       <p class="hub-footer">${esc(m.footer)}</p>
     </div>`;

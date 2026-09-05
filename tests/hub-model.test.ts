@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { SUNSET, THEME } from '../src/core/theme';
+import { THEME } from '../src/core/theme';
 import { GAMES } from '../src/games/registry';
 import { padScore, accentAt, relativeTime, dateKey, hashDate } from '../src/shell/hub/model';
 import { ArcadeStorage, memoryBackend } from '../src/core/storage';
@@ -7,11 +7,7 @@ import { buildHall } from '../src/shell/hub/model';
 import { buildDaily, CHALLENGES } from '../src/shell/hub/model';
 import { buildFeatured, buildCards, buildHubModel } from '../src/shell/hub/model';
 
-describe('SUNSET 令牌', () => {
-  it('提供四个 accent 颜色，顺序为 teal/magenta/orange/gold', () => {
-    expect(SUNSET.accents).toEqual(['#0b7285', '#d6336c', '#e8590c', '#e67700']);
-  });
-
+describe('THEME 守卫', () => {
   // THEME 被 8 个游戏的 canvas 渲染引用 163 次，首页重设计期间一个键都不许动
   it('不破坏游戏画布使用的 THEME', () => {
     expect(THEME).toEqual({
@@ -53,13 +49,13 @@ describe('padScore', () => {
 });
 
 describe('accentAt', () => {
-  it('四色轮转', () => {
-    expect(accentAt(0)).toBe('#0b7285');
-    expect(accentAt(1)).toBe('#d6336c');
-    expect(accentAt(2)).toBe('#e8590c');
-    expect(accentAt(3)).toBe('#e67700');
-    expect(accentAt(4)).toBe('#0b7285');
-    expect(accentAt(7)).toBe('#e67700');
+  it('四色调轮转', () => {
+    expect(accentAt(0)).toBe('teal');
+    expect(accentAt(1)).toBe('magenta');
+    expect(accentAt(2)).toBe('orange');
+    expect(accentAt(3)).toBe('gold');
+    expect(accentAt(4)).toBe('teal');
+    expect(accentAt(7)).toBe('gold');
   });
 });
 
@@ -115,15 +111,15 @@ describe('buildHall', () => {
   it('没有任何成绩时给出三行空位', () => {
     const rows = buildHall(freshStorage());
     expect(rows).toHaveLength(3);
-    expect(rows.every((r) => r.empty)).toBe(true);
-    expect(rows[0]).toEqual({ rank: '1', name: '— EMPTY —', score: '······', tone: 'faint', empty: true });
+    expect(rows.every((r) => r.tone === 'faint')).toBe(true);
+    expect(rows[0]).toEqual({ rank: '1', name: '— EMPTY —', score: '······', tone: 'faint' });
   });
 
   it('按分数降序取前三，并补齐到三行', () => {
     const rows = buildHall(freshStorage({ 'best.snake': 3840, 'best.tetris': 12750 }));
     expect(rows.map((r) => r.name)).toEqual(['TETRIS', 'SNAKE', '— EMPTY —']);
     expect(rows.map((r) => r.score)).toEqual(['012750', '003840', '······']);
-    expect(rows[2].empty).toBe(true);
+    expect(rows[2].tone).toBe('faint');
   });
 
   it('第一名是 gold 色调，二三名是 dim 色调', () => {
@@ -149,6 +145,15 @@ describe('buildHall', () => {
       'best.snake': 'oops', 'best.tetris': null, 'best.breakout': 0, 'best.flappy': 47,
     }));
     expect(rows.map((r) => r.name)).toEqual(['FLAPPY', '— EMPTY —', '— EMPTY —']);
+  });
+});
+
+describe('0 分的口径', () => {
+  // 卡片和 Hall of Fame 必须用同一套「什么算有成绩」的规则
+  it('0 分在两处都算没有成绩', () => {
+    const s = freshStorage({ 'best.snake': 0 });
+    expect(buildCards(s)[0]).toMatchObject({ pill: 'NO RECORD', hasRecord: false });
+    expect(buildHall(s).every((r) => r.tone === 'faint')).toBe(true);
   });
 });
 
@@ -201,7 +206,7 @@ describe('buildFeatured', () => {
       button: 'PRESS START',
       id: 'tetris',
       name: 'TETRIS',
-      accent: '#d6336c',
+      accent: 'magenta',
       meta: 'YOUR BEST 012750 · LAST PLAYED 2H AGO',
     });
   });
@@ -238,7 +243,7 @@ describe('buildCards', () => {
     const cards = buildCards(freshStorage());
     expect(cards).toHaveLength(8);
     expect(cards.map((c) => c.accent)).toEqual([
-      '#0b7285', '#d6336c', '#e8590c', '#e67700', '#0b7285', '#d6336c', '#e8590c', '#e67700',
+      'teal', 'magenta', 'orange', 'gold', 'teal', 'magenta', 'orange', 'gold',
     ]);
   });
 
