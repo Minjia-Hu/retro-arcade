@@ -5,6 +5,7 @@ import { padScore, accentAt, relativeTime, dateKey, hashDate } from '../src/shel
 import { ArcadeStorage, memoryBackend } from '../src/core/storage';
 import { buildHall } from '../src/shell/hub/model';
 import { buildDaily, CHALLENGES } from '../src/shell/hub/model';
+import { buildFeatured, buildCards, buildHubModel } from '../src/shell/hub/model';
 
 describe('SUNSET 令牌', () => {
   it('提供四个 accent 颜色，顺序为 teal/magenta/orange/gold', () => {
@@ -185,5 +186,82 @@ describe('buildDaily', () => {
 
   it('轮到扫雷时文案与设计稿一致', () => {
     expect(CHALLENGES.minesweeper).toEqual({ prefix: 'CLEAR', suffix: 'IN UNDER 60 SECONDS' });
+  });
+});
+
+describe('buildFeatured', () => {
+  const now = new Date(2026, 8, 5, 12, 0);
+
+  it('有合法 lastPlayed 时进入 continue 模式', () => {
+    const at = now.getTime() - 2 * 3_600_000;
+    const s = freshStorage({ lastPlayed: { id: 'tetris', at }, 'best.tetris': 12750 });
+    expect(buildFeatured(s, now)).toEqual({
+      mode: 'continue',
+      label: '◆ CONTINUE PLAYING ◆',
+      button: 'PRESS START',
+      id: 'tetris',
+      name: 'TETRIS',
+      accent: '#d6336c',
+      meta: 'YOUR BEST 012750 · LAST PLAYED 2H AGO',
+    });
+  });
+
+  it('玩过但没有成绩时元信息降级', () => {
+    const s = freshStorage({ lastPlayed: { id: 'sudoku', at: now.getTime() } });
+    expect(buildFeatured(s, now).meta).toBe('NO RECORD YET · LAST PLAYED JUST NOW');
+  });
+
+  it('从未玩过时进入 newcomer 模式', () => {
+    const f = buildFeatured(freshStorage(), now);
+    expect(f.mode).toBe('newcomer');
+    expect(f.label).toBe('◆ NEW CHALLENGER? ◆');
+    expect(f.button).toBe('INSERT COIN');
+    expect(f.meta).toBe('NO RECORD YET · BE THE FIRST');
+    expect(GAMES.some((g) => g.meta.id === f.id)).toBe(true);
+  });
+
+  it('newcomer 模式当天结果稳定', () => {
+    const a = buildFeatured(freshStorage(), new Date(2026, 8, 5, 1, 0));
+    const b = buildFeatured(freshStorage(), new Date(2026, 8, 5, 22, 0));
+    expect(a).toEqual(b);
+  });
+
+  it('lastPlayed 脏数据一律退回 newcomer', () => {
+    for (const bad of ['nope', 42, null, {}, { id: 'ghost', at: 1 }, { id: 'snake', at: 'x' }]) {
+      expect(buildFeatured(freshStorage({ lastPlayed: bad }), now).mode).toBe('newcomer');
+    }
+  });
+});
+
+describe('buildCards', () => {
+  it('八张卡片，accent 按下标轮转', () => {
+    const cards = buildCards(freshStorage());
+    expect(cards).toHaveLength(8);
+    expect(cards.map((c) => c.accent)).toEqual([
+      '#0b7285', '#d6336c', '#e8590c', '#e67700', '#0b7285', '#d6336c', '#e8590c', '#e67700',
+    ]);
+  });
+
+  it('无成绩显示 NO RECORD，有成绩显示补零分数', () => {
+    const cards = buildCards(freshStorage({ 'best.snake': 3840 }));
+    expect(cards[0]).toMatchObject({ id: 'snake', name: 'SNAKE', pill: 'BEST 003840', hasRecord: true });
+    expect(cards[6]).toMatchObject({ id: 'sudoku', pill: 'NO RECORD', hasRecord: false });
+  });
+});
+
+describe('buildHubModel', () => {
+  it('footer 反映游戏数量与静音状态', () => {
+    const on = buildHubModel(freshStorage(), new Date(2026, 8, 5));
+    expect(on.footer).toBe('8 GAMES LOADED · SOUND ON · © 2026 SUNSET ARCADE');
+    const off = buildHubModel(freshStorage({ muted: true }), new Date(2026, 8, 5));
+    expect(off.footer).toBe('8 GAMES LOADED · SOUND OFF · © 2026 SUNSET ARCADE');
+  });
+
+  it('聚合四个区块', () => {
+    const m = buildHubModel(freshStorage(), new Date(2026, 8, 5));
+    expect(m.hall).toHaveLength(3);
+    expect(m.cards).toHaveLength(8);
+    expect(m.featured.mode).toBe('newcomer');
+    expect(m.daily.dateLabel).toContain('DAILY CHALLENGE');
   });
 });

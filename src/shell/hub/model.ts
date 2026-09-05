@@ -124,3 +124,95 @@ export function buildDaily(now: Date): DailyModel {
     id: entry.meta.id,
   };
 }
+
+export interface FeaturedModel {
+  mode: 'continue' | 'newcomer';
+  label: string;
+  button: string;
+  id: string;
+  name: string;
+  accent: string;
+  meta: string;
+}
+
+export interface CardModel {
+  id: string;
+  name: string;
+  accent: string;
+  pill: string;
+  hasRecord: boolean;
+}
+
+export interface HubModel {
+  featured: FeaturedModel;
+  daily: DailyModel;
+  hall: HallRow[];
+  cards: CardModel[];
+  footer: string;
+}
+
+interface LastPlayed { id: string; at: number }
+
+/** 读上次游玩记录；任何不合法都当作没玩过 */
+function readLastPlayed(storage: ArcadeStorage): LastPlayed | null {
+  const raw = storage.get<unknown>('lastPlayed', null);
+  if (raw === null || typeof raw !== 'object') return null;
+  const { id, at } = raw as Partial<LastPlayed>;
+  if (typeof id !== 'string' || typeof at !== 'number' || !Number.isFinite(at)) return null;
+  return GAMES.some((g) => g.meta.id === id) ? { id, at } : null;
+}
+
+export function buildFeatured(storage: ArcadeStorage, now: Date): FeaturedModel {
+  const last = readLastPlayed(storage);
+  if (last) {
+    const index = GAMES.findIndex((g) => g.meta.id === last.id);
+    const entry = GAMES[index];
+    const best = bestOf(storage, entry.meta.id);
+    const bestText = best === null ? 'NO RECORD YET' : `YOUR BEST ${padScore(best)}`;
+    return {
+      mode: 'continue',
+      label: '◆ CONTINUE PLAYING ◆',
+      button: 'PRESS START',
+      id: entry.meta.id,
+      name: label(entry),
+      accent: accentAt(index),
+      meta: `${bestText} · LAST PLAYED ${relativeTime(last.at, now.getTime())}`,
+    };
+  }
+  // 没有历史时按日期挑一个，保证当天稳定、跨天变化
+  const index = hashDate(`${dateKey(now)}:new`) % GAMES.length;
+  const entry = GAMES[index];
+  return {
+    mode: 'newcomer',
+    label: '◆ NEW CHALLENGER? ◆',
+    button: 'INSERT COIN',
+    id: entry.meta.id,
+    name: label(entry),
+    accent: accentAt(index),
+    meta: 'NO RECORD YET · BE THE FIRST',
+  };
+}
+
+export function buildCards(storage: ArcadeStorage): CardModel[] {
+  return GAMES.map((entry, index) => {
+    const best = bestOf(storage, entry.meta.id);
+    return {
+      id: entry.meta.id,
+      name: label(entry),
+      accent: accentAt(index),
+      pill: best === null ? 'NO RECORD' : `BEST ${padScore(best)}`,
+      hasRecord: best !== null,
+    };
+  });
+}
+
+export function buildHubModel(storage: ArcadeStorage, now: Date): HubModel {
+  const muted = storage.get<unknown>('muted', false);
+  return {
+    featured: buildFeatured(storage, now),
+    daily: buildDaily(now),
+    hall: buildHall(storage),
+    cards: buildCards(storage),
+    footer: `${GAMES.length} GAMES LOADED · SOUND ${muted ? 'OFF' : 'ON'} · © 2026 SUNSET ARCADE`,
+  };
+}
