@@ -2,7 +2,7 @@ import type { Game, GameContext } from '../../core/game';
 import { GameLoop } from '../../core/loop';
 import { THEME } from '../../core/theme';
 import * as L from './logic';
-import { createScreenCanvas } from '../../core/screen';
+import { createScreenCanvas, resizeScreenCanvas } from '../../core/screen';
 
 const MENU_W = 320;
 const MENU_H = 480;
@@ -43,11 +43,7 @@ export function createMinesweeper(): Game {
     if (!canvas || !g) return;
     viewW = w;
     viewH = h;
-    const dpr = Math.min(window.devicePixelRatio || 1, 3);
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
-    canvas.style.width = `${w}px`;
-    g.setTransform(dpr, 0, 0, dpr, 0, 0); // 重设尺寸会清空变换，用 setTransform 而非叠加 scale
+    resizeScreenCanvas(canvas, g, w, h);
   }
 
   function startGame(diff: L.Difficulty): void {
