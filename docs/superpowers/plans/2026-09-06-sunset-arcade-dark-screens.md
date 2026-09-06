@@ -732,9 +732,12 @@ function pad(n: number, width: number): string {
 
 - [ ] **Step 3: 终局时上报结算**
 
-在处理 `ev.over` 的地方（`if (ev.over)` 或等价分支）补：
+`update()` 里已有的 `if (ev.over)` 分支改为：
 
 ```ts
+    if (ev.over) {
+      endedAt = performance.now();
+      ctx?.audio.play('over');
       const record = state.score > bestAtStart;
       ctx?.settle({
         title: record ? 'NEW HIGH SCORE' : 'GAME OVER',
@@ -743,10 +746,12 @@ function pad(n: number, width: number): string {
         action: { label: '▶ RETRY', onPress: retry },
         hints: ['SPACE / TAP TO RETRY'],
       });
+    } else if (ev.lost) {
+      ctx?.audio.play('hit');
+    }
 ```
 
-若现有代码里 `ev.over` 没有独立分支，在 `update` 末尾按 `state.status === 'over'` 加一个
-只触发一次的守卫（参考 SNAKE 的 `deadHandled` 写法）。
+`ev.over` 由 `logic.ts` 保证只在丢掉最后一条命的那一帧为真，不需要额外的一次性守卫。
 
 - [ ] **Step 4: 重画 render()**
 
@@ -1012,8 +1017,8 @@ function pad(n: number, width: number): string {
   }
 ```
 
-若 `L.BIRD_X` 不存在，读 `src/games/flappy/logic.ts` 找到小鸟横坐标的实际导出名并替换；
-**不要改 logic.ts 去迎合这段代码。**
+`L.BIRD_X`（= 80）与 `L.BIRD_R`（= 12）都已由 `logic.ts` 导出，直接用即可；
+上面的鸟身 24×18 与 `BIRD_R * 2 = 24` 一致。**不要改 logic.ts。**
 
 - [ ] **Step 4: meta 与 mount**
 
