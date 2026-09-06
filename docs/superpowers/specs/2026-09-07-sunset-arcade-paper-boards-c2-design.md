@@ -8,9 +8,38 @@
 A（机柜外壳 + 结算浮层 + `SCREEN`）、B（深色屏三款 + 侧栏/控制垫/可选暂停/动态提示条）、
 C1（机柜补完 + SUDOKU 样板）均已合并。
 
-**C2 不新增任何机柜 API。** C1 已经把能力配齐：多动作浮层、控制垫插槽、顶栏工具按钮、
-状态药丸、`ctx.overlayOpen()`。C2 是把同一套模式重复应用到剩下三个游戏，
-这也是敢一轮做完三个的依据。
+**C2 需要给机柜补一个插槽。** C1 的能力（多动作浮层、控制垫、顶栏工具按钮、状态药丸、
+`ctx.overlayOpen()`）大部分够用，但**三个游戏都有一行位于棋盘上方的 DOM**——
+2048 的 SCORE/BEST/UNDO、MINES 的 ⚑/🙂/计时、GOMOKU 的回合筹——
+而机柜只有屏幕右侧的 `.cab-side` 与下方的 `.cab-pad`，没有上方的槽。
+
+三个消费者同时出现，是真需求而非投机抽象，因此新增 `head` 插槽：
+
+```ts
+// GameMeta
+/** 需要屏幕井上方的一行 DOM 时置 true，内容由游戏自己填 */
+head?: boolean;
+// GameContext
+/** 上方栏容器；meta.head 为 true 时可用，否则为 null */
+head: HTMLElement | null;
+```
+
+机柜结构相应改为「纵向堆叠 head + screen」，再与 side 横向并列：
+
+```html
+<div class="cab-screen">
+  <div class="cab-stack">
+    <div class="cab-head"></div>   <!-- 可选 -->
+    <div class="screen">…</div>
+  </div>
+  <div class="cab-side"></div>     <!-- 可选 -->
+</div>
+```
+
+`.cab-stack` **无条件渲染**（不按 `head` 有无切换两种结构）——一种形状比两种好推理，
+且对 TETRIS 的侧栏布局无视觉影响。
+
+除此之外 C2 是把 C1 的模式重复应用到剩下三个游戏。
 
 C2 完成后 `THEME` 将没有任何消费者，可以删除。
 
