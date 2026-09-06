@@ -1,7 +1,11 @@
 import type { Game, GameContext } from '../../core/game';
 import { GameLoop } from '../../core/loop';
-import { THEME } from '../../core/theme';
+import { SCREEN } from '../../core/theme';
 import * as L from './logic';
+
+function pad(n: number, width: number): string {
+  return String(Math.max(0, Math.floor(n))).padStart(width, '0');
+}
 
 export function createFlappy(): Game {
   let state = L.createState();
@@ -13,17 +17,30 @@ export function createFlappy(): Game {
   let deadHandled = false;
   let paused = false;
   let diedAt = 0;
+  let bestAtStart = 0;
 
   function act(): void {
     if (paused) return;
     if (state.status === 'dead') {
-      if (performance.now() - diedAt < 400) return; // 死亡瞬间常有连点，给 GAME OVER 一点展示时间
-      state = L.createState();
-      deadHandled = false;
+      if (performance.now() - diedAt < 400) return; // 死亡瞬间常有连点，给结算浮层一点展示时间
+      restart();
       return;
     }
     L.flap(state);
     ctx?.audio.play('action');
+  }
+
+  /** 浮层 RETRY 按钮的入口：共用 paused 卫语句，但不继承 400ms 防连点 */
+  function retry(): void {
+    if (paused) return;
+    restart();
+  }
+
+  function restart(): void {
+    state = L.createState();
+    deadHandled = false;
+    bestAtStart = best;
+    ctx?.settle(null);
   }
 
   function update(dt: number): void {
@@ -33,68 +50,112 @@ export function createFlappy(): Game {
       if (state.score > best) {
         best = state.score;
         ctx?.storage.set('best.flappy', best);
+        ctx?.setHints([`BEST ${pad(best, 6)}`]); // 设计稿 2c 的提示条显示实时最高分
       }
     }
     if (state.status === 'dead' && !deadHandled) {
       deadHandled = true;
       diedAt = performance.now();
       ctx?.audio.play('hit');
+      const record = state.score > bestAtStart;
+      ctx?.settle({
+        title: record ? 'NEW HIGH SCORE' : 'GAME OVER',
+        tone: record ? 'record' : 'lose',
+        lines: [`SCORE ${pad(state.score, 4)}`, `BEST ${pad(best, 6)}`],
+        action: { label: '▶ RETRY', onPress: retry },
+        hints: ['SPACE / TAP TO RETRY'],
+      });
     }
   }
 
   function render(): void {
     if (!g) return;
-    g.fillStyle = THEME.bg;
+    // 背景：竖向渐变（设计稿 2c）
+    const sky = g.createLinearGradient(0, 0, 0, L.H);
+    sky.addColorStop(0, SCREEN.ground);
+    sky.addColorStop(0.6, SCREEN.ground);
+    sky.addColorStop(1, '#241a12');
+    g.fillStyle = sky;
     g.fillRect(0, 0, L.W, L.H);
+    g.textBaseline = 'alphabetic';
 
-    // 天花板与地面同样致死，画出可见边界（画布背景与页面同色，否则边界隐形）
-    g.fillStyle = THEME.neonCyan;
-    g.fillRect(0, 0, L.W, 2);
-    g.fillRect(0, L.H - 2, L.W, 2);
-
-    // 管道：霓虹绿
-    g.fillStyle = THEME.neonGreen;
-    g.shadowColor = THEME.neonGreen;
-    g.shadowBlur = 8;
+    // 管道：teal 填充 + 深色描边 + 左侧高光
     for (const p of state.pipes) {
-      g.fillRect(p.x, 0, L.PIPE_W, p.gapY - L.PIPE_GAP / 2);
-      g.fillRect(p.x, p.gapY + L.PIPE_GAP / 2, L.PIPE_W, L.H - p.gapY - L.PIPE_GAP / 2);
+      const top = p.gapY - L.PIPE_GAP / 2;
+      const bottomY = p.gapY + L.PIPE_GAP / 2;
+      for (const [y, h] of [[0, top], [bottomY, L.H - bottomY]] as const) {
+        g.fillStyle = '#0b7285';
+        g.fillRect(p.x, y, L.PIPE_W, h);
+        g.strokeStyle = '#075a68';
+        g.lineWidth = 3;
+        g.strokeRect(p.x + 1.5, y + 1.5, L.PIPE_W - 3, h - 3);
+        g.fillStyle = 'rgba(255, 255, 255, .12)';
+        g.fillRect(p.x + 3, y + 3, 4, h - 6);
+      }
     }
 
-    // 小鸟：霓虹黄圆
-    g.shadowColor = THEME.neonYellow;
-    g.fillStyle = THEME.neonYellow;
+    // 地面：条纹 + 墨色顶边
+    const groundH = 28;
+    const gy = L.H - groundH;
+    for (let x = 0; x < L.W; x += 36) {
+      g.fillStyle = '#3a2c1c';
+      g.fillRect(x, gy, 18, groundH);
+      g.fillStyle = '#2e2316';
+      g.fillRect(x + 18, gy, 18, groundH);
+    }
+    g.fillStyle = '#2b2118';
+    g.fillRect(0, gy, L.W, 3);
+
+    // 小鸟：gold 身 + orange 喙 + 深色眼
+    const bx = L.BIRD_X;
+    const by = state.birdY;
+    g.fillStyle = SCREEN.gold;
+    g.shadowColor = SCREEN.glow.gold;
+    g.shadowBlur = 12;
     g.beginPath();
-    g.arc(L.BIRD_X, state.birdY, L.BIRD_R, 0, Math.PI * 2);
+    g.roundRect(bx - 12, by - 9, 24, 18, 5);
     g.fill();
     g.shadowBlur = 0;
+    g.fillStyle = SCREEN.orange;
+    g.fillRect(bx + 10, by - 4, 8, 6);
+    g.fillStyle = SCREEN.ground;
+    g.beginPath();
+    g.arc(bx + 2, by - 4, 2.5, 0, Math.PI * 2);
+    g.fill();
 
-    // 分数
-    g.fillStyle = THEME.text;
-    g.font = `bold 28px ${THEME.font}`;
+    // 分数：Bungee 大字 + 墨色投影
     g.textAlign = 'center';
-    g.fillText(String(state.score), L.W / 2, 48);
+    g.fillStyle = '#2b2118';
+    g.font = `34px 'Bungee', ${SCREEN.mono}`;
+    g.fillText(pad(state.score, 2), L.W / 2 + 3, 55 + 3);
+    g.fillStyle = SCREEN.white;
+    g.fillText(pad(state.score, 2), L.W / 2, 55);
 
-    // 状态提示
-    g.font = `14px ${THEME.font}`;
+    // 开局提示留在画布内；GAME OVER 走 ctx.settle 的 DOM 浮层
     if (state.status === 'ready') {
-      g.fillStyle = THEME.neonCyan;
-      g.fillText('点按 / 空格 起飞', L.W / 2, L.H / 2 + 60);
-    } else if (state.status === 'dead') {
-      g.fillStyle = THEME.neonPink;
-      g.font = `bold 24px ${THEME.font}`;
-      g.fillText('GAME OVER', L.W / 2, L.H / 2 - 20);
-      g.font = `14px ${THEME.font}`;
-      g.fillText(`BEST ${best} · 点按重来`, L.W / 2, L.H / 2 + 12);
+      g.fillStyle = SCREEN.gold;
+      g.font = `700 14px ${SCREEN.mono}`;
+      g.fillText('TAP / SPACE TO FLAP', L.W / 2, L.H / 2 + 60);
     }
+    g.textAlign = 'left';
   }
 
   return {
-    meta: { id: 'flappy', name: 'FLAPPY BIRD', icon: '🐦' },
+    meta: {
+      id: 'flappy',
+      name: 'FLAPPY BIRD',
+      icon: '🐦',
+      displayName: 'FLAPPY',
+      hints: ['BEST 000000'], // 挂载时由 setHints 覆写为真实值
+      screen: 'dark',
+      pausable: false, // 设计稿 2c 的顶栏只有 SND
+    },
 
     mount(container: HTMLElement, context: GameContext): void {
       ctx = context;
       best = ctx.storage.get('best.flappy', 0);
+      bestAtStart = best;
+      ctx.setHints([`BEST ${pad(best, 6)}`]);
       canvas = document.createElement('canvas');
       const dpr = Math.min(window.devicePixelRatio || 1, 3);
       canvas.width = L.W * dpr;
