@@ -118,10 +118,7 @@ export function createBreakout(): Game {
     // 砖块：按行取色，斜面 + 同色辉光
     for (const b of state.bricks) {
       if (!b.alive) continue;
-      // 60 与 18 来自 logic.ts makeBricks 的 y0 与 bh+gap，两者都没导出；
-      // 改那里必须同步这里，否则配色会静默错位且没有测试会发现
-      const row = Math.floor((b.y - 60) / 18);
-      const tone = ROW_TONES[((row % ROW_TONES.length) + ROW_TONES.length) % ROW_TONES.length];
+      const tone = ROW_TONES[b.row % ROW_TONES.length];
       g.fillStyle = SCREEN[tone];
       g.shadowColor = SCREEN.glow[tone];
       g.shadowBlur = 8;
