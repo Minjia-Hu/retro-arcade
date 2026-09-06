@@ -259,6 +259,13 @@ button { font-family: inherit; cursor: pointer; }
 .pad-btn:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
 .pad-btn:focus-visible { outline: none; box-shadow: 3px 3px 0 var(--ink), var(--focus-ring); }
 
+/* 数独数字盘：比默认 pad-btn 窄，一行放得下 9 个 */
+.cab-pad-rows { flex-direction: column; gap: 10px; }
+.pad-row { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; }
+.pad-btn-digit { width: 33px; height: 38px; font-family: var(--mono); font-size: 16px; }
+.pad-btn-wide { width: auto; height: auto; padding: 9px 16px; font-size: 12px; letter-spacing: 1px; }
+.pad-btn.is-on { background: var(--highlight); }
+
 .cab-hints {
   display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
   padding: 12px; border-top: 3px solid var(--ink);

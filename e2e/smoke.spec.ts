@@ -64,7 +64,7 @@ test('进入数独有画布渲染，返回首页正常', async ({ page }) => {
   await page.goto('/');
   await page.click('[data-id="sudoku"]');
   await expect(page.locator('canvas')).toBeVisible();
-  await expect(page.locator('.cab-name')).toContainText('数独');
+  await expect(page.locator('.cab-name')).toContainText('SUDOKU');
   await page.click('[data-act="back"]');
   await expect(page.locator('.hub-title')).toBeVisible();
 });
