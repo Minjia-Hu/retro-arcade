@@ -1,10 +1,15 @@
 import type { Game, GameContext } from '../../core/game';
 import { GameLoop } from '../../core/loop';
-import { THEME } from '../../core/theme';
+import { SCREEN } from '../../core/theme';
 import * as L from './logic';
 
 const KEY_PADDLE_SPEED = 300; // 键盘按住移动速度 px/s
-const ROW_COLORS = [THEME.neonPink, '#ff7a2f', THEME.neonYellow, THEME.neonGreen, THEME.neonCyan];
+/** 砖块四行由上至下：pink / orange / gold / teal（设计稿 2b） */
+const ROW_TONES = ['pink', 'orange', 'gold', 'teal'] as const;
+
+function pad(n: number, width: number): string {
+  return String(Math.max(0, Math.floor(n))).padStart(width, '0');
+}
 
 export function createBreakout(): Game {
   let state = L.createState();
@@ -17,6 +22,7 @@ export function createBreakout(): Game {
   let endedAt = 0;
   let heldLeft = false;
   let heldRight = false;
+  let bestAtStart = 0; // 本局开始前的最高分，用来判断是否刷新纪录
 
   function primary(): void {
     if (paused) return;
@@ -25,9 +31,21 @@ export function createBreakout(): Game {
       ctx?.audio.play('action');
     } else if (state.status === 'over') {
       if (performance.now() - endedAt < 400) return;
-      state = L.createState();
+      restart();
       ctx?.audio.play('click');
     }
+  }
+
+  /** 浮层 RETRY 按钮的入口：共用 paused 卫语句，但不继承 400ms 防连点 */
+  function retry(): void {
+    if (paused) return;
+    restart();
+  }
+
+  function restart(): void {
+    state = L.createState();
+    bestAtStart = best;
+    ctx?.settle(null);
   }
 
   function dragBy(cssDx: number): void {
@@ -63,6 +81,14 @@ export function createBreakout(): Game {
     if (ev.over) {
       endedAt = performance.now();
       ctx?.audio.play('over');
+      const record = state.score > bestAtStart;
+      ctx?.settle({
+        title: record ? 'NEW HIGH SCORE' : 'GAME OVER',
+        tone: record ? 'record' : 'lose',
+        lines: [`SCORE ${pad(state.score, 6)}`, `LEVEL ${pad(state.level, 2)}`, `BEST ${pad(best, 6)}`],
+        action: { label: '▶ RETRY', onPress: retry },
+        hints: ['SPACE / TAP TO RETRY'],
+      });
     } else if (ev.lost) {
       ctx?.audio.play('hit');
     }
@@ -70,81 +96,88 @@ export function createBreakout(): Game {
 
   function render(): void {
     if (!g) return;
-    g.fillStyle = THEME.bg;
+    g.fillStyle = SCREEN.ground;
     g.fillRect(0, 0, L.W, L.H);
+    g.textBaseline = 'alphabetic';
 
-    // 三面反弹墙（青）+ 底部致死线（粉色虚线）——边界可见规矩
-    g.strokeStyle = THEME.neonCyan;
-    g.lineWidth = 2;
-    g.beginPath();
-    g.moveTo(1, L.H);
-    g.lineTo(1, 1);
-    g.lineTo(L.W - 1, 1);
-    g.lineTo(L.W - 1, L.H);
-    g.stroke();
-    g.strokeStyle = THEME.neonPink;
-    g.setLineDash([6, 6]);
-    g.beginPath();
-    g.moveTo(0, L.H - 1);
-    g.lineTo(L.W, L.H - 1);
-    g.stroke();
-    g.setLineDash([]);
-
-    // HUD
-    g.fillStyle = THEME.text;
-    g.font = `bold 16px ${THEME.font}`;
+    // HUD：分数金色左上、生命粉色右上（设计稿 2b）
+    g.font = `700 15px ${SCREEN.mono}`;
     g.textAlign = 'left';
-    g.fillText(`${state.score}`, 10, 40);
-    g.textAlign = 'center';
-    g.fillStyle = THEME.dim;
-    g.font = `12px ${THEME.font}`;
-    g.fillText(`LEVEL ${state.level}`, L.W / 2, 40);
+    g.fillStyle = SCREEN.gold;
+    g.fillText(`SCORE ${pad(state.score, 4)}`, 16, 30);
     g.textAlign = 'right';
-    g.fillStyle = THEME.neonPink;
-    g.fillText('♥'.repeat(Math.max(0, state.lives)), L.W - 10, 40);
+    g.fillStyle = SCREEN.pink;
+    const lives = Math.max(0, Math.min(3, state.lives));
+    g.fillText('♥'.repeat(lives) + '♡'.repeat(3 - lives), L.W - 16, 30);
+    // 关卡设计稿没画，但游戏会升级，不显示玩家就无从得知，故保留为暗色小字
+    g.textAlign = 'center';
+    g.font = `12px ${SCREEN.mono}`;
+    g.fillStyle = 'rgba(255, 250, 240, .45)';
+    g.fillText(`LEVEL ${state.level}`, L.W / 2, 30);
 
-    // 砖块（按行配色）
+    // 砖块：按行取色，斜面 + 同色辉光
     for (const b of state.bricks) {
       if (!b.alive) continue;
       const row = Math.floor((b.y - 60) / 18);
-      g.fillStyle = ROW_COLORS[row] ?? THEME.neonCyan;
-      g.fillRect(b.x, b.y, b.w, b.h);
+      const tone = ROW_TONES[((row % ROW_TONES.length) + ROW_TONES.length) % ROW_TONES.length];
+      g.fillStyle = SCREEN[tone];
+      g.shadowColor = SCREEN.glow[tone];
+      g.shadowBlur = 8;
+      g.beginPath();
+      g.roundRect(b.x, b.y, b.w, b.h, 3);
+      g.fill();
+      g.shadowBlur = 0;
+      g.fillStyle = 'rgba(0, 0, 0, .3)';
+      g.fillRect(b.x + b.w - 3, b.y, 3, b.h);
+      g.fillRect(b.x, b.y + b.h - 3, b.w, 3);
+      g.fillStyle = 'rgba(255, 255, 255, .25)';
+      g.fillRect(b.x, b.y, b.w, 2);
     }
 
-    // 挡板与球
-    g.fillStyle = THEME.neonCyan;
-    g.shadowColor = THEME.neonCyan;
-    g.shadowBlur = 8;
-    g.fillRect(state.paddleX - L.PADDLE_W / 2, L.PADDLE_Y, L.PADDLE_W, L.PADDLE_H);
-    g.shadowColor = THEME.neonYellow;
-    g.fillStyle = THEME.neonYellow;
+    // 挡板：teal 圆角
+    g.fillStyle = SCREEN.teal;
+    g.shadowColor = SCREEN.glow.teal;
+    g.shadowBlur = 12;
+    g.beginPath();
+    g.roundRect(state.paddleX - L.PADDLE_W / 2, L.PADDLE_Y, L.PADDLE_W, L.PADDLE_H, 6);
+    g.fill();
+    g.shadowBlur = 0;
+    g.fillStyle = 'rgba(0, 0, 0, .25)';
+    g.fillRect(state.paddleX - L.PADDLE_W / 2, L.PADDLE_Y + L.PADDLE_H - 2, L.PADDLE_W, 2);
+
+    // 球：白色
+    g.fillStyle = SCREEN.white;
+    g.shadowColor = SCREEN.glow.white;
+    g.shadowBlur = 12;
     g.beginPath();
     g.arc(state.ballX, state.ballY, L.BALL_R, 0, Math.PI * 2);
     g.fill();
     g.shadowBlur = 0;
 
-    // 状态提示
-    g.textAlign = 'center';
-    g.font = `14px ${THEME.font}`;
+    // 开局提示留在画布内；GAME OVER 走 ctx.settle 的 DOM 浮层
     if (state.status === 'ready') {
-      g.fillStyle = THEME.neonCyan;
-      g.fillText('拖动移板 · 点按/空格 发球', L.W / 2, L.H / 2 + 40);
-    } else if (state.status === 'over') {
-      g.fillStyle = THEME.neonPink;
-      g.font = `bold 24px ${THEME.font}`;
-      g.fillText('GAME OVER', L.W / 2, L.H / 2 - 20);
-      g.fillStyle = THEME.neonCyan;
-      g.font = `14px ${THEME.font}`;
-      g.fillText(`BEST ${best} · 点按重来`, L.W / 2, L.H / 2 + 12);
+      g.textAlign = 'center';
+      g.font = `700 14px ${SCREEN.mono}`;
+      g.fillStyle = SCREEN.gold;
+      g.fillText('TAP / SPACE TO LAUNCH', L.W / 2, L.H / 2 + 40);
     }
+    g.textAlign = 'left';
   }
 
   return {
-    meta: { id: 'breakout', name: '打砖块', icon: '🕹️' },
+    meta: {
+      id: 'breakout',
+      name: '打砖块',
+      icon: '🕹️',
+      displayName: 'BREAKOUT',
+      hints: ['←→ / MOUSE MOVE', 'SPACE LAUNCH'],
+      screen: 'dark',
+    },
 
     mount(container: HTMLElement, context: GameContext): void {
       ctx = context;
       best = ctx.storage.get('best.breakout', 0);
+      bestAtStart = best;
       canvas = document.createElement('canvas');
       const dpr = Math.min(window.devicePixelRatio || 1, 3);
       canvas.width = L.W * dpr;
