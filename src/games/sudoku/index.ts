@@ -53,7 +53,7 @@ export function createSudoku(): Game {
     syncPad();
     ctx?.setPill(DIFF_LABEL[diff.id]);
     ctx?.overlay(null);
-    ctx?.audio.play('click');
+    // 不在这里发声：浮层按钮的 click 由 frame 统一负责，重复发声会响两下
     save();
   }
 
@@ -61,21 +61,27 @@ export function createSudoku(): Game {
     state = null;
     clearSave();
     ctx?.setPill(null);
-    ctx?.audio.play('click');
     showMenu();
   }
 
   function showMenu(): void {
+    const resumable = state !== null && state.status === 'playing';
     ctx?.overlay({
       title: 'DIFFICULTY', // 单词标题：卡片宽 256、棋盘仅 288，两词会折行并盖满整块屏幕
       tone: 'win',
       lines: [],
-      actions: L.DIFFICULTIES.map((d) => ({
-        label: DIFF_LABEL[d.id],
-        kind: 'secondary' as const,
-        onPress: () => startGame(d),
-      })),
-      hints: ['PICK A DIFFICULTY TO BEGIN'],
+      actions: [
+        // 玩到一半误触 ☰ 不该只能弃局
+        ...(resumable
+          ? [{ label: '✕ RESUME', kind: 'secondary' as const, onPress: () => ctx?.overlay(null) }]
+          : []),
+        ...L.DIFFICULTIES.map((d) => ({
+          label: DIFF_LABEL[d.id],
+          kind: 'secondary' as const,
+          onPress: () => startGame(d),
+        })),
+      ],
+      hints: [resumable ? 'RESUME OR PICK A DIFFICULTY' : 'PICK A DIFFICULTY TO BEGIN'],
     });
   }
 
@@ -86,7 +92,7 @@ export function createSudoku(): Game {
       tone: 'win',
       // 设计稿还写了用时与失误数，但 SudokuState 里没有这两项数据源，不造假
       lines: [DIFF_LABEL[state.diff.id]],
-      actions: [{ label: '▶ NEW PUZZLE', onPress: showMenu }],
+      actions: [{ label: '▶ NEW PUZZLE', onPress: backToMenu }],
       hints: ['SPACE / TAP FOR A NEW PUZZLE'],
     });
   }
@@ -112,8 +118,14 @@ export function createSudoku(): Game {
     });
     const fn = (name: string) => host.querySelector<HTMLButtonElement>(`[data-fn="${name}"]`)!;
     fn('erase').addEventListener('click', () => { eraseSelected(); fn('erase').blur(); });
-    fn('notes').addEventListener('click', () => { notesMode = !notesMode; syncPad(); fn('notes').blur(); });
-    fn('check').addEventListener('click', () => { showErrors = !showErrors; syncPad(); fn('check').blur(); });
+    fn('notes').addEventListener('click', () => {
+      if (!frozen()) { notesMode = !notesMode; syncPad(); }
+      fn('notes').blur();
+    });
+    fn('check').addEventListener('click', () => {
+      if (!frozen()) { showErrors = !showErrors; syncPad(); }
+      fn('check').blur();
+    });
     padRefs = { notes: fn('notes'), check: fn('check') };
     syncPad();
   }
@@ -124,8 +136,17 @@ export function createSudoku(): Game {
     padRefs?.check.classList.toggle('is-on', showErrors);
   }
 
+  /**
+   * 浮层盖住棋盘时，整个控制垫都该冻结。
+   * 浮层只覆盖 .screen，而 .cab-pad 在它外面照样可点；键盘更是直达。
+   */
+  function frozen(): boolean {
+    return paused || Boolean(ctx?.overlayOpen());
+  }
+
   function applyDigit(v: number): void {
-    if (!state || selected < 0) return;
+    // !state 留在这里而不是收进 frozen()：否则 TS 无法收窄 state 的类型
+    if (!state || selected < 0 || frozen()) return;
     const ok = notesMode ? L.toggleNote(state, selected, v) : L.setValue(state, selected, v);
     if (!ok) return;
     ctx?.audio.play('action');
@@ -140,7 +161,7 @@ export function createSudoku(): Game {
   }
 
   function eraseSelected(): void {
-    if (!state || selected < 0) return;
+    if (!state || selected < 0 || frozen()) return;
     if (L.clearCell(state, selected)) {
       ctx?.audio.play('click');
       save();
@@ -269,6 +290,11 @@ export function createSudoku(): Game {
       ctx.input.onTapAt(canvas, tapAt);
       ctx.input.onKey((code) => {
         if (paused || !state) return;
+        if (ctx?.overlayOpen()) {
+          // 菜单开着时键盘也要停手；Escape 给进行中的局一个和 ✕ RESUME 对称的出口
+          if (code === 'Escape' && state.status === 'playing') ctx.overlay(null);
+          return;
+        }
         if (state.status === 'won') {
           // 胜利横幅：纯键盘用户也能返回难度菜单（带 400ms 防误触）
           if ((code === 'Enter' || code === 'Escape' || code === 'Space')
@@ -280,7 +306,7 @@ export function createSudoku(): Game {
           if (d >= 1 && d <= 9) applyDigit(d);
           else if (d === 0) eraseSelected();
         } else if (code === 'Backspace' || code === 'Delete') eraseSelected();
-        else if (code === 'KeyN') { notesMode = !notesMode; syncPad(); }
+        else if (code === 'KeyN') { notesMode = !notesMode; syncPad(); } // 到这里已过 frozen 门
         else if (code === 'ArrowUp') moveSel(-1, 0);
         else if (code === 'ArrowDown') moveSel(1, 0);
         else if (code === 'ArrowLeft') moveSel(0, -1);

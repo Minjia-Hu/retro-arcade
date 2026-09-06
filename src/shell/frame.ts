@@ -13,7 +13,8 @@ export class GameFrame {
   private settleEl: HTMLElement | null = null;
   private cabinetEl: HTMLElement | null = null;
   private baseHints: string[] = [];              // 游戏态的按键提示
-  private settleHints: string[] | null = null;   // 结算态的提示；null 表示不在结算态
+  private isOverlayOpen = false;
+  private overlayHints: string[] = [];           // 开层时的快照：浮层自带的提示，或冻结当时屏幕上的
 
   constructor(private audio: AudioFx, private storage: ArcadeStorage) {}
 
@@ -67,6 +68,7 @@ export class GameFrame {
     this.observer.observe(body);
     this.input = new InputService();
     const pillEl = root.querySelector<HTMLElement>('.cab-pill');
+    const toolBound = new Set<string>(); // 防止同一 id 注册两次导致点一下触发两回
 
     const ctx: GameContext = {
       audio: this.audio,
@@ -85,8 +87,24 @@ export class GameFrame {
         this.applyHints();
       },
       onTool: (id, handler) => {
-        wire(`tool:${id}`, () => handler());
+        const b = root.querySelector<HTMLButtonElement>(`[data-act="tool:${id}"]`);
+        if (!b) {
+          // wire 的「缺席就静默跳过」是为 FLAPPY 没有暂停键设计的；用在这里会让
+          // 拼错的 id 毫无反应且无从排查，所以显式报警
+          console.warn(`[arcade] onTool("${id}")：meta.tools 里没有这个 id`);
+          return;
+        }
+        if (toolBound.has(id)) {
+          console.warn(`[arcade] onTool("${id}") 被注册了多次，后一次已忽略`);
+          return;
+        }
+        toolBound.add(id);
+        b.addEventListener('click', () => {
+          b.blur();
+          handler();
+        });
       },
+      overlayOpen: () => this.isOverlayOpen,
       setPill: (text) => {
         if (!pillEl) return;
         pillEl.textContent = text ?? '';
@@ -126,7 +144,8 @@ export class GameFrame {
     this.screenEl = null;
     this.settleEl = null;
     this.baseHints = [];
-    this.settleHints = null;
+    this.overlayHints = [];
+    this.isOverlayOpen = false;
   }
 
   private clearSettle(): void {
@@ -141,8 +160,12 @@ export class GameFrame {
    * 结算态优先。把「当前该显示哪条提示」写成显式规则，而不是靠调用顺序——
    * 否则浮层展示期间游戏若调 setHints，会把 SPACE / TAP TO RETRY 冲掉而浮层还开着。
    */
+  /**
+   * 浮层冻结提示条：开着时显示开层那一刻的快照，游戏此时调 setHints 只更新
+   * baseHints、不改写屏幕，收起后才生效。
+   */
   private applyHints(): void {
-    this.renderHints(this.settleHints ?? this.baseHints);
+    this.renderHints(this.isOverlayOpen ? this.overlayHints : this.baseHints);
   }
 
   /** 替换底部按键提示条；结算态与游戏态的文案不同（设计稿 artboard 1a vs 1b） */
@@ -162,14 +185,15 @@ export class GameFrame {
     if (!el) return;
     if (!view) {
       this.clearSettle();
-      this.settleHints = null;
+      this.isOverlayOpen = false;
       this.applyHints();
       return;
     }
     el.innerHTML = overlayHtml(view);
     el.hidden = false;
     this.screenEl?.classList.add('is-settled');
-    this.settleHints = view.hints ?? null;
+    this.overlayHints = view.hints ?? this.baseHints;
+    this.isOverlayOpen = true;
     this.applyHints();
 
     // 点完就 blur：与顶栏 wire() 同一约定，避免残留焦点让空格键既触发按钮又触发游戏逻辑

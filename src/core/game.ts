@@ -20,8 +20,6 @@ export interface GameMeta {
   pausable?: boolean;
   /** 顶栏右侧的额外按钮，排在 SND 之前 */
   tools?: { id: string; label: string; aria: string }[];
-  /** 游戏名右侧的药丸文案（如数独难度）；运行时可用 ctx.setPill 改 */
-  pill?: string;
 }
 
 export interface OverlayAction {
@@ -41,7 +39,8 @@ export interface OverlayView {
   /** 一到多个操作按钮，按顺序纵向排列 */
   actions: OverlayAction[];
   /**
-   * 浮层期间的底部按键提示，覆盖 meta.hints。不给则沿用 meta.hints。
+   * 浮层期间的底部按键提示，覆盖游戏当前设置的提示（`meta.hints` 或最近一次
+   * `ctx.setHints`）。不给则沿用之。
    */
   hints?: string[];
   /** 是否显示 QUIT TO HUB，缺省 true */
@@ -66,6 +65,11 @@ export interface GameContext {
   onTool(id: string, handler: () => void): void;
   /** 改写游戏名右侧的药丸；传 null 隐藏 */
   setPill(text: string | null): void;
+  /**
+   * 浮层是否正开着。frame 是唯一知道这件事的一方，游戏据此决定要不要吃掉输入——
+   * 有的游戏希望浮层期间 Space 仍能重开（结算态），有的希望完全冻结（开始菜单）。
+   */
+  overlayOpen(): boolean;
 }
 
 export interface Game {

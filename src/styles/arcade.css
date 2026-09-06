@@ -305,6 +305,8 @@ button { font-family: inherit; cursor: pointer; }
 }
 .settle-action-secondary:hover { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
 .settle-action-secondary:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
+/* 必须显式写：.settle-action:focus-visible 特异度更高，否则次按钮聚焦时会跳成主按钮外观 */
+.settle-action-secondary:focus-visible { outline: none; box-shadow: 3px 3px 0 var(--ink), var(--focus-ring); }
 .settle-quit {
   font-size: 12px; font-weight: 700; letter-spacing: 2px;
   background: none; border: none; color: var(--dim); text-decoration: underline;

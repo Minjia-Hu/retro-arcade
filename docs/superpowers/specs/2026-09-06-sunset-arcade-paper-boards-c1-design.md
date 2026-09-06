@@ -116,7 +116,11 @@ SUDOKU 声明 `tools: [{ id: 'menu', label: '☰', aria: '难度菜单' }]`，�
 export interface OverlayAction {
   label: string;
   onPress: () => void;
-  /** 主按钮（accent 底色）还是次按钮（描边）。缺省首个为 primary，其余 secondary */
+  /**
+   * 主按钮（accent 底色）还是次按钮（描边）。**缺省 primary**。
+   * 本节初稿写的是「缺省首个为 primary，其余 secondary」，实现时改掉了：
+   * 按位置定主次在 diff 里读不出来，显式标 kind 更清楚。C2 的菜单照这条做。
+   */
   kind?: 'primary' | 'secondary';
 }
 

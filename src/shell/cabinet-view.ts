@@ -31,8 +31,8 @@ export function cabinetHtml(meta: GameMeta, muted: boolean): string {
   const toolsHtml = (meta.tools ?? [])
     .map((t) => `<button class="cab-btn" data-act="tool:${esc(t.id)}" aria-label="${esc(t.aria)}">${esc(t.label)}</button>`)
     .join('');
-  // 药丸始终渲染，靠 hidden 控制显隐，这样 setPill 不必凭空插入节点
-  const pillHtml = `<span class="cab-pill"${meta.pill ? '' : ' hidden'}>${esc(meta.pill ?? '')}</span>`;
+  // 药丸始终渲染、起手隐藏，靠 ctx.setPill 填内容——这样它不必凭空插入节点
+  const pillHtml = '<span class="cab-pill" aria-label="当前难度" hidden></span>';
 
   return `
     <div class="cabinet accent-${accentOf(meta.id)}">

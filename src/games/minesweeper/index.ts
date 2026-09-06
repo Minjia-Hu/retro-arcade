@@ -234,7 +234,9 @@ export function createMinesweeper(): Game {
       ctx = context;
       ({ canvas, g } = createScreenCanvas(container, MENU_W, MENU_H));
       canvas.style.setProperty('-webkit-touch-callout', 'none'); // iOS 长按放大镜/呼出菜单兜底
-      setCanvasSize(MENU_W, MENU_H);
+      // createScreenCanvas 已按这个尺寸设过一次，这里只补记视图尺寸，不再重设 backing store
+      viewW = MENU_W;
+      viewH = MENU_H;
 
       ctx.input.onPress(canvas, {
         tap: onTapGesture,

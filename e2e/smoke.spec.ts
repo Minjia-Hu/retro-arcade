@@ -189,3 +189,34 @@ test('SUDOKU 的笔记开关键盘与按钮共用同一状态', async ({ page })
   await page.keyboard.press('KeyN');
   await expect(notes).not.toHaveClass(/is-on/);
 });
+
+test('SUDOKU 菜单开着时冻结盘面，RESUME 能回到当前局', async ({ page }) => {
+  await page.goto('/#/sudoku');
+  await page.click('[data-act="overlay:0"]');           // 选 EASY 开局
+  await expect(page.locator('.settle-card')).toBeHidden();
+
+  // 选一格填个数，作为"盘面有没有被改"的参照
+  const box = (await page.locator('canvas').boundingBox())!;
+  await page.mouse.click(box.x + 16, box.y + 16);       // 第 0 格
+
+  // 中途误触 ☰：进行中的局要有回去的出口，而不是只能弃局
+  await page.click('[data-act="tool:menu"]');
+  await expect(page.locator('.settle-title')).toHaveText('DIFFICULTY');
+  await expect(page.locator('.settle-actions .settle-action').first()).toHaveText('✕ RESUME');
+  await expect(page.locator('.cab-hints')).toHaveText('RESUME OR PICK A DIFFICULTY');
+
+  // 浮层只覆盖 .screen，控制垫在它外面——按钮点得到，但不该改到被盖住的盘面
+  await page.click('[data-fn="notes"]');
+  await expect(page.locator('[data-fn="notes"]')).not.toHaveClass(/is-on/);
+
+  await page.click('[data-act="overlay:0"]');           // ✕ RESUME
+  await expect(page.locator('.settle-card')).toBeHidden();
+  await expect(page.locator('.cab-pill')).toHaveText('EASY'); // 仍是原来那局
+});
+
+test('SUDOKU 尚未开局时菜单没有 RESUME', async ({ page }) => {
+  await page.goto('/#/sudoku');
+  await expect(page.locator('.settle-title')).toHaveText('DIFFICULTY');
+  await expect(page.locator('.settle-actions .settle-action')).toHaveCount(3);
+  await expect(page.locator('.cab-hints')).toHaveText('PICK A DIFFICULTY TO BEGIN');
+});
