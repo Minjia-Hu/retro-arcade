@@ -12,7 +12,8 @@ export class GameFrame {
   private screenEl: HTMLElement | null = null;
   private settleEl: HTMLElement | null = null;
   private cabinetEl: HTMLElement | null = null;
-  private baseHints: string[] = []; // 游戏态的按键提示，结算浮层收起时还原
+  private baseHints: string[] = [];              // 游戏态的按键提示
+  private settleHints: string[] | null = null;   // 结算态的提示；null 表示不在结算态
 
   constructor(private audio: AudioFx, private storage: ArcadeStorage) {}
 
@@ -77,10 +78,10 @@ export class GameFrame {
       settle: (view) => this.showSettle(view),
       side: root.querySelector<HTMLElement>('.cab-side'),
       pad: root.querySelector<HTMLElement>('.cab-pad'),
-      // 公开版本必须同时更新 baseHints，否则结算浮层收起时会把游戏设的文案冲掉
+      // 只更新游戏态那一路；结算态在时由 applyHints 保证浮层提示不被冲掉
       setHints: (hints) => {
         this.baseHints = hints;
-        this.renderHints(hints);
+        this.applyHints();
       },
     };
 
@@ -116,6 +117,7 @@ export class GameFrame {
     this.screenEl = null;
     this.settleEl = null;
     this.baseHints = [];
+    this.settleHints = null;
   }
 
   private clearSettle(): void {
@@ -124,6 +126,14 @@ export class GameFrame {
       this.settleEl.innerHTML = '';
     }
     this.screenEl?.classList.remove('is-settled');
+  }
+
+  /**
+   * 结算态优先。把「当前该显示哪条提示」写成显式规则，而不是靠调用顺序——
+   * 否则浮层展示期间游戏若调 setHints，会把 SPACE / TAP TO RETRY 冲掉而浮层还开着。
+   */
+  private applyHints(): void {
+    this.renderHints(this.settleHints ?? this.baseHints);
   }
 
   /** 替换底部按键提示条；结算态与游戏态的文案不同（设计稿 artboard 1a vs 1b） */
@@ -143,13 +153,15 @@ export class GameFrame {
     if (!el) return;
     if (!view) {
       this.clearSettle();
-      this.renderHints(this.baseHints);
+      this.settleHints = null;
+      this.applyHints();
       return;
     }
     el.innerHTML = settleHtml(view);
     el.hidden = false;
     this.screenEl?.classList.add('is-settled');
-    this.renderHints(view.hints ?? this.baseHints);
+    this.settleHints = view.hints ?? null;
+    this.applyHints();
 
     // 点完就 blur：与顶栏 wire() 同一约定，避免残留焦点让空格键既触发按钮又触发游戏逻辑
     const onClick = (act: string, fn: () => void) => {

@@ -2,10 +2,11 @@ import type { Game, GameContext } from '../../core/game';
 import { GameLoop } from '../../core/loop';
 import { SCREEN } from '../../core/theme';
 import * as L from './logic';
+import { padScore } from '../../core/format';
 
-function pad(n: number, width: number): string {
-  return String(Math.max(0, Math.floor(n))).padStart(width, '0');
-}
+/** 与 arcade.css 的 --ink 对应，改一处要同步另一处（canvas 读不到 CSS 变量） */
+const INK = '#2b2118';
+
 
 export function createFlappy(): Game {
   let state = L.createState();
@@ -24,6 +25,7 @@ export function createFlappy(): Game {
     if (state.status === 'dead') {
       if (performance.now() - diedAt < 400) return; // 死亡瞬间常有连点，给结算浮层一点展示时间
       restart();
+      ctx?.audio.play('click');
       return;
     }
     L.flap(state);
@@ -50,7 +52,7 @@ export function createFlappy(): Game {
       if (state.score > best) {
         best = state.score;
         ctx?.storage.set('best.flappy', best);
-        ctx?.setHints([`BEST ${pad(best, 6)}`]); // 设计稿 2c 的提示条显示实时最高分
+        ctx?.setHints([`BEST ${padScore(best, 6)}`]); // 设计稿 2c 的提示条显示实时最高分
       }
     }
     if (state.status === 'dead' && !deadHandled) {
@@ -61,7 +63,7 @@ export function createFlappy(): Game {
       ctx?.settle({
         title: record ? 'NEW HIGH SCORE' : 'GAME OVER',
         tone: record ? 'record' : 'lose',
-        lines: [`SCORE ${pad(state.score, 4)}`, `BEST ${pad(best, 6)}`],
+        lines: [`SCORE ${padScore(state.score, 4)}`, `BEST ${padScore(best, 6)}`],
         action: { label: '▶ RETRY', onPress: retry },
         hints: ['SPACE / TAP TO RETRY'],
       });
@@ -103,7 +105,7 @@ export function createFlappy(): Game {
       g.fillStyle = '#2e2316';
       g.fillRect(x + 18, gy, 18, groundH);
     }
-    g.fillStyle = '#2b2118';
+    g.fillStyle = INK;
     g.fillRect(0, gy, L.W, 3);
 
     // 小鸟：gold 身 + orange 喙 + 深色眼
@@ -125,11 +127,11 @@ export function createFlappy(): Game {
 
     // 分数：Bungee 大字 + 墨色投影
     g.textAlign = 'center';
-    g.fillStyle = '#2b2118';
+    g.fillStyle = INK;
     g.font = `34px 'Bungee', ${SCREEN.mono}`;
-    g.fillText(pad(state.score, 2), L.W / 2 + 3, 55 + 3);
+    g.fillText(padScore(state.score, 2), L.W / 2 + 3, 55 + 3);
     g.fillStyle = SCREEN.white;
-    g.fillText(pad(state.score, 2), L.W / 2, 55);
+    g.fillText(padScore(state.score, 2), L.W / 2, 55);
 
     // 开局提示留在画布内；GAME OVER 走 ctx.settle 的 DOM 浮层
     if (state.status === 'ready') {
@@ -155,7 +157,7 @@ export function createFlappy(): Game {
       ctx = context;
       best = ctx.storage.get('best.flappy', 0);
       bestAtStart = best;
-      ctx.setHints([`BEST ${pad(best, 6)}`]);
+      ctx.setHints([`BEST ${padScore(best, 6)}`]);
       canvas = document.createElement('canvas');
       const dpr = Math.min(window.devicePixelRatio || 1, 3);
       canvas.width = L.W * dpr;

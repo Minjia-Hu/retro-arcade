@@ -2,6 +2,7 @@ import type { Game, GameContext } from '../../core/game';
 import { GameLoop } from '../../core/loop';
 import { SCREEN } from '../../core/theme';
 import * as L from './logic';
+import { padScore } from '../../core/format';
 
 const CELL = 22;
 const W = L.COLS * CELL; // 220：画布只剩棋盘，边框圆角由 .screen 提供
@@ -24,9 +25,6 @@ const PAD: { id: PadId; label: string; aria: string }[] = [
   { id: 'hold', label: '⇄', aria: '暂存' },
 ];
 
-function pad(n: number, width: number): string {
-  return String(Math.max(0, Math.floor(n))).padStart(width, '0');
-}
 
 export function createTetris(): Game {
   let state = L.createState();
@@ -64,7 +62,7 @@ export function createTetris(): Game {
     ctx?.settle({
       title: record ? 'NEW HIGH SCORE' : 'GAME OVER',
       tone: record ? 'record' : 'lose',
-      lines: [`SCORE ${pad(state.score, 6)}`, `LINES ${pad(state.lines, 3)}`, `BEST ${pad(best, 6)}`],
+      lines: [`SCORE ${padScore(state.score, 6)}`, `LINES ${padScore(state.lines, 3)}`, `BEST ${padScore(best, 6)}`],
       action: { label: '▶ RETRY', onPress: retry },
       hints: ['SPACE / TAP TO RETRY'],
     });
@@ -92,6 +90,7 @@ export function createTetris(): Game {
     } else if (state.status === 'over') {
       if (performance.now() - endedAt < 400) return;
       restart();
+      ctx?.audio.play('click');
     }
   }
 
@@ -105,7 +104,7 @@ export function createTetris(): Game {
     state = L.createState();
     bestAtStart = best;
     ctx?.settle(null);
-    ctx?.audio.play('click');
+    // 不在这里发声：浮层 RETRY 的 click 由 frame 统一负责，重复发声会响两下
   }
 
   function act(id: PadId): void {
@@ -172,16 +171,27 @@ export function createTetris(): Game {
     g.fillRect(px, py, b, size);
   }
 
-  /** 迷你块用 DOM 小方块拼；格子尺寸按块宽自适应，I 型（4 格宽）也不会溢出 44px */
+  /**
+   * 迷你块用 DOM 小方块拼，按**实际包围盒**居中于 44×30。
+   * 不能拿 def.size 当高度：rotation 0 下没有方块真占满 def.size 行
+   * （I 只有 1 行、其余 2 行），照 def.size 算出的 oy 会是负数，
+   * T/S/Z/J/L 会越出卡片上沿顶到 NEXT 标签底下。宽高都参与 size 约束。
+   */
   function miniHtml(type: number | null): string {
     if (type === null) return '';
-    const def = L.PIECE_DEFS[type];
-    const size = Math.min(13, Math.floor(44 / def.size));
-    const ox = (44 - def.size * size) / 2;
-    const oy = (30 - def.size * size) / 2;
-    return L.rotatedCells(type, 0)
+    const cells = L.rotatedCells(type, 0);
+    const xs = cells.map(([cx]) => cx);
+    const ys = cells.map(([, cy]) => cy);
+    const minX = Math.min(...xs);
+    const minY = Math.min(...ys);
+    const cw = Math.max(...xs) - minX + 1;
+    const ch = Math.max(...ys) - minY + 1;
+    const size = Math.min(13, Math.floor(44 / cw), Math.floor(30 / ch));
+    const ox = (44 - cw * size) / 2;
+    const oy = (30 - ch * size) / 2;
+    return cells
       .map(([cx, cy]) =>
-        `<i style="left:${ox + cx * size}px;top:${oy + cy * size}px;` +
+        `<i style="left:${ox + (cx - minX) * size}px;top:${oy + (cy - minY) * size}px;` +
         `width:${size}px;height:${size}px;background:${pieceFill(type)}"></i>`)
       .join('');
   }
@@ -222,9 +232,9 @@ export function createTetris(): Game {
       shownHold = state.hold;
       side.hold.innerHTML = miniHtml(state.hold);
     }
-    side.score.textContent = pad(state.score, 6);
-    side.level.textContent = pad(L.levelOf(state.lines), 2);
-    side.best.textContent = pad(best, 6);
+    side.score.textContent = padScore(state.score, 6);
+    side.level.textContent = padScore(L.levelOf(state.lines), 2);
+    side.best.textContent = padScore(best, 6);
   }
 
   function render(): void {
@@ -293,7 +303,7 @@ export function createTetris(): Game {
       if (ctx.side) buildSide(ctx.side);
       if (ctx.pad) buildPad(ctx.pad);
 
-      ctx.input.onTapAt(canvas, tapBoard);
+      ctx.input.onTap(canvas, tapBoard);
       ctx.input.onKey((code) => {
         if (paused) return;
         if (state.status !== 'playing') {
@@ -372,6 +382,9 @@ export function createTetris(): Game {
       canvas?.remove();
       canvas = null;
       g = null;
+      // 与 frame.close() 的 clearSettle() 同构：路由切换到下次 open 之间隔着
+      // await entry.load()，不清会在这个窗口里留下一排可点的死按钮
+      if (ctx?.pad) ctx.pad.innerHTML = '';
       side = null;
       ctx = null; // 事件监听由 frame 的 InputService.dispose() 统一清理
     },

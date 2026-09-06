@@ -2,14 +2,12 @@ import type { Game, GameContext } from '../../core/game';
 import { GameLoop } from '../../core/loop';
 import { SCREEN } from '../../core/theme';
 import * as L from './logic';
+import { padScore } from '../../core/format';
 
 const KEY_PADDLE_SPEED = 300; // 键盘按住移动速度 px/s
 /** 砖块四行由上至下：pink / orange / gold / teal（设计稿 2b） */
 const ROW_TONES = ['pink', 'orange', 'gold', 'teal'] as const;
 
-function pad(n: number, width: number): string {
-  return String(Math.max(0, Math.floor(n))).padStart(width, '0');
-}
 
 export function createBreakout(): Game {
   let state = L.createState();
@@ -85,7 +83,7 @@ export function createBreakout(): Game {
       ctx?.settle({
         title: record ? 'NEW HIGH SCORE' : 'GAME OVER',
         tone: record ? 'record' : 'lose',
-        lines: [`SCORE ${pad(state.score, 6)}`, `LEVEL ${pad(state.level, 2)}`, `BEST ${pad(best, 6)}`],
+        lines: [`SCORE ${padScore(state.score, 6)}`, `LEVEL ${padScore(state.level, 2)}`, `BEST ${padScore(best, 6)}`],
         action: { label: '▶ RETRY', onPress: retry },
         hints: ['SPACE / TAP TO RETRY'],
       });
@@ -100,11 +98,12 @@ export function createBreakout(): Game {
     g.fillRect(0, 0, L.W, L.H);
     g.textBaseline = 'alphabetic';
 
-    // HUD：分数金色左上、生命粉色右上（设计稿 2b）
+    // HUD：分数金色左上、生命粉色右上（设计稿 2b）。
+    // spec 写的 (12,16) 是设计稿的盒坐标；canvas 用 alphabetic 基线，y=16 会顶到上沿，故取 (16,30)
     g.font = `700 15px ${SCREEN.mono}`;
     g.textAlign = 'left';
     g.fillStyle = SCREEN.gold;
-    g.fillText(`SCORE ${pad(state.score, 4)}`, 16, 30);
+    g.fillText(`SCORE ${padScore(state.score, 4)}`, 16, 30);
     g.textAlign = 'right';
     g.fillStyle = SCREEN.pink;
     const lives = Math.max(0, Math.min(3, state.lives));
@@ -118,6 +117,8 @@ export function createBreakout(): Game {
     // 砖块：按行取色，斜面 + 同色辉光
     for (const b of state.bricks) {
       if (!b.alive) continue;
+      // 60 与 18 来自 logic.ts makeBricks 的 y0 与 bh+gap，两者都没导出；
+      // 改那里必须同步这里，否则配色会静默错位且没有测试会发现
       const row = Math.floor((b.y - 60) / 18);
       const tone = ROW_TONES[((row % ROW_TONES.length) + ROW_TONES.length) % ROW_TONES.length];
       g.fillStyle = SCREEN[tone];
@@ -189,7 +190,7 @@ export function createBreakout(): Game {
       g.scale(dpr, dpr);
 
       ctx.input.onDrag(canvas, dragBy);
-      ctx.input.onTapAt(canvas, () => primary());
+      ctx.input.onTap(canvas, primary);
       ctx.input.onKey((code) => {
         if (code === 'ArrowLeft' || code === 'KeyA') heldLeft = true;
         else if (code === 'ArrowRight' || code === 'KeyD') heldRight = true;

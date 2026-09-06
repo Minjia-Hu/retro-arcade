@@ -236,7 +236,7 @@ button { font-family: inherit; cursor: pointer; }
 .side-value { font-family: var(--mono); font-weight: 700; font-size: 16px; color: var(--ink); }
 .side-value-accent { color: var(--orange); }
 .side-value-dim { font-size: 14px; color: var(--dim); }
-.side-piece { position: relative; display: block; width: 44px; height: 30px; }
+.side-piece { position: relative; display: block; width: 44px; height: 30px; overflow: hidden; }
 .side-piece i { position: absolute; box-shadow: inset -2px -2px 0 rgba(0, 0, 0, .25); }
 
 /* ---- 触屏控制垫（当前只有 TETRIS 用）---- */

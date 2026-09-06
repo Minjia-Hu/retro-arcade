@@ -119,10 +119,11 @@ test('TETRIS 的侧栏与触屏控制垫是 DOM 且可用', async ({ page }) => 
   await expect(page.locator('.cab-side .side-card')).toHaveCount(5);
   await expect(page.locator('.cab-pad .pad-btn')).toHaveCount(6);
 
-  // 点开始，再点旋转键——不抛错即说明按钮确实接到了游戏
+  // 断言真实行为而非「没抛错」：hardDrop 必然加分，分数变了才证明按钮接到了游戏
   await page.locator('canvas').click();
-  await page.locator('[data-pad="rotate"]').click();
-  await expect(page.locator('canvas')).toBeVisible();
+  await expect(page.locator('[data-ref="score"]')).toHaveText('000000');
+  await page.locator('[data-pad="hard"]').click();
+  await expect(page.locator('[data-ref="score"]')).not.toHaveText('000000');
 });
 
 test('FLAPPY 没有暂停按钮，提示条显示实时最高分', async ({ page }) => {
@@ -131,4 +132,26 @@ test('FLAPPY 没有暂停按钮，提示条显示实时最高分', async ({ page
   await expect(page.locator('[data-act="pause"]')).toHaveCount(0);
   await expect(page.locator('[data-act="mute"]')).toHaveCount(1);
   await expect(page.locator('.cab-hints')).toContainText('BEST');
+});
+
+test('提示条在 结算 → 收起 之后还原成游戏设的文案', async ({ page }) => {
+  // FLAPPY 是唯一走 ctx.setHints 的游戏。这条覆盖 setHints → settle → settle(null)
+  // 的完整还原链路：少了 frame 里的 baseHints 记账，收起后会退回 meta.hints 的占位。
+  //
+  // 必须种一个非零最高分：meta.hints 的占位恰好是 'BEST 000000'，而鸟撞地时
+  // 得分为 0、best 也是 0，不种的话「还原成实时值」与「退回占位」肉眼无法区分。
+  await page.goto('/');
+  await page.evaluate(() => localStorage.setItem('arcade.best.flappy', '42'));
+  await page.goto('/#/flappy');
+  await expect(page.locator('canvas')).toBeVisible();
+  await expect(page.locator('.cab-hints')).toHaveText('BEST 000042');
+
+  // FLAPPY 停在 ready 态不跑物理，先扇一下开局，之后不再操作，重力会把鸟送到地面
+  await page.keyboard.press('Space');
+  await expect(page.locator('.settle-card')).toBeVisible({ timeout: 20000 });
+  await expect(page.locator('.cab-hints')).toHaveText('SPACE / TAP TO RETRY');
+
+  await page.click('[data-act="settle-action"]');
+  await expect(page.locator('.settle-card')).toBeHidden();
+  await expect(page.locator('.cab-hints')).toHaveText('BEST 000042');
 });
