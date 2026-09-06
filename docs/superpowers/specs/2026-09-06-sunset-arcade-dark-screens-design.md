@@ -110,6 +110,13 @@ TETRIS 是三者中唯一有侧栏的，需要确认不超出机柜 464px 的内
 
 **不需要加宽变体**。A 的 spec 里留的那条「TETRIS 可能需要更宽的机柜」预警不成立，可以划掉。
 
+控制垫：`6 × 48 + 5 × 8 + 12 × 2 = 352 ≤ 458`（机柜内容区），不会换行。
+
+**窄屏为什么也不溢出**：上面两个算式只对着 464px 桌面上限算。手机 390px 下 396px 本应溢出，
+救回来的是 A 留下的 `.screen-body canvas { max-width: 100%; height: auto }`——canvas 作为
+替换元素按内在比例等比缩小，`.screen` 随之收缩。BREAKOUT 的拖动用 `rect.width` 归一化、
+TETRIS 已不再读点击坐标，都不受缩放影响。**动那条 CSS 会连带破坏窄屏布局。**
+
 ## TETRIS（artboard 2a）
 
 - **画布缩成纯棋盘** `220×440`（`COLS 10 × CELL 22`、`ROWS 20 × CELL 22`），
@@ -159,6 +166,10 @@ TETRIS 是三者中唯一有侧栏的，需要确认不超出机柜 464px 的内
 - **底部提示条显示实时 `BEST ??????`**，通过 `ctx.setHints()` 在挂载时与刷新纪录时更新。
 - 结算：`GAME OVER` / `NEW HIGH SCORE`，结算态 hints 为 `['SPACE / TAP TO RETRY']`。
 
+实现比本节写得更合理的两处（**以实现为准，勿"改回"**）：小鸟辉光复用 `SCREEN.glow.gold`（50%）
+而非本节写的 60% 字面量；idle 提示省掉了 `ls 2px`，因为 Canvas 2D 的 `letterSpacing`
+跨浏览器支持不齐。
+
 ## 会推翻的现有断言
 
 - 三个游戏拿到 `displayName`（`TETRIS` / `BREAKOUT` / `FLAPPY`），
@@ -188,7 +199,17 @@ TETRIS 是三者中唯一有侧栏的，需要确认不超出机柜 464px 的内
 ## 留给 C 的已知问题
 
 - `THEME` 在 B 之后只剩 SUDOKU / 2048 / MINES / GOMOKU 引用，C 迁完即可删除。
-- 侧栏与控制垫当前都无抽象，只有 TETRIS 使用。C 的 SUDOKU 数字键盘、MINES 的 HUD、GOMOKU 的回合筹
+- 侧栏与控制垫的**机制**不需要抽象（两个插槽的位置、布局、CSS 三重不共享）。真正可能重复的是
+  `.side-card` / `.side-label` / `.side-value` 这套**卡片标记**——它现在是 tetris 里手写的
+  HTML 字符串。C 的 MINES HUD 若形态相近，重复会落在那里。
+- **canvas 建立的样板在四个游戏里各有一份**（dpr 上限 3、只设 `style.width` 不设 height、
+  `touchAction`、`g.scale`）。里面藏着两个不显眼的约定，改一份就会不一致。C 会把这个数字推到 8，
+  届时提取 `createScreenCanvas()` 到 core。本次未做，因为它要动 SNAKE（属 A 的范围）。
+- **BREAKOUT 的砖块行号靠 `(b.y - 60) / 18` 反推 `logic.ts` 的私有布局常量**（`y0` 与 `bh+gap`，
+  两者都没导出）。改砖块布局会让配色静默错位且无测试报警。C 若有机会给 `Brick` 加 `row` 字段，
+  一并解决。代码里已加注释钉住出处。
+- `GameFrame` 至今没有单测（A 遗留）。B 往里塞了 `applyHints` 的结算态优先逻辑，目前只由一条
+  e2e 守着。C 的 SUDOKU 数字键盘、MINES 的 HUD、GOMOKU 的回合筹
   若形态相近，届时再考虑抽公共件。
 - `SCREEN.orange` / `white` 在 B 中首次被真正渲染（BREAKOUT 的砖块与球、FLAPPY 的喙），
   需要目视核对——A 里它们没有任何消费者。
