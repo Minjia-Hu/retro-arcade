@@ -23,6 +23,11 @@ export function hintsBarHtml(hints: string[]): string {
 export function cabinetHtml(meta: GameMeta, muted: boolean): string {
   const name = meta.displayName ?? meta.name;
   const hintsHtml = hintsBarHtml(meta.hints ?? []);
+  const pauseHtml = meta.pausable === false
+    ? ''
+    : '<button class="cab-btn" data-act="pause" aria-label="暂停">❚❚</button>';
+  const sideHtml = meta.side ? '<div class="cab-side"></div>' : '';
+  const padHtml = meta.pad ? '<div class="cab-pad"></div>' : '';
 
   return `
     <div class="cabinet accent-${accentOf(meta.id)}">
@@ -34,7 +39,7 @@ export function cabinetHtml(meta: GameMeta, muted: boolean): string {
           <span class="cab-name">${esc(name)}</span>
         </span>
         <span class="cab-tools">
-          <button class="cab-btn" data-act="pause" aria-label="暂停">❚❚</button>
+          ${pauseHtml}
           <button class="cab-btn${muted ? ' is-off' : ''}" data-act="mute" aria-pressed="${muted}" aria-label="音效">SND</button>
         </span>
       </div>
@@ -44,7 +49,9 @@ export function cabinetHtml(meta: GameMeta, muted: boolean): string {
           <div class="screen-glass"></div>
           <div class="settle" role="status" aria-live="polite" hidden></div>
         </div>
+        ${sideHtml}
       </div>
+      ${padHtml}
       ${hintsHtml}
     </div>`;
 }

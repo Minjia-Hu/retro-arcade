@@ -37,7 +37,7 @@ test('进入打砖块有画布渲染，返回首页正常', async ({ page }) => 
   await page.goto('/');
   await page.click('[data-id="breakout"]');
   await expect(page.locator('canvas')).toBeVisible();
-  await expect(page.locator('.cab-name')).toContainText('打砖块');
+  await expect(page.locator('.cab-name')).toContainText('BREAKOUT');
   await page.click('[data-act="back"]');
   await expect(page.locator('.hub-title')).toBeVisible();
 });
@@ -55,7 +55,7 @@ test('进入俄罗斯方块有画布渲染，返回首页正常', async ({ page 
   await page.goto('/');
   await page.click('[data-id="tetris"]');
   await expect(page.locator('canvas')).toBeVisible();
-  await expect(page.locator('.cab-name')).toContainText('俄罗斯方块');
+  await expect(page.locator('.cab-name')).toContainText('TETRIS');
   await page.click('[data-act="back"]');
   await expect(page.locator('.hub-title')).toBeVisible();
 });
@@ -91,7 +91,9 @@ test('SNAKE 死亡后弹出结算浮层，RETRY 收起并重开', async ({ page 
   await page.keyboard.press('ArrowUp');
   await expect(page.locator('.settle-card')).toBeVisible({ timeout: 20000 });
 
-  await expect(page.locator('.settle-title')).toHaveText('GAME OVER');
+  // 食物位置是随机的：蛇撞墙前若恰好吃到，就会刷新纪录、标题变成 NEW HIGH SCORE。
+  // 断言两种结算标题都接受，别把随机的游戏内容写死进测试。
+  await expect(page.locator('.settle-title')).toHaveText(/GAME OVER|NEW HIGH SCORE/);
   await expect(page.locator('.screen')).toHaveClass(/is-settled/);
   // 结算态的提示条与游戏态不同（设计稿 artboard 1a vs 1b）
   await expect(page.locator('.cab-hints')).toHaveText('SPACE / TAP TO RETRY');
@@ -109,4 +111,47 @@ test('结算浮层的 QUIT TO HUB 回首页', async ({ page }) => {
   await expect(page.locator('.settle-card')).toBeVisible({ timeout: 20000 });
   await page.click('[data-act="settle-quit"]');
   await expect(page.locator('.hub-title')).toBeVisible();
+});
+
+test('TETRIS 的侧栏与触屏控制垫是 DOM 且可用', async ({ page }) => {
+  await page.goto('/#/tetris');
+  await expect(page.locator('canvas')).toBeVisible();
+  await expect(page.locator('.cab-side .side-card')).toHaveCount(5);
+  await expect(page.locator('.cab-pad .pad-btn')).toHaveCount(6);
+
+  // 断言真实行为而非「没抛错」：hardDrop 必然加分，分数变了才证明按钮接到了游戏
+  await page.locator('canvas').click();
+  await expect(page.locator('[data-ref="score"]')).toHaveText('000000');
+  await page.locator('[data-pad="hard"]').click();
+  await expect(page.locator('[data-ref="score"]')).not.toHaveText('000000');
+});
+
+test('FLAPPY 没有暂停按钮，提示条显示实时最高分', async ({ page }) => {
+  await page.goto('/#/flappy');
+  await expect(page.locator('canvas')).toBeVisible();
+  await expect(page.locator('[data-act="pause"]')).toHaveCount(0);
+  await expect(page.locator('[data-act="mute"]')).toHaveCount(1);
+  await expect(page.locator('.cab-hints')).toContainText('BEST');
+});
+
+test('提示条在 结算 → 收起 之后还原成游戏设的文案', async ({ page }) => {
+  // FLAPPY 是唯一走 ctx.setHints 的游戏。这条覆盖 setHints → settle → settle(null)
+  // 的完整还原链路：少了 frame 里的 baseHints 记账，收起后会退回 meta.hints 的占位。
+  //
+  // 必须种一个非零最高分：meta.hints 的占位恰好是 'BEST 000000'，而鸟撞地时
+  // 得分为 0、best 也是 0，不种的话「还原成实时值」与「退回占位」肉眼无法区分。
+  await page.goto('/');
+  await page.evaluate(() => localStorage.setItem('arcade.best.flappy', '42'));
+  await page.goto('/#/flappy');
+  await expect(page.locator('canvas')).toBeVisible();
+  await expect(page.locator('.cab-hints')).toHaveText('BEST 000042');
+
+  // FLAPPY 停在 ready 态不跑物理，先扇一下开局，之后不再操作，重力会把鸟送到地面
+  await page.keyboard.press('Space');
+  await expect(page.locator('.settle-card')).toBeVisible({ timeout: 20000 });
+  await expect(page.locator('.cab-hints')).toHaveText('SPACE / TAP TO RETRY');
+
+  await page.click('[data-act="settle-action"]');
+  await expect(page.locator('.settle-card')).toBeHidden();
+  await expect(page.locator('.cab-hints')).toHaveText('BEST 000042');
 });

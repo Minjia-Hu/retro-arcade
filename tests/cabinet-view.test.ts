@@ -128,3 +128,51 @@ describe('转义', () => {
     expect(html).toContain('A &amp; B');
   });
 });
+
+describe('cabinetHtml 可选暂停', () => {
+  it('缺省渲染暂停按钮', () => {
+    expect(cabinetHtml(snake, false)).toContain('data-act="pause"');
+  });
+
+  it('pausable 为 false 时不渲染暂停按钮', () => {
+    const html = cabinetHtml({ ...snake, pausable: false }, false);
+    expect(html).not.toContain('data-act="pause"');
+    expect(html).toContain('data-act="mute"'); // 静音按钮仍在
+  });
+});
+
+describe('cabinetHtml 插槽', () => {
+  it('缺省不渲染侧栏与控制垫', () => {
+    const html = cabinetHtml(snake, false);
+    expect(html).not.toContain('cab-side');
+    expect(html).not.toContain('cab-pad');
+  });
+
+  it('side 为 true 时在屏幕井里渲染空侧栏', () => {
+    expect(cabinetHtml({ ...snake, side: true }, false)).toContain('<div class="cab-side"></div>');
+  });
+
+  it('pad 为 true 时在屏幕井之后渲染空控制垫', () => {
+    expect(cabinetHtml({ ...snake, pad: true }, false)).toContain('<div class="cab-pad"></div>');
+  });
+
+  it('控制垫排在提示条之前', () => {
+    const html = cabinetHtml({ ...snake, pad: true }, false);
+    // 先确认两者都真的在，否则缺席时 indexOf 返回 -1，这条断言会形同虚设
+    const pad = html.indexOf('cab-pad');
+    const hints = html.indexOf('cab-hints');
+    expect(pad).toBeGreaterThan(-1);
+    expect(hints).toBeGreaterThan(-1);
+    expect(pad).toBeLessThan(hints);
+  });
+
+  it('侧栏排在屏幕井之内、控制垫之前', () => {
+    const html = cabinetHtml({ ...snake, side: true, pad: true }, false);
+    const screen = html.indexOf('class="screen ');
+    const side = html.indexOf('cab-side');
+    const pad = html.indexOf('cab-pad');
+    expect(screen).toBeGreaterThan(-1);
+    expect(side).toBeGreaterThan(screen);
+    expect(pad).toBeGreaterThan(side);
+  });
+});

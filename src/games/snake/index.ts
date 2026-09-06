@@ -2,6 +2,7 @@ import type { Game, GameContext } from '../../core/game';
 import { GameLoop } from '../../core/loop';
 import { SCREEN } from '../../core/theme';
 import * as L from './logic';
+import { padScore } from '../../core/format';
 
 const CELL = 16; // COLS×16 = 320，ROWS×16 = 480，与逻辑网格一一对应
 const W = L.COLS * CELL;
@@ -31,9 +32,6 @@ export function createSnake(): Game {
     L.setDirection(state, dir);
   }
 
-  function pad(n: number, width: number): string {
-    return String(Math.max(0, Math.floor(n))).padStart(width, '0');
-  }
 
   /**
    * 浮层 RETRY 按钮的入口。与键盘/点按路径共用 paused 卫语句，但**不**走 tapAction
@@ -80,7 +78,7 @@ export function createSnake(): Game {
       ctx?.settle({
         title: record ? 'NEW HIGH SCORE' : 'GAME OVER',
         tone: record ? 'record' : 'lose',
-        lines: [`SCORE ${pad(state.score, 4)}`, `BEST ${pad(best, 6)}`],
+        lines: [`SCORE ${padScore(state.score, 4)}`, `BEST ${padScore(best, 6)}`],
         action: { label: '▶ RETRY', onPress: retry },
         hints: ['SPACE / TAP TO RETRY'],
       });
@@ -121,7 +119,7 @@ export function createSnake(): Game {
     g.shadowBlur = 10;
     g.font = `700 24px ${SCREEN.mono}`;
     g.textAlign = 'center';
-    g.fillText(pad(state.score, 4), W / 2, 40);
+    g.fillText(padScore(state.score, 4), W / 2, 40);
     g.shadowBlur = 0;
 
     // GAME OVER 与开局提示不再画在画布里：前者走 ctx.settle 的 DOM 浮层，
