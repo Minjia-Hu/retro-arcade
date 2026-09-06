@@ -20,21 +20,28 @@ export interface GameMeta {
   pausable?: boolean;
 }
 
-export interface SettleView {
-  /** 标题文案，如 GAME OVER / SOLVED! / NEW HIGH SCORE */
+export interface OverlayAction {
+  label: string;
+  onPress: () => void;
+  /** primary 为 accent 底色的主按钮，secondary 为描边按钮。缺省 primary */
+  kind?: 'primary' | 'secondary';
+}
+
+export interface OverlayView {
+  /** 标题文案，如 GAME OVER / SOLVED! / SELECT DIFFICULTY */
   title: string;
   /** 决定标题颜色：lose→magenta、win→teal、record→gold */
   tone: 'lose' | 'win' | 'record';
-  /** 分数行，等宽字体渲染 */
+  /** 说明行，等宽字体渲染 */
   lines: string[];
-  /** 主操作按钮 */
-  action: { label: string; onPress: () => void };
+  /** 一到多个操作按钮，按顺序纵向排列 */
+  actions: OverlayAction[];
   /**
-   * 结算态的底部按键提示，覆盖 meta.hints。设计稿 artboard 1b 的提示条与
-   * 游戏态（1a）不同：游戏中是 "SPACE START"，结算时是 "SPACE / TAP TO RETRY"。
-   * 不给则沿用 meta.hints。
+   * 浮层期间的底部按键提示，覆盖 meta.hints。不给则沿用 meta.hints。
    */
   hints?: string[];
+  /** 是否显示 QUIT TO HUB，缺省 true */
+  quit?: boolean;
 }
 
 export interface GameContext {
@@ -43,8 +50,8 @@ export interface GameContext {
   input: InputService;
   /** 注册容器尺寸变化回调，返回解除函数 */
   onResize(cb: () => void): () => void;
-  /** 上报结算状态；传 null 收起浮层 */
-  settle(view: SettleView | null): void;
+  /** 展示或收起浮层（开始菜单、结算卡片）；传 null 收起 */
+  overlay(view: OverlayView | null): void;
   /** 侧栏容器；meta.side 为 true 时可用，否则为 null */
   side: HTMLElement | null;
   /** 控制垫容器；meta.pad 为 true 时可用，否则为 null */

@@ -1,8 +1,8 @@
-import type { Game, GameContext, SettleView } from '../core/game';
+import type { Game, GameContext, OverlayView } from '../core/game';
 import type { AudioFx } from '../core/audio';
 import type { ArcadeStorage } from '../core/storage';
 import { InputService } from '../core/input';
-import { cabinetHtml, hintsBarHtml, settleHtml } from './cabinet-view';
+import { cabinetHtml, hintsBarHtml, overlayHtml } from './cabinet-view';
 
 export class GameFrame {
   private game: Game | null = null;
@@ -75,7 +75,7 @@ export class GameFrame {
         resizeCbs.add(cb);
         return () => resizeCbs.delete(cb);
       },
-      settle: (view) => this.showSettle(view),
+      overlay: (view) => this.showOverlay(view),
       side: root.querySelector<HTMLElement>('.cab-side'),
       pad: root.querySelector<HTMLElement>('.cab-pad'),
       // 只更新游戏态那一路；结算态在时由 applyHints 保证浮层提示不被冲掉
@@ -148,7 +148,7 @@ export class GameFrame {
    * 渲染或收起结算浮层。不自动聚焦主按钮——游戏的 Space 处理器仍在监听，
    * 自动聚焦会让一次 Space 同时触发按钮点击和游戏自身的重开逻辑。
    */
-  private showSettle(view: SettleView | null): void {
+  private showOverlay(view: OverlayView | null): void {
     const el = this.settleEl;
     if (!el) return;
     if (!view) {
@@ -157,25 +157,24 @@ export class GameFrame {
       this.applyHints();
       return;
     }
-    el.innerHTML = settleHtml(view);
+    el.innerHTML = overlayHtml(view);
     el.hidden = false;
     this.screenEl?.classList.add('is-settled');
     this.settleHints = view.hints ?? null;
     this.applyHints();
 
     // 点完就 blur：与顶栏 wire() 同一约定，避免残留焦点让空格键既触发按钮又触发游戏逻辑
-    const onClick = (act: string, fn: () => void) => {
-      const b = el.querySelector<HTMLButtonElement>(`[data-act="${act}"]`)!;
-      b.addEventListener('click', () => {
+    view.actions.forEach((a, i) => {
+      const b = el.querySelector<HTMLButtonElement>(`[data-act="overlay:${i}"]`);
+      b?.addEventListener('click', () => {
         b.blur();
-        fn();
+        this.audio.play('click');
+        a.onPress();
       });
-    };
-    onClick('settle-action', () => {
-      this.audio.play('click');
-      view.action.onPress();
     });
-    onClick('settle-quit', () => {
+    const quit = el.querySelector<HTMLButtonElement>('[data-act="overlay-quit"]');
+    quit?.addEventListener('click', () => {
+      quit.blur();
       location.hash = '#/';
     });
   }

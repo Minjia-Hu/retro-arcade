@@ -44,7 +44,7 @@ export function createBreakout(): Game {
   function restart(): void {
     state = L.createState();
     bestAtStart = best;
-    ctx?.settle(null);
+    ctx?.overlay(null);
   }
 
   function dragBy(cssDx: number): void {
@@ -81,11 +81,11 @@ export function createBreakout(): Game {
       endedAt = performance.now();
       ctx?.audio.play('over');
       const record = state.score > bestAtStart;
-      ctx?.settle({
+      ctx?.overlay({
         title: record ? 'NEW HIGH SCORE' : 'GAME OVER',
         tone: record ? 'record' : 'lose',
         lines: [`SCORE ${padScore(state.score, 6)}`, `LEVEL ${padScore(state.level, 2)}`, `BEST ${padScore(best, 6)}`],
-        action: { label: '▶ RETRY', onPress: retry },
+        actions: [{ label: '▶ RETRY', onPress: retry }],
         hints: ['SPACE / TAP TO RETRY'],
       });
     } else if (ev.lost) {

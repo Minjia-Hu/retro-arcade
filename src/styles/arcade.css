@@ -276,16 +276,23 @@ button { font-family: inherit; cursor: pointer; }
 .settle-title-record { color: var(--gold); }
 .settle-line { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--ink); }
 .settle-line ~ .settle-line { font-size: 12px; font-weight: 400; color: var(--dim); }
+.settle-actions { display: flex; flex-direction: column; gap: 10px; align-items: stretch; margin-top: 6px; }
 .settle-action {
   font-family: 'Bungee', 'Space Grotesk', sans-serif; font-size: 14px;
   background: var(--orange); color: var(--panel);
   border: 3px solid var(--ink); border-radius: 10px;
-  box-shadow: 4px 4px 0 var(--ink); padding: 12px 26px; margin-top: 6px;
+  box-shadow: 4px 4px 0 var(--ink); padding: 12px 26px;
   transition: transform .1s, box-shadow .1s;
 }
 .settle-action:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
 .settle-action:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--ink); }
 .settle-action:focus-visible { outline: none; box-shadow: 4px 4px 0 var(--ink), var(--focus-ring); }
+.settle-action-secondary {
+  background: var(--paper); color: var(--ink);
+  border-width: 2px; box-shadow: 3px 3px 0 var(--ink); padding: 10px 22px;
+}
+.settle-action-secondary:hover { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+.settle-action-secondary:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
 .settle-quit {
   font-size: 12px; font-weight: 700; letter-spacing: 2px;
   background: none; border: none; color: var(--dim); text-decoration: underline;

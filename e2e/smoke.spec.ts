@@ -98,7 +98,7 @@ test('SNAKE 死亡后弹出结算浮层，RETRY 收起并重开', async ({ page 
   // 结算态的提示条与游戏态不同（设计稿 artboard 1a vs 1b）
   await expect(page.locator('.cab-hints')).toHaveText('SPACE / TAP TO RETRY');
 
-  await page.click('[data-act="settle-action"]');
+  await page.click('[data-act="overlay:0"]');
   await expect(page.locator('.settle-card')).toBeHidden();
   await expect(page.locator('.screen')).not.toHaveClass(/is-settled/);
   await expect(page.locator('.cab-hints')).toContainText('SPACE START');
@@ -109,7 +109,7 @@ test('结算浮层的 QUIT TO HUB 回首页', async ({ page }) => {
   await expect(page.locator('canvas')).toBeVisible();
   await page.keyboard.press('ArrowUp');
   await expect(page.locator('.settle-card')).toBeVisible({ timeout: 20000 });
-  await page.click('[data-act="settle-quit"]');
+  await page.click('[data-act="overlay-quit"]');
   await expect(page.locator('.hub-title')).toBeVisible();
 });
 
@@ -151,7 +151,7 @@ test('提示条在 结算 → 收起 之后还原成游戏设的文案', async (
   await expect(page.locator('.settle-card')).toBeVisible({ timeout: 20000 });
   await expect(page.locator('.cab-hints')).toHaveText('SPACE / TAP TO RETRY');
 
-  await page.click('[data-act="settle-action"]');
+  await page.click('[data-act="overlay:0"]');
   await expect(page.locator('.settle-card')).toBeHidden();
   await expect(page.locator('.cab-hints')).toHaveText('BEST 000042');
 });

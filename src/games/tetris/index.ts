@@ -60,11 +60,11 @@ export function createTetris(): Game {
 
   function reportOver(): void {
     const record = state.score > bestAtStart;
-    ctx?.settle({
+    ctx?.overlay({
       title: record ? 'NEW HIGH SCORE' : 'GAME OVER',
       tone: record ? 'record' : 'lose',
       lines: [`SCORE ${padScore(state.score, 6)}`, `LINES ${padScore(state.lines, 3)}`, `BEST ${padScore(best, 6)}`],
-      action: { label: '▶ RETRY', onPress: retry },
+      actions: [{ label: '▶ RETRY', onPress: retry }],
       hints: ['SPACE / TAP TO RETRY'],
     });
   }
@@ -104,7 +104,7 @@ export function createTetris(): Game {
   function restart(): void {
     state = L.createState();
     bestAtStart = best;
-    ctx?.settle(null);
+    ctx?.overlay(null);
     // 不在这里发声：浮层 RETRY 的 click 由 frame 统一负责，重复发声会响两下
   }
 

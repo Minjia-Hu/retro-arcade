@@ -1,10 +1,10 @@
 import { pixelIconSvg } from './pixel-icons';
 import { accentOf } from './accent';
-import type { GameMeta, SettleView } from '../core/game';
+import type { GameMeta, OverlayView } from '../core/game';
 import { esc } from './escape';
 
 
-const TITLE_CLASS: Record<SettleView['tone'], string> = {
+const TITLE_CLASS: Record<OverlayView['tone'], string> = {
   lose: 'settle-title-lose',
   win: 'settle-title-win',
   record: 'settle-title-record',
@@ -19,7 +19,7 @@ export function hintsBarHtml(hints: string[]): string {
   return `<p class="cab-hints">${items}</p>`;
 }
 
-/** 机柜外壳。游戏挂载到 .screen-body，结算浮层由 settleHtml 填进 .settle */
+/** 机柜外壳。游戏挂载到 .screen-body，浮层由 overlayHtml 填进 .settle */
 export function cabinetHtml(meta: GameMeta, muted: boolean): string {
   const name = meta.displayName ?? meta.name;
   const hintsHtml = hintsBarHtml(meta.hints ?? []);
@@ -56,16 +56,25 @@ export function cabinetHtml(meta: GameMeta, muted: boolean): string {
     </div>`;
 }
 
-/** 结算浮层卡片。按钮的点击由 frame 绑定 */
-export function settleHtml(view: SettleView): string {
+/** 浮层卡片。按钮的点击由 frame 绑定，data-act 用下标寻址 */
+export function overlayHtml(view: OverlayView): string {
   const lines = view.lines
     .map((l) => `<span class="settle-line">${esc(l)}</span>`)
     .join('');
+  const actions = view.actions
+    .map((a, i) => {
+      const secondary = a.kind === 'secondary' ? ' settle-action-secondary' : '';
+      return `<button class="settle-action${secondary}" data-act="overlay:${i}">${esc(a.label)}</button>`;
+    })
+    .join('');
+  const quit = view.quit === false
+    ? ''
+    : '<button class="settle-quit" data-act="overlay-quit">QUIT TO HUB</button>';
   return `
     <div class="settle-card">
       <span class="settle-title ${TITLE_CLASS[view.tone]}">${esc(view.title)}</span>
       ${lines}
-      <button class="settle-action" data-act="settle-action">${esc(view.action.label)}</button>
-      <button class="settle-quit" data-act="settle-quit">QUIT TO HUB</button>
+      <div class="settle-actions">${actions}</div>
+      ${quit}
     </div>`;
 }

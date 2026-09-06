@@ -43,7 +43,7 @@ export function createFlappy(): Game {
     state = L.createState();
     deadHandled = false;
     bestAtStart = best;
-    ctx?.settle(null);
+    ctx?.overlay(null);
   }
 
   function update(dt: number): void {
@@ -61,11 +61,11 @@ export function createFlappy(): Game {
       diedAt = performance.now();
       ctx?.audio.play('hit');
       const record = state.score > bestAtStart;
-      ctx?.settle({
+      ctx?.overlay({
         title: record ? 'NEW HIGH SCORE' : 'GAME OVER',
         tone: record ? 'record' : 'lose',
         lines: [`SCORE ${padScore(state.score, 4)}`, `BEST ${padScore(best, 6)}`],
-        action: { label: '▶ RETRY', onPress: retry },
+        actions: [{ label: '▶ RETRY', onPress: retry }],
         hints: ['SPACE / TAP TO RETRY'],
       });
     }
