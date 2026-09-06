@@ -166,8 +166,18 @@ accent 底、2px ink 描边）——用机柜已有的 `.cab-pill`？**当前不
 `actions` 为三个难度，`quit: true`。
 
 **完成结算**（artboard 1d）：`title: 'SOLVED!'`、`tone: 'win'`、
-`lines` 为用时与难度，`actions: [{ label: '▶ NEW PUZZLE' }]`。
-——`tone: 'win'` 在 B 里用不到，SUDOKU 是第一个真正用到它的游戏。
+`actions: [{ label: '▶ NEW PUZZLE' }]`。
+——`tone: 'win'` 在 A/B 里始终没有消费者（BREAKOUT 清关是进下一关而非结束），
+SUDOKU 是第一个真正用到它的游戏，实现时要专门核对这条分支的观感。
+
+**artboard 1d 的两行文案有一行做不出来。** 稿子写 `MEDIUM · 12:34` 与
+`0 MISTAKES · PERSONAL BEST`，但 `SudokuState` 里既没有计时器也没有失误计数，
+更没有个人最佳记录。计时看似可以在 `index.ts` 里做，但数独支持存档恢复——
+从挂载开始计时会少算此前时长，等于在界面上撒谎。
+
+因此 C1 的 `lines` 只放难度一行（`MEDIUM`）。用时、失误数、个人最佳都需要
+`logic.ts` 与存储支持，属功能新增而非改版，与首页那轮的 `WINS 012`、`BEST 000099`
+同样按示意数据处理。
 
 ### hints
 
@@ -202,5 +212,7 @@ accent 底、2px ink 描边）——用机柜已有的 `.cab-pill`？**当前不
 
 - 2048 的撤销按钮、MINES 的 🙂 与「返回菜单」的语义区分，在 C2 落地。
 - GOMOKU 的 `WINS 012` 无数据源；若要显示需要新增胜场持久化，属功能新增而非改版。
+- SUDOKU 结算卡的用时、失误数、个人最佳同样无数据源。三者都需要动 `logic.ts` 与
+  `SudokuSave`（时长必须随存档持久化，否则恢复后的计时是错的）。
 - `.side-card` 那套卡片标记仍是 tetris 里手写的 HTML 字符串。若 MINES 的 HUD 形态相近，
   届时再考虑抽公共件。
