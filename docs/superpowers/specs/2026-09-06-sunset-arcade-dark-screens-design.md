@@ -19,7 +19,7 @@ B 完成后 `THEME` 只剩 4 款纸盘游戏在用，C 做完即可删除。
 3. **保持现有画布逻辑尺寸**，只换配色不动网格。设计稿的 BREAKOUT 360×480 与 FLAPPY 360×540
    是等比放大，改尺寸会动到碰撞与难度手感，风险不值得。这与 A 里 SNAKE 的处理一致。
 
-## 机柜的三处扩展
+## 机柜的四处扩展
 
 A 的外壳是按 SNAKE 那种「一块画布 + 静态提示」设计的，B 的三个游戏各撞破一条。
 
@@ -55,7 +55,36 @@ pausable?: boolean;
 `cabinetHtml` 据此决定是否渲染 `[data-act="pause"]`，`frame.ts` 的按钮绑定相应改为可缺省
 （现在 `btn(act)` 用的是非空断言，必须改）。
 
-### 3. 动态提示条
+### 3. 控制垫插槽
+
+**这条是写计划时才发现的，设计稿里看不出来。** TETRIS 的画布底部有一排 6 个触屏按钮
+（`◀ ▶ ⟳ ▼ ⤓ ⇄`，即 `BTNS` 常量），是它在手机上**唯一**的操作方式。artboard 2a 是桌面稿，
+底部提示条写的全是键盘按键，压根没画这排按钮。若照原计划把画布缩成纯棋盘，这排按钮会无处安放，
+等于删掉 TETRIS 的手机可玩性。
+
+因此把它们也搬到 DOM，渲染在屏幕井与提示条之间：
+
+`GameMeta` 增加：
+
+```ts
+/** 需要屏幕下方的触屏控制垫时置 true，内容由游戏自己填 */
+pad?: boolean;
+```
+
+`GameContext` 增加：
+
+```ts
+/** 控制垫容器；meta.pad 为 true 时可用，否则为 null */
+pad: HTMLElement | null;
+```
+
+这与已定的 C 方向（控件改 DOM）一致，而且比画在画布里更好：可 Tab、有焦点环、触屏命中率高。
+BREAKOUT 与 FLAPPY 不需要——它们用拖动和点按整块画布。
+
+`side` 与 `pad` 是两个独立的布尔与两个独立的插槽，位置不同（屏幕右侧 vs 屏幕下方），
+不合并成通用的「插槽列表」——那是为一个消费者造框架。
+
+### 4. 动态提示条
 
 `GameContext` 增加：
 
@@ -90,6 +119,8 @@ TETRIS 是三者中唯一有侧栏的，需要确认不超出机柜 464px 的内
 - 每格加设计稿的斜面与辉光：
   `inset -3px -3px rgba(0,0,0,.3)` + `inset 3px 3px rgba(255,255,255,.25)` + `0 0 8px <同色>`。
   canvas 没有 inset 阴影，用两条半透明矩形（右下暗、左上亮）模拟，辉光用 `shadowBlur`。
+- **触屏按钮排改 DOM**（`.cab-pad` 内 6 个 `.pad-btn`），沿用 `cab-btn` 的视觉语言。
+  画布点按只保留「开始 / 重开」（原 `tapAt` 里的按钮命中判定连同 `BTNS`/`Btn`/`BTN_Y` 一并删除）。
 - **侧栏五张 DOM 卡**，自上而下 NEXT / HOLD / SCORE / LEVEL / BEST。卡片样式：
   `#fffaf0` 底、2px ink 描边、radius 10、投影 `3px 3px 0`、padding 12、纵向居中。
   标签 Bungee 10px `--dim`；数值 JetBrains Mono 700 16px ink，LEVEL 用 `--orange`，
@@ -138,7 +169,8 @@ TETRIS 是三者中唯一有侧栏的，需要确认不超出机柜 464px 的内
 ## 测试
 
 - `tests/cabinet-view.test.ts` 补上述两条能力。
-- 新增 e2e：进入 TETRIS 断言 `.cab-side` 里有 5 张 `.side-card`；
+- 新增 e2e：进入 TETRIS 断言 `.cab-side` 里有 5 张 `.side-card`、`.cab-pad` 里有 6 个 `.pad-btn`
+  且点其中的旋转键能被游戏收到；
   进入 FLAPPY 断言顶栏没有 `[data-act="pause"]` 且 `.cab-hints` 含 `BEST`。
 - 三个游戏各自的既有逻辑单测（`tetris-logic` / `breakout-logic` / `flappy-logic`）
   **不应有任何改动**——本子项目只改渲染与外壳，不动玩法。这是判断有没有越界的判据。
@@ -147,16 +179,16 @@ TETRIS 是三者中唯一有侧栏的，需要确认不超出机柜 464px 的内
 
 修改：
 - `src/core/game.ts` — `GameMeta` 加 `side`/`pausable`；`GameContext` 加 `side`/`setHints`
-- `src/shell/cabinet-view.ts` — 可选 pause、侧栏容器
-- `src/shell/frame.ts` — 侧栏引用、pause 可缺省、开放 setHints
-- `src/styles/arcade.css` — `.cab-side` 与 `.side-card` 系列
+- `src/shell/cabinet-view.ts` — 可选 pause、侧栏容器、控制垫容器
+- `src/shell/frame.ts` — 侧栏与控制垫引用、pause 可缺省、开放 setHints
+- `src/styles/arcade.css` — `.cab-side` / `.side-card` / `.cab-pad` / `.pad-btn` 系列
 - `src/games/tetris/index.ts`、`src/games/breakout/index.ts`、`src/games/flappy/index.ts`
 - `e2e/smoke.spec.ts`、`tests/cabinet-view.test.ts`
 
 ## 留给 C 的已知问题
 
 - `THEME` 在 B 之后只剩 SUDOKU / 2048 / MINES / GOMOKU 引用，C 迁完即可删除。
-- 侧栏当前无抽象，只有 TETRIS 使用。C 的 SUDOKU 数字键盘、MINES 的 HUD、GOMOKU 的回合筹
+- 侧栏与控制垫当前都无抽象，只有 TETRIS 使用。C 的 SUDOKU 数字键盘、MINES 的 HUD、GOMOKU 的回合筹
   若形态相近，届时再考虑抽公共件。
 - `SCREEN.orange` / `white` 在 B 中首次被真正渲染（BREAKOUT 的砖块与球、FLAPPY 的喙），
   需要目视核对——A 里它们没有任何消费者。
