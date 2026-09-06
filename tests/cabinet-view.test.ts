@@ -158,6 +158,21 @@ describe('cabinetHtml 插槽', () => {
 
   it('控制垫排在提示条之前', () => {
     const html = cabinetHtml({ ...snake, pad: true }, false);
-    expect(html.indexOf('cab-pad')).toBeLessThan(html.indexOf('cab-hints'));
+    // 先确认两者都真的在，否则缺席时 indexOf 返回 -1，这条断言会形同虚设
+    const pad = html.indexOf('cab-pad');
+    const hints = html.indexOf('cab-hints');
+    expect(pad).toBeGreaterThan(-1);
+    expect(hints).toBeGreaterThan(-1);
+    expect(pad).toBeLessThan(hints);
+  });
+
+  it('侧栏排在屏幕井之内、控制垫之前', () => {
+    const html = cabinetHtml({ ...snake, side: true, pad: true }, false);
+    const screen = html.indexOf('class="screen ');
+    const side = html.indexOf('cab-side');
+    const pad = html.indexOf('cab-pad');
+    expect(screen).toBeGreaterThan(-1);
+    expect(side).toBeGreaterThan(screen);
+    expect(pad).toBeGreaterThan(side);
   });
 });
