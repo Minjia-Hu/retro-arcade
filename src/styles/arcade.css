@@ -169,7 +169,7 @@ button { font-family: inherit; cursor: pointer; }
   .hero { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .btn-start, .btn-accept, .card, .cab-btn, .settle-action { transition: none; }
+  .btn-start, .btn-accept, .card, .cab-btn, .settle-action, .pad-btn { transition: none; }
 }
 
 /* ---- 游戏机柜 ---- */
@@ -208,7 +208,7 @@ button { font-family: inherit; cursor: pointer; }
   color: var(--faint); border-color: var(--faint);
 }
 
-.cab-screen { padding: 22px; display: flex; justify-content: center; background: var(--well); }
+.cab-screen { padding: 22px; display: flex; justify-content: center; gap: 16px; background: var(--well); }
 .screen {
   position: relative; border: 3px solid var(--ink); border-radius: 10px; overflow: hidden;
 }
@@ -224,6 +224,35 @@ button { font-family: inherit; cursor: pointer; }
 .screen-paper .screen-glass { box-shadow: inset 0 0 0 2px var(--glow, transparent); }
 .screen.is-settled .screen-body { opacity: .25; }
 .screen-paper.is-settled .screen-body { opacity: .45; }
+
+/* ---- 侧栏（当前只有 TETRIS 用）---- */
+.cab-side { display: flex; flex-direction: column; gap: 12px; width: 110px; flex: none; }
+.side-card {
+  background: var(--panel); border: 2px solid var(--ink); border-radius: 10px;
+  box-shadow: 3px 3px 0 var(--ink); padding: 12px;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.side-label { font-family: 'Bungee', 'Space Grotesk', sans-serif; font-size: 10px; color: var(--dim); }
+.side-value { font-family: var(--mono); font-weight: 700; font-size: 16px; color: var(--ink); }
+.side-value-accent { color: var(--orange); }
+.side-value-dim { font-size: 14px; color: var(--dim); }
+.side-piece { position: relative; display: block; width: 44px; height: 30px; }
+.side-piece i { position: absolute; box-shadow: inset -2px -2px 0 rgba(0, 0, 0, .25); }
+
+/* ---- 触屏控制垫（当前只有 TETRIS 用）---- */
+.cab-pad {
+  display: flex; justify-content: center; flex-wrap: wrap; gap: 8px;
+  padding: 12px; border-top: 3px solid var(--ink);
+}
+.pad-btn {
+  width: 48px; height: 48px; font-size: 20px; line-height: 1;
+  background: var(--paper); border: 2px solid var(--ink); border-radius: 8px;
+  box-shadow: 3px 3px 0 var(--ink); color: var(--ink);
+  transition: transform .1s, box-shadow .1s;
+}
+.pad-btn:hover { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+.pad-btn:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
+.pad-btn:focus-visible { outline: none; box-shadow: 3px 3px 0 var(--ink), var(--focus-ring); }
 
 .cab-hints {
   display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
