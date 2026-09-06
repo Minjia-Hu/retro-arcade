@@ -2,6 +2,7 @@ import type { Game, GameContext } from '../../core/game';
 import { GameLoop } from '../../core/loop';
 import { THEME } from '../../core/theme';
 import * as L from './logic';
+import { createScreenCanvas } from '../../core/screen';
 
 const MENU_W = 320;
 const MENU_H = 480;
@@ -235,12 +236,8 @@ export function createMinesweeper(): Game {
 
     mount(container: HTMLElement, context: GameContext): void {
       ctx = context;
-      canvas = document.createElement('canvas');
-      canvas.style.touchAction = 'none';
-      canvas.style.userSelect = 'none';
+      ({ canvas, g } = createScreenCanvas(container, MENU_W, MENU_H));
       canvas.style.setProperty('-webkit-touch-callout', 'none'); // iOS 长按放大镜/呼出菜单兜底
-      container.appendChild(canvas);
-      g = canvas.getContext('2d')!;
       setCanvasSize(MENU_W, MENU_H);
 
       ctx.input.onPress(canvas, {

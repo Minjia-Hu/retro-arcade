@@ -2,6 +2,7 @@ import type { Game, GameContext } from '../../core/game';
 import { GameLoop } from '../../core/loop';
 import { THEME } from '../../core/theme';
 import * as L from './logic';
+import { createScreenCanvas } from '../../core/screen';
 
 const W = 320;
 const H = 480;
@@ -168,15 +169,7 @@ export function createG2048(): Game {
     mount(container: HTMLElement, context: GameContext): void {
       ctx = context;
       best = ctx.storage.get('best.g2048', 0);
-      canvas = document.createElement('canvas');
-      const dpr = Math.min(window.devicePixelRatio || 1, 3);
-      canvas.width = W * dpr;
-      canvas.height = H * dpr;
-      canvas.style.width = `${W}px`; // CSS 尺寸不变；backing store 按 DPR 放大保证高分屏清晰
-      canvas.style.touchAction = 'none';
-      container.appendChild(canvas);
-      g = canvas.getContext('2d')!;
-      g.scale(dpr, dpr);
+      ({ canvas, g } = createScreenCanvas(container, W, H));
 
       ctx.input.onSwipe(canvas, doMove);
       ctx.input.onTapAt(canvas, tapAt);

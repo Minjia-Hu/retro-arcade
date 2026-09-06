@@ -3,6 +3,7 @@ import { GameLoop } from '../../core/loop';
 import { SCREEN } from '../../core/theme';
 import * as L from './logic';
 import { padScore } from '../../core/format';
+import { createScreenCanvas } from '../../core/screen';
 
 const KEY_PADDLE_SPEED = 300; // 键盘按住移动速度 px/s
 /** 砖块四行由上至下：pink / orange / gold / teal（设计稿 2b） */
@@ -179,15 +180,7 @@ export function createBreakout(): Game {
       ctx = context;
       best = ctx.storage.get('best.breakout', 0);
       bestAtStart = best;
-      canvas = document.createElement('canvas');
-      const dpr = Math.min(window.devicePixelRatio || 1, 3);
-      canvas.width = L.W * dpr;
-      canvas.height = L.H * dpr;
-      canvas.style.width = `${L.W}px`; // CSS 尺寸不变；backing store 按 DPR 放大保证高分屏清晰
-      canvas.style.touchAction = 'none';
-      container.appendChild(canvas);
-      g = canvas.getContext('2d')!;
-      g.scale(dpr, dpr);
+      ({ canvas, g } = createScreenCanvas(container, L.W, L.H));
 
       ctx.input.onDrag(canvas, dragBy);
       ctx.input.onTap(canvas, primary);
