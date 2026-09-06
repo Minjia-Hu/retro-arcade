@@ -67,7 +67,7 @@ export function createSudoku(): Game {
 
   function showMenu(): void {
     ctx?.overlay({
-      title: 'SELECT DIFFICULTY',
+      title: 'DIFFICULTY', // 单词标题：卡片宽 256、棋盘仅 288，两词会折行并盖满整块屏幕
       tone: 'win',
       lines: [],
       actions: L.DIFFICULTIES.map((d) => ({

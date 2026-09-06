@@ -155,3 +155,37 @@ test('提示条在 结算 → 收起 之后还原成游戏设的文案', async (
   await expect(page.locator('.settle-card')).toBeHidden();
   await expect(page.locator('.cab-hints')).toHaveText('BEST 000042');
 });
+
+test('SUDOKU 先弹难度菜单，选完出现数字盘', async ({ page }) => {
+  await page.goto('/#/sudoku');
+  await expect(page.locator('canvas')).toBeVisible();
+
+  // 难度菜单是多动作浮层
+  await expect(page.locator('.settle-title')).toHaveText('DIFFICULTY');
+  await expect(page.locator('.settle-actions .settle-action')).toHaveCount(3);
+  await expect(page.locator('[data-act="pause"]')).toHaveCount(0);
+
+  await page.click('[data-act="overlay:0"]');
+  await expect(page.locator('.settle-card')).toBeHidden();
+  await expect(page.locator('.cab-pill')).toHaveText('EASY');
+  await expect(page.locator('.pad-btn-digit')).toHaveCount(9);
+  await expect(page.locator('.pad-btn-wide')).toHaveCount(3);
+
+  // ☰ 重新打开菜单
+  await page.click('[data-act="tool:menu"]');
+  await expect(page.locator('.settle-title')).toHaveText('DIFFICULTY');
+});
+
+test('SUDOKU 的笔记开关键盘与按钮共用同一状态', async ({ page }) => {
+  await page.goto('/#/sudoku');
+  await page.click('[data-act="overlay:0"]');
+  const notes = page.locator('[data-fn="notes"]');
+  await expect(notes).not.toHaveClass(/is-on/);
+
+  await notes.click();
+  await expect(notes).toHaveClass(/is-on/);
+
+  // 键盘切换也要让按钮激活态跟着变——计划里漏掉过这条同步
+  await page.keyboard.press('KeyN');
+  await expect(notes).not.toHaveClass(/is-on/);
+});
