@@ -3,6 +3,7 @@ import { GameLoop } from '../../core/loop';
 import { SCREEN } from '../../core/theme';
 import * as L from './logic';
 import { padScore } from '../../core/format';
+import { createScreenCanvas } from '../../core/screen';
 
 const KEY_PADDLE_SPEED = 300; // 键盘按住移动速度 px/s
 /** 砖块四行由上至下：pink / orange / gold / teal（设计稿 2b） */
@@ -43,7 +44,7 @@ export function createBreakout(): Game {
   function restart(): void {
     state = L.createState();
     bestAtStart = best;
-    ctx?.settle(null);
+    ctx?.overlay(null);
   }
 
   function dragBy(cssDx: number): void {
@@ -80,11 +81,11 @@ export function createBreakout(): Game {
       endedAt = performance.now();
       ctx?.audio.play('over');
       const record = state.score > bestAtStart;
-      ctx?.settle({
+      ctx?.overlay({
         title: record ? 'NEW HIGH SCORE' : 'GAME OVER',
         tone: record ? 'record' : 'lose',
         lines: [`SCORE ${padScore(state.score, 6)}`, `LEVEL ${padScore(state.level, 2)}`, `BEST ${padScore(best, 6)}`],
-        action: { label: '▶ RETRY', onPress: retry },
+        actions: [{ label: '▶ RETRY', onPress: retry }],
         hints: ['SPACE / TAP TO RETRY'],
       });
     } else if (ev.lost) {
@@ -117,10 +118,7 @@ export function createBreakout(): Game {
     // 砖块：按行取色，斜面 + 同色辉光
     for (const b of state.bricks) {
       if (!b.alive) continue;
-      // 60 与 18 来自 logic.ts makeBricks 的 y0 与 bh+gap，两者都没导出；
-      // 改那里必须同步这里，否则配色会静默错位且没有测试会发现
-      const row = Math.floor((b.y - 60) / 18);
-      const tone = ROW_TONES[((row % ROW_TONES.length) + ROW_TONES.length) % ROW_TONES.length];
+      const tone = ROW_TONES[b.row % ROW_TONES.length];
       g.fillStyle = SCREEN[tone];
       g.shadowColor = SCREEN.glow[tone];
       g.shadowBlur = 8;
@@ -179,15 +177,7 @@ export function createBreakout(): Game {
       ctx = context;
       best = ctx.storage.get('best.breakout', 0);
       bestAtStart = best;
-      canvas = document.createElement('canvas');
-      const dpr = Math.min(window.devicePixelRatio || 1, 3);
-      canvas.width = L.W * dpr;
-      canvas.height = L.H * dpr;
-      canvas.style.width = `${L.W}px`; // CSS 尺寸不变；backing store 按 DPR 放大保证高分屏清晰
-      canvas.style.touchAction = 'none';
-      container.appendChild(canvas);
-      g = canvas.getContext('2d')!;
-      g.scale(dpr, dpr);
+      ({ canvas, g } = createScreenCanvas(container, L.W, L.H));
 
       ctx.input.onDrag(canvas, dragBy);
       ctx.input.onTap(canvas, primary);

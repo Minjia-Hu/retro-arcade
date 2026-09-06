@@ -3,6 +3,7 @@ import { GameLoop } from '../../core/loop';
 import { SCREEN } from '../../core/theme';
 import * as L from './logic';
 import { padScore } from '../../core/format';
+import { createScreenCanvas } from '../../core/screen';
 
 const CELL = 16; // COLS×16 = 320，ROWS×16 = 480，与逻辑网格一一对应
 const W = L.COLS * CELL;
@@ -46,7 +47,7 @@ export function createSnake(): Game {
     state = L.createState();
     deadHandled = false;
     bestAtStart = best;
-    ctx?.settle(null);
+    ctx?.overlay(null);
   }
 
   function tapAction(): void {
@@ -75,11 +76,11 @@ export function createSnake(): Game {
       diedAt = performance.now();
       ctx?.audio.play('over');
       const record = state.score > bestAtStart;
-      ctx?.settle({
+      ctx?.overlay({
         title: record ? 'NEW HIGH SCORE' : 'GAME OVER',
         tone: record ? 'record' : 'lose',
         lines: [`SCORE ${padScore(state.score, 4)}`, `BEST ${padScore(best, 6)}`],
-        action: { label: '▶ RETRY', onPress: retry },
+        actions: [{ label: '▶ RETRY', onPress: retry }],
         hints: ['SPACE / TAP TO RETRY'],
       });
     }
@@ -140,15 +141,7 @@ export function createSnake(): Game {
       ctx = context;
       best = ctx.storage.get('best.snake', 0);
       bestAtStart = best;
-      canvas = document.createElement('canvas');
-      const dpr = Math.min(window.devicePixelRatio || 1, 3);
-      canvas.width = W * dpr;
-      canvas.height = H * dpr;
-      canvas.style.width = `${W}px`; // CSS 尺寸不变；backing store 按 DPR 放大保证高分屏清晰
-      canvas.style.touchAction = 'none';
-      container.appendChild(canvas);
-      g = canvas.getContext('2d')!;
-      g.scale(dpr, dpr);
+      ({ canvas, g } = createScreenCanvas(container, W, H));
 
       ctx.input.onSwipe(canvas, handleDir);
       ctx.input.onTap(canvas, tapAction);

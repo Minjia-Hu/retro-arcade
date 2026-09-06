@@ -19,6 +19,8 @@ export interface Brick {
   h: number;
   points: number;
   alive: boolean;
+  /** 第几行（0 起）。渲染按行取色，避免从 y 反推 makeBricks 的私有布局常量 */
+  row: number;
 }
 
 export interface BreakoutState {
@@ -68,6 +70,7 @@ export function makeBricks(level: number): Brick[] {
         h: bh,
         points: (rows - r) * 10, // 越靠上分越高
         alive: true,
+        row: r,
       });
     }
   }

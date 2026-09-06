@@ -751,6 +751,16 @@ git commit -m "test: cover GameFrame's hints, overlay, tools and slots"
 
 ---
 
+## Task 6 与 Task 7 必须合并提交（执行中发现的计划缺陷）
+
+原计划把 SUDOKU 拆成「Task 6 缩画布 / Task 7 加 DOM 控件」两步，**这一刀划错了**：
+Task 6 删掉画布内的难度菜单，而菜单是 `startGame` 的唯一调用者；Task 7 才加回 DOM 菜单
+去调它。中间状态下 `noUnusedLocals` 必然报 `startGame` 与 `DIFF_LABEL` 未使用，
+既不能删（Task 7 要用），也不该用 `void` 之类手段抑制。
+
+**处理**：两步照原样做，但**合并为一个 commit**，保证每个提交都能编译。
+下方两个任务的 Step「提交」以 Task 7 的为准。
+
 ## Task 6: SUDOKU 画布缩成棋盘
 
 **Files:**

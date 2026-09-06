@@ -3,6 +3,7 @@ import { GameLoop } from '../../core/loop';
 import { SCREEN } from '../../core/theme';
 import * as L from './logic';
 import { padScore } from '../../core/format';
+import { createScreenCanvas } from '../../core/screen';
 
 /** 与 arcade.css 的 --ink 对应，改一处要同步另一处（canvas 读不到 CSS 变量） */
 const INK = '#2b2118';
@@ -42,7 +43,7 @@ export function createFlappy(): Game {
     state = L.createState();
     deadHandled = false;
     bestAtStart = best;
-    ctx?.settle(null);
+    ctx?.overlay(null);
   }
 
   function update(dt: number): void {
@@ -60,11 +61,11 @@ export function createFlappy(): Game {
       diedAt = performance.now();
       ctx?.audio.play('hit');
       const record = state.score > bestAtStart;
-      ctx?.settle({
+      ctx?.overlay({
         title: record ? 'NEW HIGH SCORE' : 'GAME OVER',
         tone: record ? 'record' : 'lose',
         lines: [`SCORE ${padScore(state.score, 4)}`, `BEST ${padScore(best, 6)}`],
-        action: { label: '▶ RETRY', onPress: retry },
+        actions: [{ label: '▶ RETRY', onPress: retry }],
         hints: ['SPACE / TAP TO RETRY'],
       });
     }
@@ -158,15 +159,7 @@ export function createFlappy(): Game {
       best = ctx.storage.get('best.flappy', 0);
       bestAtStart = best;
       ctx.setHints([`BEST ${padScore(best, 6)}`]);
-      canvas = document.createElement('canvas');
-      const dpr = Math.min(window.devicePixelRatio || 1, 3);
-      canvas.width = L.W * dpr;
-      canvas.height = L.H * dpr;
-      canvas.style.width = `${L.W}px`; // CSS 尺寸不变；backing store 按 DPR 放大保证高分屏清晰
-      canvas.style.touchAction = 'none';
-      container.appendChild(canvas);
-      g = canvas.getContext('2d')!;
-      g.scale(dpr, dpr);
+      ({ canvas, g } = createScreenCanvas(container, L.W, L.H));
 
       ctx.input.onTap(canvas, act);
       ctx.input.onKey((code) => {

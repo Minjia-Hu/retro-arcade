@@ -192,6 +192,11 @@ button { font-family: inherit; cursor: pointer; }
   font-family: 'Bungee', 'Space Grotesk', sans-serif; font-size: 17px; color: var(--ink);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+.cab-pill {
+  font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 1px;
+  color: var(--panel); background: var(--accent);
+  border: 2px solid var(--ink); border-radius: 6px; padding: 3px 8px;
+}
 .cab-tools { display: flex; gap: 8px; }
 .cab-btn {
   font-size: 13px; font-weight: 700; letter-spacing: 1px;
@@ -254,6 +259,13 @@ button { font-family: inherit; cursor: pointer; }
 .pad-btn:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
 .pad-btn:focus-visible { outline: none; box-shadow: 3px 3px 0 var(--ink), var(--focus-ring); }
 
+/* 数独数字盘：比默认 pad-btn 窄，一行放得下 9 个 */
+.cab-pad-rows { flex-direction: column; gap: 10px; }
+.pad-row { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; }
+.pad-btn-digit { width: 33px; height: 38px; font-family: var(--mono); font-size: 16px; }
+.pad-btn-wide { width: auto; height: auto; padding: 9px 16px; font-size: 12px; letter-spacing: 1px; }
+.pad-btn.is-on { background: var(--highlight); }
+
 .cab-hints {
   display: flex; flex-wrap: wrap; justify-content: center; gap: 10px;
   padding: 12px; border-top: 3px solid var(--ink);
@@ -276,16 +288,25 @@ button { font-family: inherit; cursor: pointer; }
 .settle-title-record { color: var(--gold); }
 .settle-line { font-family: var(--mono); font-size: 14px; font-weight: 700; color: var(--ink); }
 .settle-line ~ .settle-line { font-size: 12px; font-weight: 400; color: var(--dim); }
+.settle-actions { display: flex; flex-direction: column; gap: 10px; align-items: stretch; margin-top: 6px; }
 .settle-action {
   font-family: 'Bungee', 'Space Grotesk', sans-serif; font-size: 14px;
   background: var(--orange); color: var(--panel);
   border: 3px solid var(--ink); border-radius: 10px;
-  box-shadow: 4px 4px 0 var(--ink); padding: 12px 26px; margin-top: 6px;
+  box-shadow: 4px 4px 0 var(--ink); padding: 12px 26px;
   transition: transform .1s, box-shadow .1s;
 }
 .settle-action:hover { transform: translate(2px, 2px); box-shadow: 2px 2px 0 var(--ink); }
 .settle-action:active { transform: translate(4px, 4px); box-shadow: 0 0 0 var(--ink); }
 .settle-action:focus-visible { outline: none; box-shadow: 4px 4px 0 var(--ink), var(--focus-ring); }
+.settle-action-secondary {
+  background: var(--paper); color: var(--ink);
+  border-width: 2px; box-shadow: 3px 3px 0 var(--ink); padding: 10px 22px;
+}
+.settle-action-secondary:hover { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+.settle-action-secondary:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
+/* 必须显式写：.settle-action:focus-visible 特异度更高，否则次按钮聚焦时会跳成主按钮外观 */
+.settle-action-secondary:focus-visible { outline: none; box-shadow: 3px 3px 0 var(--ink), var(--focus-ring); }
 .settle-quit {
   font-size: 12px; font-weight: 700; letter-spacing: 2px;
   background: none; border: none; color: var(--dim); text-decoration: underline;

@@ -2,6 +2,7 @@ import type { Game, GameContext } from '../../core/game';
 import { GameLoop } from '../../core/loop';
 import { THEME } from '../../core/theme';
 import * as L from './logic';
+import { createScreenCanvas, resizeScreenCanvas } from '../../core/screen';
 
 const MENU_W = 320;
 const MENU_H = 480;
@@ -42,11 +43,7 @@ export function createMinesweeper(): Game {
     if (!canvas || !g) return;
     viewW = w;
     viewH = h;
-    const dpr = Math.min(window.devicePixelRatio || 1, 3);
-    canvas.width = w * dpr;
-    canvas.height = h * dpr;
-    canvas.style.width = `${w}px`;
-    g.setTransform(dpr, 0, 0, dpr, 0, 0); // 重设尺寸会清空变换，用 setTransform 而非叠加 scale
+    resizeScreenCanvas(canvas, g, w, h);
   }
 
   function startGame(diff: L.Difficulty): void {
@@ -235,13 +232,11 @@ export function createMinesweeper(): Game {
 
     mount(container: HTMLElement, context: GameContext): void {
       ctx = context;
-      canvas = document.createElement('canvas');
-      canvas.style.touchAction = 'none';
-      canvas.style.userSelect = 'none';
+      ({ canvas, g } = createScreenCanvas(container, MENU_W, MENU_H));
       canvas.style.setProperty('-webkit-touch-callout', 'none'); // iOS 长按放大镜/呼出菜单兜底
-      container.appendChild(canvas);
-      g = canvas.getContext('2d')!;
-      setCanvasSize(MENU_W, MENU_H);
+      // createScreenCanvas 已按这个尺寸设过一次，这里只补记视图尺寸，不再重设 backing store
+      viewW = MENU_W;
+      viewH = MENU_H;
 
       ctx.input.onPress(canvas, {
         tap: onTapGesture,

@@ -3,6 +3,7 @@ import { GameLoop } from '../../core/loop';
 import { THEME } from '../../core/theme';
 import * as L from './logic';
 import { AI_LEVELS, findBestMove, type AiLevel } from './ai';
+import { createScreenCanvas } from '../../core/screen';
 
 const W = 320;
 const H = 400;
@@ -258,16 +259,7 @@ export function createGomoku(): Game {
 
     mount(container: HTMLElement, context: GameContext): void {
       ctx = context;
-      canvas = document.createElement('canvas');
-      const dpr = Math.min(window.devicePixelRatio || 1, 3);
-      canvas.width = W * dpr;
-      canvas.height = H * dpr;
-      canvas.style.width = `${W}px`; // CSS 尺寸不变；backing store 按 DPR 放大保证高分屏清晰
-      canvas.style.touchAction = 'none';
-      canvas.style.userSelect = 'none';
-      container.appendChild(canvas);
-      g = canvas.getContext('2d')!;
-      g.scale(dpr, dpr);
+      ({ canvas, g } = createScreenCanvas(container, W, H));
 
       ctx.input.onTapAt(canvas, tapAt);
       ctx.input.onKey((code) => {

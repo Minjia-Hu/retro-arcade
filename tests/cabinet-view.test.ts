@@ -1,16 +1,16 @@
 import { describe, it, expect } from 'vitest';
-import { cabinetHtml, hintsBarHtml, settleHtml } from '../src/shell/cabinet-view';
-import type { GameMeta, SettleView } from '../src/core/game';
+import { cabinetHtml, hintsBarHtml, overlayHtml } from '../src/shell/cabinet-view';
+import type { GameMeta, OverlayView } from '../src/core/game';
 
 const snake: GameMeta = {
   id: 'snake', name: '贪吃蛇', icon: '🐍', displayName: 'SNAKE',
   hints: ['↑↓←→ / WASD MOVE', 'SPACE START'], screen: 'dark',
 };
 
-const settle: SettleView = {
+const settle: OverlayView = {
   title: 'GAME OVER', tone: 'lose',
   lines: ['SCORE 0042', 'BEST 003840'],
-  action: { label: '▶ RETRY', onPress: () => {} },
+  actions: [{ label: '▶ RETRY', onPress: () => {} }],
 };
 
 describe('cabinetHtml 顶栏', () => {
@@ -92,26 +92,58 @@ describe('cabinetHtml 按键提示', () => {
   });
 });
 
-describe('settleHtml', () => {
+describe('overlayHtml', () => {
   it('三种 tone 对应三种标题 class', () => {
-    expect(settleHtml(settle)).toContain('settle-title settle-title-lose');
-    expect(settleHtml({ ...settle, tone: 'win' })).toContain('settle-title-win');
-    expect(settleHtml({ ...settle, tone: 'record' })).toContain('settle-title-record');
+    expect(overlayHtml(settle)).toContain('settle-title settle-title-lose');
+    expect(overlayHtml({ ...settle, tone: 'win' })).toContain('settle-title-win');
+    expect(overlayHtml({ ...settle, tone: 'record' })).toContain('settle-title-record');
   });
 
   it('分数行逐行渲染', () => {
-    const html = settleHtml(settle);
+    const html = overlayHtml(settle);
     expect(html.match(/class="settle-line"/g)!.length).toBe(2);
     expect(html).toContain('>SCORE 0042<');
     expect(html).toContain('>BEST 003840<');
   });
 
   it('两个按钮各带自己的 data-act', () => {
-    const html = settleHtml(settle);
-    expect(html).toContain('data-act="settle-action"');
-    expect(html).toContain('data-act="settle-quit"');
+    const html = overlayHtml(settle);
+    expect(html).toContain('data-act="overlay:0"');
+    expect(html).toContain('data-act="overlay-quit"');
     expect(html).toContain('>▶ RETRY<');
     expect(html).toContain('>QUIT TO HUB<');
+  });
+});
+
+describe('overlayHtml 多动作', () => {
+  const menu: OverlayView = {
+    title: 'SELECT DIFFICULTY', tone: 'win', lines: [],
+    actions: [
+      { label: 'EASY', onPress: () => {}, kind: 'secondary' },
+      { label: 'MEDIUM', onPress: () => {}, kind: 'secondary' },
+      { label: 'HARD', onPress: () => {}, kind: 'secondary' },
+    ],
+  };
+
+  it('每个动作各一个按钮，按下标寻址', () => {
+    const html = overlayHtml(menu);
+    // 用 <button class="settle-action 前缀而非裸的 class="settle-action，
+    // 否则外层容器的 class="settle-actions"（复数）也会被这条正则误计入
+    expect(html.match(/<button class="settle-action/g)!.length).toBe(3);
+    for (const i of [0, 1, 2]) expect(html).toContain(`data-act="overlay:${i}"`);
+    expect(html).toContain('>EASY<');
+    expect(html).toContain('>HARD<');
+  });
+
+  it('kind 决定主次按钮样式，缺省为主按钮', () => {
+    expect(overlayHtml(menu)).toContain('settle-action settle-action-secondary');
+    expect(overlayHtml({ ...menu, actions: [{ label: 'GO', onPress: () => {} }] }))
+      .toContain('class="settle-action" data-act="overlay:0"');
+  });
+
+  it('quit 为 false 时不渲染 QUIT TO HUB', () => {
+    expect(overlayHtml({ ...menu, quit: false })).not.toContain('overlay-quit');
+    expect(overlayHtml(menu)).toContain('overlay-quit');
   });
 });
 
@@ -122,7 +154,7 @@ describe('转义', () => {
   });
 
   it('浮层里的标题与分数行被转义', () => {
-    const html = settleHtml({ ...settle, title: '<script>x</script>', lines: ['A & B'] });
+    const html = overlayHtml({ ...settle, title: '<script>x</script>', lines: ['A & B'] });
     expect(html).not.toContain('<script>');
     expect(html).toContain('&lt;script&gt;x&lt;/script&gt;');
     expect(html).toContain('A &amp; B');
@@ -174,5 +206,43 @@ describe('cabinetHtml 插槽', () => {
     expect(screen).toBeGreaterThan(-1);
     expect(side).toBeGreaterThan(screen);
     expect(pad).toBeGreaterThan(side);
+  });
+});
+
+describe('cabinetHtml 顶栏工具按钮与药丸', () => {
+  const withTool = {
+    ...snake,
+    tools: [{ id: 'menu', label: '☰', aria: '难度菜单' }],
+  };
+
+  it('工具按钮用 tool: 前缀，避开 back/pause/mute 的命名空间', () => {
+    const html = cabinetHtml(withTool, false);
+    expect(html).toContain('data-act="tool:menu"');
+    expect(html).toContain('>☰<');
+  });
+
+  it('工具按钮排在 SND 之前', () => {
+    const html = cabinetHtml(withTool, false);
+    expect(html.indexOf('tool:menu')).toBeLessThan(html.indexOf('data-act="mute"'));
+  });
+
+  it('缺省不渲染工具按钮，药丸渲染但隐藏', () => {
+    const html = cabinetHtml(snake, false);
+    expect(html).not.toContain('data-act="tool:');
+    // 药丸始终渲染、靠 hidden 控制显隐，这样 setPill 不必凭空插入节点
+    expect(html).toMatch(/class="cab-pill"[^>]*\shidden/);
+  });
+
+  it('药丸渲染在游戏名之后，起手隐藏（内容只能来自 ctx.setPill）', () => {
+    const html = cabinetHtml(withTool, false);
+    expect(html.indexOf('cab-name')).toBeLessThan(html.indexOf('cab-pill'));
+    expect(html).toContain('hidden></span>');
+  });
+
+  it('工具按钮与 pausable:false 可以并存', () => {
+    const html = cabinetHtml({ ...withTool, pausable: false }, false);
+    expect(html).not.toContain('data-act="pause"');
+    expect(html).toContain('data-act="tool:menu"');
+    expect(html).toContain('data-act="mute"');
   });
 });

@@ -3,6 +3,7 @@ import { GameLoop } from '../../core/loop';
 import { SCREEN } from '../../core/theme';
 import * as L from './logic';
 import { padScore } from '../../core/format';
+import { createScreenCanvas } from '../../core/screen';
 
 const CELL = 22;
 const W = L.COLS * CELL; // 220：画布只剩棋盘，边框圆角由 .screen 提供
@@ -59,11 +60,11 @@ export function createTetris(): Game {
 
   function reportOver(): void {
     const record = state.score > bestAtStart;
-    ctx?.settle({
+    ctx?.overlay({
       title: record ? 'NEW HIGH SCORE' : 'GAME OVER',
       tone: record ? 'record' : 'lose',
       lines: [`SCORE ${padScore(state.score, 6)}`, `LINES ${padScore(state.lines, 3)}`, `BEST ${padScore(best, 6)}`],
-      action: { label: '▶ RETRY', onPress: retry },
+      actions: [{ label: '▶ RETRY', onPress: retry }],
       hints: ['SPACE / TAP TO RETRY'],
     });
   }
@@ -103,7 +104,7 @@ export function createTetris(): Game {
   function restart(): void {
     state = L.createState();
     bestAtStart = best;
-    ctx?.settle(null);
+    ctx?.overlay(null);
     // 不在这里发声：浮层 RETRY 的 click 由 frame 统一负责，重复发声会响两下
   }
 
@@ -289,16 +290,7 @@ export function createTetris(): Game {
       ctx = context;
       best = ctx.storage.get('best.tetris', 0);
       bestAtStart = best;
-      canvas = document.createElement('canvas');
-      const dpr = Math.min(window.devicePixelRatio || 1, 3);
-      canvas.width = W * dpr;
-      canvas.height = H * dpr;
-      canvas.style.width = `${W}px`; // CSS 尺寸不变；backing store 按 DPR 放大保证高分屏清晰
-      canvas.style.touchAction = 'none';
-      canvas.style.userSelect = 'none';
-      container.appendChild(canvas);
-      g = canvas.getContext('2d')!;
-      g.scale(dpr, dpr);
+      ({ canvas, g } = createScreenCanvas(container, W, H));
 
       if (ctx.side) buildSide(ctx.side);
       if (ctx.pad) buildPad(ctx.pad);
