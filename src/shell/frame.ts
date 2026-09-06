@@ -66,6 +66,7 @@ export class GameFrame {
     this.observer = new ResizeObserver(() => resizeCbs.forEach((cb) => cb()));
     this.observer.observe(body);
     this.input = new InputService();
+    const pillEl = root.querySelector<HTMLElement>('.cab-pill');
 
     const ctx: GameContext = {
       audio: this.audio,
@@ -82,6 +83,14 @@ export class GameFrame {
       setHints: (hints) => {
         this.baseHints = hints;
         this.applyHints();
+      },
+      onTool: (id, handler) => {
+        wire(`tool:${id}`, () => handler());
+      },
+      setPill: (text) => {
+        if (!pillEl) return;
+        pillEl.textContent = text ?? '';
+        pillEl.hidden = text === null;
       },
     };
 

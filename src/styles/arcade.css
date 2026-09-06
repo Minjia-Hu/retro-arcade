@@ -192,6 +192,11 @@ button { font-family: inherit; cursor: pointer; }
   font-family: 'Bungee', 'Space Grotesk', sans-serif; font-size: 17px; color: var(--ink);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+.cab-pill {
+  font-family: var(--mono); font-size: 11px; font-weight: 700; letter-spacing: 1px;
+  color: var(--panel); background: var(--accent);
+  border: 2px solid var(--ink); border-radius: 6px; padding: 3px 8px;
+}
 .cab-tools { display: flex; gap: 8px; }
 .cab-btn {
   font-size: 13px; font-weight: 700; letter-spacing: 1px;

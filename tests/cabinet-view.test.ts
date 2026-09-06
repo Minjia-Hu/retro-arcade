@@ -208,3 +208,42 @@ describe('cabinetHtml 插槽', () => {
     expect(pad).toBeGreaterThan(side);
   });
 });
+
+describe('cabinetHtml 顶栏工具按钮与药丸', () => {
+  const withTool = {
+    ...snake,
+    tools: [{ id: 'menu', label: '☰', aria: '难度菜单' }],
+    pill: 'MEDIUM',
+  };
+
+  it('工具按钮用 tool: 前缀，避开 back/pause/mute 的命名空间', () => {
+    const html = cabinetHtml(withTool, false);
+    expect(html).toContain('data-act="tool:menu"');
+    expect(html).toContain('>☰<');
+  });
+
+  it('工具按钮排在 SND 之前', () => {
+    const html = cabinetHtml(withTool, false);
+    expect(html.indexOf('tool:menu')).toBeLessThan(html.indexOf('data-act="mute"'));
+  });
+
+  it('缺省不渲染工具按钮，药丸渲染但隐藏', () => {
+    const html = cabinetHtml(snake, false);
+    expect(html).not.toContain('data-act="tool:');
+    // 药丸始终渲染、靠 hidden 控制显隐，这样 setPill 不必凭空插入节点
+    expect(html).toContain('class="cab-pill" hidden');
+  });
+
+  it('药丸渲染在游戏名之后', () => {
+    const html = cabinetHtml(withTool, false);
+    expect(html).toContain('class="cab-pill">MEDIUM<');
+    expect(html.indexOf('cab-name')).toBeLessThan(html.indexOf('cab-pill'));
+  });
+
+  it('工具按钮与 pausable:false 可以并存', () => {
+    const html = cabinetHtml({ ...withTool, pausable: false }, false);
+    expect(html).not.toContain('data-act="pause"');
+    expect(html).toContain('data-act="tool:menu"');
+    expect(html).toContain('data-act="mute"');
+  });
+});

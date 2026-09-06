@@ -28,6 +28,11 @@ export function cabinetHtml(meta: GameMeta, muted: boolean): string {
     : '<button class="cab-btn" data-act="pause" aria-label="暂停">❚❚</button>';
   const sideHtml = meta.side ? '<div class="cab-side"></div>' : '';
   const padHtml = meta.pad ? '<div class="cab-pad"></div>' : '';
+  const toolsHtml = (meta.tools ?? [])
+    .map((t) => `<button class="cab-btn" data-act="tool:${esc(t.id)}" aria-label="${esc(t.aria)}">${esc(t.label)}</button>`)
+    .join('');
+  // 药丸始终渲染，靠 hidden 控制显隐，这样 setPill 不必凭空插入节点
+  const pillHtml = `<span class="cab-pill"${meta.pill ? '' : ' hidden'}>${esc(meta.pill ?? '')}</span>`;
 
   return `
     <div class="cabinet accent-${accentOf(meta.id)}">
@@ -37,9 +42,11 @@ export function cabinetHtml(meta: GameMeta, muted: boolean): string {
           <!-- pixelIconSvg 的输出只由白名单查表与数字构成，不含任何入参文本，故不转义 -->
           <span class="px px-xs">${pixelIconSvg(meta.id)}</span>
           <span class="cab-name">${esc(name)}</span>
+          ${pillHtml}
         </span>
         <span class="cab-tools">
           ${pauseHtml}
+          ${toolsHtml}
           <button class="cab-btn${muted ? ' is-off' : ''}" data-act="mute" aria-pressed="${muted}" aria-label="音效">SND</button>
         </span>
       </div>

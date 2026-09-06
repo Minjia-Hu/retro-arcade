@@ -18,6 +18,10 @@ export interface GameMeta {
   pad?: boolean;
   /** 顶栏是否渲染暂停按钮，缺省 true。FLAPPY 按设计稿不显示 */
   pausable?: boolean;
+  /** 顶栏右侧的额外按钮，排在 SND 之前 */
+  tools?: { id: string; label: string; aria: string }[];
+  /** 游戏名右侧的药丸文案（如数独难度）；运行时可用 ctx.setPill 改 */
+  pill?: string;
 }
 
 export interface OverlayAction {
@@ -58,6 +62,10 @@ export interface GameContext {
   pad: HTMLElement | null;
   /** 替换底部按键提示条 */
   setHints(hints: string[]): void;
+  /** 注册顶栏自定义按钮的点击处理；id 需与 meta.tools 中的一致 */
+  onTool(id: string, handler: () => void): void;
+  /** 改写游戏名右侧的药丸；传 null 隐藏 */
+  setPill(text: string | null): void;
 }
 
 export interface Game {
