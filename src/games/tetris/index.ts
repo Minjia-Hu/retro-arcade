@@ -1,37 +1,32 @@
 import type { Game, GameContext } from '../../core/game';
 import { GameLoop } from '../../core/loop';
-import { THEME } from '../../core/theme';
+import { SCREEN } from '../../core/theme';
 import * as L from './logic';
 
-const W = 320;
-const H = 540;
 const CELL = 22;
-const BOARD_X = 10;
-const BOARD_Y = 10; // 棋盘 220×440，y 10..450
-const SIDE_X = 240;
+const W = L.COLS * CELL; // 220：画布只剩棋盘，边框圆角由 .screen 提供
+const H = L.ROWS * CELL; // 440
 const REPEAT_DELAY = 0.11; // 按住左右/软降的重复间隔（秒）
 
-// I O T S Z J L
-const PIECE_COLORS = ['#00e5ff', '#ffe600', '#c084fc', '#6bcb77', '#ff6b6b', '#4d96ff', '#ffb86c'];
+/** 七种方块循环取暖霓虹四色（设计稿 2a 的 NE 对象就是这四色） */
+const PIECE_TONES = ['teal', 'gold', 'pink', 'orange'] as const;
+const pieceFill = (type: number): string => SCREEN[PIECE_TONES[type % PIECE_TONES.length]];
+const pieceGlow = (type: number): string => SCREEN.glow[PIECE_TONES[type % PIECE_TONES.length]];
 
-interface Btn {
-  id: 'left' | 'right' | 'rotate' | 'soft' | 'hard' | 'hold';
-  label: string;
-  x: number;
-  y: number;
-  w: number;
-  h: number;
+type PadId = 'left' | 'right' | 'rotate' | 'soft' | 'hard' | 'hold';
+
+const PAD: { id: PadId; label: string; aria: string }[] = [
+  { id: 'left', label: '◀', aria: '左移' },
+  { id: 'right', label: '▶', aria: '右移' },
+  { id: 'rotate', label: '⟳', aria: '旋转' },
+  { id: 'soft', label: '▼', aria: '软降' },
+  { id: 'hard', label: '⤓', aria: '硬降' },
+  { id: 'hold', label: '⇄', aria: '暂存' },
+];
+
+function pad(n: number, width: number): string {
+  return String(Math.max(0, Math.floor(n))).padStart(width, '0');
 }
-
-const BTN_Y = 464;
-const BTNS: Btn[] = (['left', 'right', 'rotate', 'soft', 'hard', 'hold'] as const).map((id, i) => ({
-  id,
-  label: { left: '◀', right: '▶', rotate: '⟳', soft: '▼', hard: '⤓', hold: '⇄' }[id],
-  x: 8 + i * 52,
-  y: BTN_Y,
-  w: 48,
-  h: 60,
-}));
 
 export function createTetris(): Game {
   let state = L.createState();
@@ -49,12 +44,30 @@ export function createTetris(): Game {
   let heldSpace = false;
   let heldHold = false;
   let repeatTimer = 0;
+  let bestAtStart = 0; // 本局开始前的最高分，用来判断是否刷新纪录
+  let side: {
+    next: HTMLElement; hold: HTMLElement;
+    score: HTMLElement; level: HTMLElement; best: HTMLElement;
+  } | null = null;
+  let shownNext: number | null = -1; // 侧栏迷你块的重绘节流：仅在换块时改 innerHTML
+  let shownHold: number | null = -1;
 
   function saveBest(): void {
     if (state.score > best) {
       best = state.score;
       ctx?.storage.set('best.tetris', best);
     }
+  }
+
+  function reportOver(): void {
+    const record = state.score > bestAtStart;
+    ctx?.settle({
+      title: record ? 'NEW HIGH SCORE' : 'GAME OVER',
+      tone: record ? 'record' : 'lose',
+      lines: [`SCORE ${pad(state.score, 6)}`, `LINES ${pad(state.lines, 3)}`, `BEST ${pad(best, 6)}`],
+      action: { label: '▶ RETRY', onPress: retry },
+      hints: ['SPACE / TAP TO RETRY'],
+    });
   }
 
   function afterEvents(ev: L.TetrisEvents): void {
@@ -67,6 +80,7 @@ export function createTetris(): Game {
       endedAt = performance.now();
       saveBest();
       ctx?.audio.play('over');
+      reportOver();
     }
   }
 
@@ -77,12 +91,24 @@ export function createTetris(): Game {
       ctx?.audio.play('click');
     } else if (state.status === 'over') {
       if (performance.now() - endedAt < 400) return;
-      state = L.createState();
-      ctx?.audio.play('click');
+      restart();
     }
   }
 
-  function act(id: Btn['id']): void {
+  /** 浮层 RETRY 按钮的入口：共用 paused 卫语句，但不继承 primary 的 400ms 防连点 */
+  function retry(): void {
+    if (paused) return;
+    restart();
+  }
+
+  function restart(): void {
+    state = L.createState();
+    bestAtStart = best;
+    ctx?.settle(null);
+    ctx?.audio.play('click');
+  }
+
+  function act(id: PadId): void {
     if (paused) return;
     if (state.status !== 'playing') {
       primary();
@@ -103,23 +129,15 @@ export function createTetris(): Game {
       endedAt = performance.now();
       saveBest();
       ctx?.audio.play('over');
+      reportOver();
     } else {
       ctx?.audio.play('click');
     }
   }
 
-  function tapAt(cssX: number, cssY: number): void {
-    if (paused || !canvas) return;
-    const rect = canvas.getBoundingClientRect();
-    const x = (cssX / rect.width) * W;
-    const y = (cssY / rect.height) * H;
-    for (const b of BTNS) {
-      if (x >= b.x && x <= b.x + b.w && y >= b.y && y <= b.y + b.h) {
-        act(b.id);
-        return;
-      }
-    }
-    primary(); // 点棋盘区：开始 / 重开
+  function tapBoard(): void {
+    if (paused) return;
+    primary();
   }
 
   function update(dt: number): void {
@@ -137,36 +155,87 @@ export function createTetris(): Game {
     afterEvents(L.tick(state, dt));
   }
 
+  /** 单格：填充 + 同色辉光 + 设计稿的斜面（右下暗、左上亮） */
   function drawCell(px: number, py: number, size: number, type: number): void {
     if (!g) return;
-    g.fillStyle = PIECE_COLORS[type];
-    g.fillRect(px + 1, py + 1, size - 2, size - 2);
+    g.fillStyle = pieceFill(type);
+    g.shadowColor = pieceGlow(type);
+    g.shadowBlur = 8;
+    g.fillRect(px, py, size, size);
+    g.shadowBlur = 0;
+    const b = Math.max(2, Math.round(size / 7)); // 22px 格对应 3px 斜面
+    g.fillStyle = 'rgba(0, 0, 0, .3)';
+    g.fillRect(px + size - b, py, b, size);
+    g.fillRect(px, py + size - b, size, b);
+    g.fillStyle = 'rgba(255, 255, 255, .25)';
+    g.fillRect(px, py, size, b);
+    g.fillRect(px, py, b, size);
   }
 
-  function drawMini(type: number | null, x0: number, y0: number): void {
-    if (!g || type === null) return;
-    const size = 12;
+  /** 迷你块用 DOM 小方块拼；格子尺寸按块宽自适应，I 型（4 格宽）也不会溢出 44px */
+  function miniHtml(type: number | null): string {
+    if (type === null) return '';
     const def = L.PIECE_DEFS[type];
-    const off = (4 - def.size) * (size / 2); // 在 4×4 预览区内居中
-    for (const [cx, cy] of L.rotatedCells(type, 0)) {
-      drawCell(x0 + off + cx * size, y0 + off + cy * size, size, type);
+    const size = Math.min(13, Math.floor(44 / def.size));
+    const ox = (44 - def.size * size) / 2;
+    const oy = (30 - def.size * size) / 2;
+    return L.rotatedCells(type, 0)
+      .map(([cx, cy]) =>
+        `<i style="left:${ox + cx * size}px;top:${oy + cy * size}px;` +
+        `width:${size}px;height:${size}px;background:${pieceFill(type)}"></i>`)
+      .join('');
+  }
+
+  function buildSide(host: HTMLElement): void {
+    host.innerHTML = `
+      <div class="side-card"><span class="side-label">NEXT</span><span class="side-piece" data-ref="next"></span></div>
+      <div class="side-card"><span class="side-label">HOLD</span><span class="side-piece" data-ref="hold"></span></div>
+      <div class="side-card"><span class="side-label">SCORE</span><span class="side-value" data-ref="score">000000</span></div>
+      <div class="side-card"><span class="side-label">LEVEL</span><span class="side-value side-value-accent" data-ref="level">01</span></div>
+      <div class="side-card"><span class="side-label">BEST</span><span class="side-value side-value-dim" data-ref="best">000000</span></div>`;
+    const q = (ref: string) => host.querySelector<HTMLElement>(`[data-ref="${ref}"]`)!;
+    side = { next: q('next'), hold: q('hold'), score: q('score'), level: q('level'), best: q('best') };
+    shownNext = -1;
+    shownHold = -1;
+  }
+
+  function buildPad(host: HTMLElement): void {
+    host.innerHTML = PAD
+      .map((b) => `<button class="pad-btn" data-pad="${b.id}" aria-label="${b.aria}">${b.label}</button>`)
+      .join('');
+    host.querySelectorAll<HTMLButtonElement>('[data-pad]').forEach((el) => {
+      el.addEventListener('click', () => {
+        act(el.dataset.pad as PadId);
+        el.blur();
+      });
+    });
+  }
+
+  /** 每帧同步侧栏；迷你块只在换块时重绘，避免 60fps 反复写 innerHTML */
+  function syncSide(): void {
+    if (!side) return;
+    if (state.next !== shownNext) {
+      shownNext = state.next;
+      side.next.innerHTML = miniHtml(state.next);
     }
+    if (state.hold !== shownHold) {
+      shownHold = state.hold;
+      side.hold.innerHTML = miniHtml(state.hold);
+    }
+    side.score.textContent = pad(state.score, 6);
+    side.level.textContent = pad(L.levelOf(state.lines), 2);
+    side.best.textContent = pad(best, 6);
   }
 
   function render(): void {
     if (!g) return;
-    g.fillStyle = THEME.bg;
+    g.fillStyle = SCREEN.ground;
     g.fillRect(0, 0, W, H);
-    g.textBaseline = 'alphabetic';
 
-    // 棋盘边界（可见规矩）与已落块
-    g.strokeStyle = THEME.neonCyan;
-    g.lineWidth = 2;
-    g.strokeRect(BOARD_X - 1, BOARD_Y - 1, L.COLS * CELL + 2, L.ROWS * CELL + 2);
     for (let y = 0; y < L.ROWS; y++) {
       for (let x = 0; x < L.COLS; x++) {
         const v = state.board[y * L.COLS + x];
-        if (v !== 0) drawCell(BOARD_X + x * CELL, BOARD_Y + y * CELL, CELL, v - 1);
+        if (v !== 0) drawCell(x * CELL, y * CELL, CELL, v - 1);
       }
     }
 
@@ -174,68 +243,42 @@ export function createTetris(): Game {
     if (state.status !== 'over') {
       for (const [cx, cy] of L.rotatedCells(state.current.type, state.current.rot)) {
         const y = state.current.y + cy;
-        if (y >= 0) drawCell(BOARD_X + (state.current.x + cx) * CELL, BOARD_Y + y * CELL, CELL, state.current.type);
+        if (y >= 0) drawCell((state.current.x + cx) * CELL, y * CELL, CELL, state.current.type);
       }
     }
 
-    // 侧栏：NEXT / HOLD / 分数
-    g.fillStyle = THEME.dim;
-    g.font = `11px ${THEME.font}`;
-    g.textAlign = 'left';
-    g.fillText('NEXT', SIDE_X, 24);
-    drawMini(state.next, SIDE_X, 32);
-    g.fillStyle = THEME.dim;
-    g.fillText('HOLD', SIDE_X, 108);
-    drawMini(state.hold, SIDE_X, 116);
-    g.fillStyle = THEME.text;
-    g.font = `bold 14px ${THEME.font}`;
-    g.fillText(`${state.score}`, SIDE_X, 196);
-    g.fillStyle = THEME.dim;
-    g.font = `11px ${THEME.font}`;
-    g.fillText(`行 ${state.lines}`, SIDE_X, 216);
-    g.fillText(`级 ${L.levelOf(state.lines)}`, SIDE_X, 232);
-    g.fillText(`BEST`, SIDE_X, 260);
-    g.fillText(`${best}`, SIDE_X, 276);
-
-    // 按键条
-    for (const b of BTNS) {
-      g.strokeStyle = THEME.neonCyan;
-      g.lineWidth = 1.5;
-      g.strokeRect(b.x, b.y, b.w, b.h);
-      g.fillStyle = THEME.neonCyan;
-      g.font = `20px ${THEME.font}`;
-      g.textAlign = 'center';
-      g.fillText(b.label, b.x + b.w / 2, b.y + 38);
-    }
-    g.textAlign = 'left';
-
-    // 覆盖提示
-    g.textAlign = 'center';
-    g.font = `14px ${THEME.font}`;
+    // 开局提示留在画布内；GAME OVER 走 ctx.settle 的 DOM 浮层
     if (state.status === 'ready') {
-      g.fillStyle = 'rgba(13, 13, 22, 0.75)';
-      g.fillRect(BOARD_X, BOARD_Y + 160, L.COLS * CELL, 80);
-      g.fillStyle = THEME.neonCyan;
-      g.fillText('点按棋盘 / 回车 开始', BOARD_X + (L.COLS * CELL) / 2, BOARD_Y + 205);
-    } else if (state.status === 'over') {
-      g.fillStyle = 'rgba(13, 13, 22, 0.85)';
-      g.fillRect(BOARD_X, BOARD_Y + 140, L.COLS * CELL, 110);
-      g.fillStyle = THEME.neonPink;
-      g.font = `bold 24px ${THEME.font}`;
-      g.fillText('GAME OVER', BOARD_X + (L.COLS * CELL) / 2, BOARD_Y + 185);
-      g.fillStyle = THEME.neonCyan;
-      g.font = `13px ${THEME.font}`;
-      g.fillText(`BEST ${best} · 点按重来`, BOARD_X + (L.COLS * CELL) / 2, BOARD_Y + 215);
+      g.fillStyle = 'rgba(26, 20, 16, .75)';
+      g.fillRect(0, H / 2 - 40, W, 80);
+      g.fillStyle = SCREEN.gold;
+      g.font = `700 14px ${SCREEN.mono}`;
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText('TAP / ENTER TO START', W / 2, H / 2);
+      g.textAlign = 'left';
+      g.textBaseline = 'alphabetic';
     }
-    g.textAlign = 'left';
+
+    syncSide();
   }
 
   return {
-    meta: { id: 'tetris', name: '俄罗斯方块', icon: '🧱' },
+    meta: {
+      id: 'tetris',
+      name: '俄罗斯方块',
+      icon: '🧱',
+      displayName: 'TETRIS',
+      hints: ['←→ MOVE', '↑ ROTATE', '↓ DROP', 'SPACE HARD DROP'],
+      screen: 'dark',
+      side: true,
+      pad: true,
+    },
 
     mount(container: HTMLElement, context: GameContext): void {
       ctx = context;
       best = ctx.storage.get('best.tetris', 0);
+      bestAtStart = best;
       canvas = document.createElement('canvas');
       const dpr = Math.min(window.devicePixelRatio || 1, 3);
       canvas.width = W * dpr;
@@ -247,7 +290,10 @@ export function createTetris(): Game {
       g = canvas.getContext('2d')!;
       g.scale(dpr, dpr);
 
-      ctx.input.onTapAt(canvas, tapAt);
+      if (ctx.side) buildSide(ctx.side);
+      if (ctx.pad) buildPad(ctx.pad);
+
+      ctx.input.onTapAt(canvas, tapBoard);
       ctx.input.onKey((code) => {
         if (paused) return;
         if (state.status !== 'playing') {
@@ -326,6 +372,7 @@ export function createTetris(): Game {
       canvas?.remove();
       canvas = null;
       g = null;
+      side = null;
       ctx = null; // 事件监听由 frame 的 InputService.dispose() 统一清理
     },
   };
