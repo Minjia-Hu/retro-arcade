@@ -26,13 +26,14 @@ export class GameFrame {
     this.screenEl = root.querySelector<HTMLElement>('.screen');
     this.settleEl = root.querySelector<HTMLElement>('.settle');
     this.baseHints = game.meta.hints ?? [];
-    const btn = (act: string) => root.querySelector<HTMLButtonElement>(`[data-act="${act}"]`)!;
 
-    // 点击后移除焦点，避免残留焦点让空格键误触按钮
-    const wire = (act: string, fn: () => void) => {
-      const b = btn(act);
+    // 点击后移除焦点，避免残留焦点让空格键误触按钮。
+    // 按钮可能不存在（FLAPPY 没有暂停键），缺席时静默跳过。
+    const wire = (act: string, fn: (b: HTMLButtonElement) => void) => {
+      const b = root.querySelector<HTMLButtonElement>(`[data-act="${act}"]`);
+      if (!b) return;
       b.addEventListener('click', () => {
-        fn();
+        fn(b);
         b.blur();
       });
     };
@@ -41,17 +42,17 @@ export class GameFrame {
       this.audio.play('click');
       location.hash = '#/';
     });
-    wire('mute', () => {
+    wire('mute', (b) => {
       const muted = this.audio.toggleMuted();
       // class 只管样式；aria-pressed 才让屏幕阅读器知道当前是开还是关
-      btn('mute').classList.toggle('is-off', muted);
-      btn('mute').setAttribute('aria-pressed', String(muted));
+      b.classList.toggle('is-off', muted);
+      b.setAttribute('aria-pressed', String(muted));
       this.audio.play('click');
     });
-    wire('pause', () => {
+    wire('pause', (b) => {
       if (!this.game) return;
       this.paused = !this.paused;
-      btn('pause').textContent = this.paused ? '▶' : '❚❚';
+      b.textContent = this.paused ? '▶' : '❚❚';
       try {
         if (this.paused) this.game.pause();
         else this.game.resume();
@@ -74,6 +75,13 @@ export class GameFrame {
         return () => resizeCbs.delete(cb);
       },
       settle: (view) => this.showSettle(view),
+      side: root.querySelector<HTMLElement>('.cab-side'),
+      pad: root.querySelector<HTMLElement>('.cab-pad'),
+      // 公开版本必须同时更新 baseHints，否则结算浮层收起时会把游戏设的文案冲掉
+      setHints: (hints) => {
+        this.baseHints = hints;
+        this.renderHints(hints);
+      },
     };
 
     try {
@@ -119,7 +127,7 @@ export class GameFrame {
   }
 
   /** 替换底部按键提示条；结算态与游戏态的文案不同（设计稿 artboard 1a vs 1b） */
-  private setHints(hints: string[]): void {
+  private renderHints(hints: string[]): void {
     const html = hintsBarHtml(hints);
     const bar = this.cabinetEl?.querySelector('.cab-hints');
     if (bar) bar.outerHTML = html;
@@ -135,13 +143,13 @@ export class GameFrame {
     if (!el) return;
     if (!view) {
       this.clearSettle();
-      this.setHints(this.baseHints);
+      this.renderHints(this.baseHints);
       return;
     }
     el.innerHTML = settleHtml(view);
     el.hidden = false;
     this.screenEl?.classList.add('is-settled');
-    this.setHints(view.hints ?? this.baseHints);
+    this.renderHints(view.hints ?? this.baseHints);
 
     // 点完就 blur：与顶栏 wire() 同一约定，避免残留焦点让空格键既触发按钮又触发游戏逻辑
     const onClick = (act: string, fn: () => void) => {

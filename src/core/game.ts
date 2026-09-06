@@ -45,6 +45,12 @@ export interface GameContext {
   onResize(cb: () => void): () => void;
   /** 上报结算状态；传 null 收起浮层 */
   settle(view: SettleView | null): void;
+  /** 侧栏容器；meta.side 为 true 时可用，否则为 null */
+  side: HTMLElement | null;
+  /** 控制垫容器；meta.pad 为 true 时可用，否则为 null */
+  pad: HTMLElement | null;
+  /** 替换底部按键提示条 */
+  setHints(hints: string[]): void;
 }
 
 export interface Game {
