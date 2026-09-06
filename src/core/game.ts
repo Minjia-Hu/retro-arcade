@@ -12,6 +12,12 @@ export interface GameMeta {
   hints?: string[];
   /** 屏幕井风格：深色屏或浅色纸盘，缺省 dark */
   screen?: 'dark' | 'paper';
+  /** 需要屏幕井右侧的侧栏时置 true，内容由游戏自己填 */
+  side?: boolean;
+  /** 需要屏幕下方的触屏控制垫时置 true，内容由游戏自己填 */
+  pad?: boolean;
+  /** 顶栏是否渲染暂停按钮，缺省 true。FLAPPY 按设计稿不显示 */
+  pausable?: boolean;
 }
 
 export interface SettleView {
