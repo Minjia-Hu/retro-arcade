@@ -27,6 +27,7 @@ export function cabinetHtml(meta: GameMeta, muted: boolean): string {
     ? ''
     : '<button class="cab-btn" data-act="pause" aria-label="暂停">❚❚</button>';
   const sideHtml = meta.side ? '<div class="cab-side"></div>' : '';
+  const headHtml = meta.head ? '<div class="cab-head"></div>' : '';
   const padHtml = meta.pad ? '<div class="cab-pad"></div>' : '';
   const toolsHtml = (meta.tools ?? [])
     .map((t) => `<button class="cab-btn" data-act="tool:${esc(t.id)}" aria-label="${esc(t.aria)}">${esc(t.label)}</button>`)
@@ -51,10 +52,13 @@ export function cabinetHtml(meta: GameMeta, muted: boolean): string {
         </span>
       </div>
       <div class="cab-screen">
-        <div class="screen screen-${meta.screen ?? 'dark'}">
-          <div class="screen-body"></div>
-          <div class="screen-glass"></div>
-          <div class="settle" role="status" aria-live="polite" hidden></div>
+        <div class="cab-stack">
+          ${headHtml}
+          <div class="screen screen-${meta.screen ?? 'dark'}">
+            <div class="screen-body"></div>
+            <div class="screen-glass"></div>
+            <div class="settle" role="status" aria-live="polite" hidden></div>
+          </div>
         </div>
         ${sideHtml}
       </div>

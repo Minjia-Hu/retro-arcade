@@ -146,4 +146,9 @@ describe('插槽', () => {
     expect(mount({ side: true }).ctx.side).not.toBeNull();
     expect(mount({ pad: true }).ctx.pad).not.toBeNull();
   });
+
+  it('按 meta 提供 head，否则为 null', () => {
+    expect(mount().ctx.head).toBeNull();
+    expect(mount({ head: true }).ctx.head).not.toBeNull();
+  });
 });
