@@ -46,7 +46,7 @@ test('进入扫雷有画布渲染，返回首页正常', async ({ page }) => {
   await page.goto('/');
   await page.click('[data-id="minesweeper"]');
   await expect(page.locator('canvas')).toBeVisible();
-  await expect(page.locator('.cab-name')).toContainText('扫雷');
+  await expect(page.locator('.cab-name')).toContainText('MINES');
   await page.click('[data-act="back"]');
   await expect(page.locator('.hub-title')).toBeVisible();
 });
@@ -73,7 +73,7 @@ test('进入五子棋有画布渲染，返回首页正常', async ({ page }) => 
   await page.goto('/');
   await page.click('[data-id="gomoku"]');
   await expect(page.locator('canvas')).toBeVisible();
-  await expect(page.locator('.cab-name')).toContainText('五子棋');
+  await expect(page.locator('.cab-name')).toContainText('GOMOKU');
   await page.click('[data-act="back"]');
   await expect(page.locator('.hub-title')).toBeVisible();
 });

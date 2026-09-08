@@ -306,7 +306,16 @@ button { font-family: inherit; cursor: pointer; }
 .cab-dot { color: var(--faint); }
 
 /* ---- 结算浮层 ---- */
-.settle { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+/*
+ * 浮层比棋盘高时不能被静默裁掉：.screen 是 overflow:hidden 的，
+ * GOMOKU 的 6 行菜单卡（389px）在 320px 的井里就把 QUIT TO HUB 裁没了。
+ * 这里让它自己滚，退路始终够得着。
+ */
+.settle {
+  position: absolute; inset: 0; display: flex;
+  align-items: center; justify-content: center;
+  overflow: auto; padding: 8px 0;
+}
 .settle[hidden] { display: none; }
 .settle-card {
   width: 280px; max-width: calc(100% - 32px);
