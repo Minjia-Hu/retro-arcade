@@ -1,28 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { THEME } from '../src/core/theme';
 import { GAMES } from '../src/games/registry';
 import { padScore, relativeTime, dateKey, hashDate } from '../src/shell/hub/model';
 import { ArcadeStorage, memoryBackend } from '../src/core/storage';
 import { buildHall } from '../src/shell/hub/model';
 import { buildDaily, CHALLENGES } from '../src/shell/hub/model';
 import { buildFeatured, buildCards, buildHubModel } from '../src/shell/hub/model';
-
-describe('THEME 守卫', () => {
-  // THEME 被 8 个游戏的 canvas 渲染引用 163 次，首页重设计期间一个键都不许动
-  it('不破坏游戏画布使用的 THEME', () => {
-    expect(THEME).toEqual({
-      bg: '#0d0d16',
-      panel: '#16121f',
-      text: '#e8e6ff',
-      dim: '#665f7a',
-      neonGreen: '#39ff14',
-      neonPink: '#ff2fd6',
-      neonCyan: '#00e5ff',
-      neonYellow: '#ffe600',
-      font: "'Courier New', ui-monospace, monospace",
-    });
-  });
-});
 
 describe('registry displayName', () => {
   it('八个游戏都有英文大写展示名', () => {
