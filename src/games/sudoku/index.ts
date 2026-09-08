@@ -1,6 +1,9 @@
 import type { Game, GameContext } from '../../core/game';
 import { GameLoop } from '../../core/loop';
 import { createScreenCanvas } from '../../core/screen';
+import { DIFF_LABEL } from '../../core/format';
+import { padButtons } from '../../shell/pad';
+import { difficultyMenu } from '../../shell/difficulty-menu';
 import * as L from './logic';
 
 const CELL = 32;
@@ -20,11 +23,6 @@ const PAPER = {
   errorBg: 'rgba(214, 51, 108, .12)',
   mono: "'JetBrains Mono', ui-monospace, monospace",
 } as const;
-
-/** 难度药丸文案：logic 里的 name 是中文，顶栏按设计稿用英文 */
-const DIFF_LABEL: Record<L.Difficulty['id'], string> = {
-  easy: 'EASY', medium: 'MEDIUM', hard: 'HARD',
-};
 
 export function createSudoku(): Game {
   let state: L.SudokuState | null = null; // null = 难度菜单
@@ -64,26 +62,10 @@ export function createSudoku(): Game {
     showMenu();
   }
 
-  function showMenu(): void {
-    const resumable = state !== null && state.status === 'playing';
-    ctx?.overlay({
-      title: 'DIFFICULTY', // 单词标题：卡片宽 256、棋盘仅 288，两词会折行并盖满整块屏幕
-      tone: 'win',
-      lines: [],
-      actions: [
-        // 玩到一半误触 ☰ 不该只能弃局
-        ...(resumable
-          ? [{ label: '✕ RESUME', kind: 'secondary' as const, onPress: () => ctx?.overlay(null) }]
-          : []),
-        ...L.DIFFICULTIES.map((d) => ({
-          label: DIFF_LABEL[d.id],
-          kind: 'secondary' as const,
-          onPress: () => startGame(d),
-        })),
-      ],
-      hints: [resumable ? 'RESUME OR PICK A DIFFICULTY' : 'PICK A DIFFICULTY TO BEGIN'],
-    });
-  }
+  /** 由 difficultyMenu 在 mount 里赋值；backToMenu 与 onTool 共用 */
+  // 默认值故意会抛：本轮踩过「赋值晚于调用」的坑，静默空桩只会变成
+  // 「菜单不弹」的现场调试，抛出来能在开发期就定位
+  let showMenu: () => void = () => { throw new Error('showMenu called before mount'); };
 
   function reportSolved(): void {
     if (!state) return;
@@ -99,34 +81,34 @@ export function createSudoku(): Game {
 
   function buildPad(host: HTMLElement): void {
     host.classList.add('cab-pad-rows');
-    const digits = [1, 2, 3, 4, 5, 6, 7, 8, 9]
-      .map((d) => `<button class="pad-btn pad-btn-digit" data-digit="${d}" aria-label="填入 ${d}">${d}</button>`)
-      .join('');
-    host.innerHTML = `
-      <div class="pad-row">${digits}</div>
-      <div class="pad-row">
-        <button class="pad-btn pad-btn-wide" data-fn="erase" aria-label="清除">⌫ ERASE</button>
-        <button class="pad-btn pad-btn-wide" data-fn="notes" aria-label="笔记模式">✎ NOTES</button>
-        <button class="pad-btn pad-btn-wide" data-fn="check" aria-label="检查冲突">⚑ CHECK</button>
-      </div>`;
+    host.innerHTML = '<div class="pad-row" data-row="digits"></div><div class="pad-row" data-row="fns"></div>';
+    const row = (n: string) => host.querySelector<HTMLElement>(`[data-row="${n}"]`)!;
 
-    host.querySelectorAll<HTMLButtonElement>('[data-digit]').forEach((el) => {
-      el.addEventListener('click', () => {
-        applyDigit(Number(el.dataset.digit));
-        el.blur();
-      });
+    padButtons(
+      row('digits'),
+      [1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => ({
+        id: String(d), label: String(d), aria: `填入 ${d}`, variant: 'pad-btn-digit',
+      })),
+      (id) => applyDigit(Number(id)),
+    );
+
+    padButtons(row('fns'), [
+      { id: 'erase', label: '⌫ ERASE', aria: '清除', variant: 'pad-btn-wide' },
+      { id: 'notes', label: '✎ NOTES', aria: '笔记模式', variant: 'pad-btn-wide' },
+      { id: 'check', label: '⚑ CHECK', aria: '检查冲突', variant: 'pad-btn-wide' },
+    ], (id) => {
+      // eraseSelected 自己有 frozen 守卫；这里再挡一次是为了 notes/check 两个开关
+      if (frozen()) return;
+      if (id === 'erase') eraseSelected();
+      else if (id === 'notes') { notesMode = !notesMode; syncPad(); }
+      else if (id === 'check') { showErrors = !showErrors; syncPad(); }
     });
-    const fn = (name: string) => host.querySelector<HTMLButtonElement>(`[data-fn="${name}"]`)!;
-    fn('erase').addEventListener('click', () => { eraseSelected(); fn('erase').blur(); });
-    fn('notes').addEventListener('click', () => {
-      if (!frozen()) { notesMode = !notesMode; syncPad(); }
-      fn('notes').blur();
-    });
-    fn('check').addEventListener('click', () => {
-      if (!frozen()) { showErrors = !showErrors; syncPad(); }
-      fn('check').blur();
-    });
-    padRefs = { notes: fn('notes'), check: fn('check') };
+
+    const fns = row('fns');
+    padRefs = {
+      notes: fns.querySelector('[data-pad="notes"]')!,
+      check: fns.querySelector('[data-pad="check"]')!,
+    };
     syncPad();
   }
 
@@ -274,6 +256,16 @@ export function createSudoku(): Game {
       ctx = context;
       ({ canvas, g } = createScreenCanvas(container, W, H));
 
+      // 菜单必须先建：下面的 else 分支会立刻调它，晚赋值会调到空函数桩
+      showMenu = difficultyMenu({
+        ctx,
+        difficulties: L.DIFFICULTIES,
+        resumable: () => state !== null && state.status === 'playing',
+        onPick: startGame,
+      }).open;
+      ctx.onTool('menu', () => showMenu());
+      if (ctx.pad) buildPad(ctx.pad);
+
       // 恢复进行中盘面；没有存档才弹难度菜单
       const restored = L.deserialize(ctx.storage.get(SAVE_KEY, null));
       if (restored) {
@@ -283,9 +275,6 @@ export function createSudoku(): Game {
         ctx.setPill(null);
         showMenu();
       }
-
-      if (ctx.pad) buildPad(ctx.pad);
-      ctx.onTool('menu', showMenu);
 
       ctx.input.onTapAt(canvas, tapAt);
       ctx.input.onKey((code) => {

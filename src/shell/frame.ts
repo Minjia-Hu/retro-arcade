@@ -79,6 +79,7 @@ export class GameFrame {
         return () => resizeCbs.delete(cb);
       },
       overlay: (view) => this.showOverlay(view),
+      head: root.querySelector<HTMLElement>('.cab-head'),
       side: root.querySelector<HTMLElement>('.cab-side'),
       pad: root.querySelector<HTMLElement>('.cab-pad'),
       // 只更新游戏态那一路；结算态在时由 applyHints 保证浮层提示不被冲掉

@@ -12,6 +12,8 @@ export interface GameMeta {
   hints?: string[];
   /** 屏幕井风格：深色屏或浅色纸盘，缺省 dark */
   screen?: 'dark' | 'paper';
+  /** 需要屏幕井上方的一行 DOM 时置 true，内容由游戏自己填 */
+  head?: boolean;
   /** 需要屏幕井右侧的侧栏时置 true，内容由游戏自己填 */
   side?: boolean;
   /** 需要屏幕下方的触屏控制垫时置 true，内容由游戏自己填 */
@@ -55,6 +57,8 @@ export interface GameContext {
   onResize(cb: () => void): () => void;
   /** 展示或收起浮层（开始菜单、结算卡片）；传 null 收起 */
   overlay(view: OverlayView | null): void;
+  /** 上方栏容器；meta.head 为 true 时可用，否则为 null */
+  head: HTMLElement | null;
   /** 侧栏容器；meta.side 为 true 时可用，否则为 null */
   side: HTMLElement | null;
   /** 控制垫容器；meta.pad 为 true 时可用，否则为 null */

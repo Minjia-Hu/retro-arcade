@@ -2,8 +2,11 @@ import type { Game, GameMeta } from '../core/game';
 
 export interface GameEntry {
   /**
-   * id/name/icon 与各游戏模块内的 meta 保持手动同步（懒加载需要，属有意重复）。
-   * displayName 是首页专用的展示字段，游戏模块内不需要，故只在这里出现。
+   * id/name/icon/displayName 与各游戏模块内的 meta 保持手动同步（懒加载需要，属有意重复）。
+   *
+   * displayName 两处都要写：首页卡片读这里（懒加载前拿不到模块），机柜顶栏读模块里的那份。
+   * 两边不一致时会静默分叉——首页显示一个名字、进去顶栏显示另一个。
+   * tests/registry.test.ts 守着这个不变量。
    */
   meta: GameMeta;
   /**

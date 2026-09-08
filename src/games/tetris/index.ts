@@ -4,6 +4,7 @@ import { SCREEN } from '../../core/theme';
 import * as L from './logic';
 import { padScore } from '../../core/format';
 import { createScreenCanvas } from '../../core/screen';
+import { padButtons } from '../../shell/pad';
 
 const CELL = 22;
 const W = L.COLS * CELL; // 220：画布只剩棋盘，边框圆角由 .screen 提供
@@ -211,15 +212,8 @@ export function createTetris(): Game {
   }
 
   function buildPad(host: HTMLElement): void {
-    host.innerHTML = PAD
-      .map((b) => `<button class="pad-btn" data-pad="${b.id}" aria-label="${b.aria}">${b.label}</button>`)
-      .join('');
-    host.querySelectorAll<HTMLButtonElement>('[data-pad]').forEach((el) => {
-      el.addEventListener('click', () => {
-        act(el.dataset.pad as PadId);
-        el.blur();
-      });
-    });
+    // PAD 的字段与 PadButton 一致，直接传，不必再 map 一层
+    padButtons(host, PAD, (id) => act(id as PadId));
   }
 
   /** 每帧同步侧栏；迷你块只在换块时重绘，避免 60fps 反复写 innerHTML */

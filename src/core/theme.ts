@@ -1,18 +1,7 @@
-export const THEME = {
-  bg: '#0d0d16',
-  panel: '#16121f',
-  text: '#e8e6ff',
-  dim: '#665f7a',
-  neonGreen: '#39ff14',
-  neonPink: '#ff2fd6',
-  neonCyan: '#00e5ff',
-  neonYellow: '#ffe600',
-  font: "'Courier New', ui-monospace, monospace",
-} as const;
-
 /**
  * 深色屏游戏的画布内配色（Sunset Arcade 暖霓虹）。
- * 逐个游戏从 THEME 迁移过来（A 迁 SNAKE，B 迁其余三款），迁完后删除 THEME。
+ * 浅色纸盘的四款各自在 index.ts 里持有自己的 PAPER 常量——它们的配色互不相同，
+ * 硬凑成一张表只会得到一个谁都不合身的抽象。
  */
 export const SCREEN = {
   ground: '#1a1410', // 与 arcade.css 的 --screen-ground 对应，改一处要同步另一处

@@ -169,7 +169,7 @@ button { font-family: inherit; cursor: pointer; }
   .hero { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .btn-start, .btn-accept, .card, .cab-btn, .settle-action, .pad-btn { transition: none; }
+  .btn-start, .btn-accept, .card, .cab-btn, .settle-action, .pad-btn, .head-btn { transition: none; }
 }
 
 /* ---- 游戏机柜 ---- */
@@ -230,6 +230,38 @@ button { font-family: inherit; cursor: pointer; }
 .screen.is-settled .screen-body { opacity: .25; }
 .screen-paper.is-settled .screen-body { opacity: .45; }
 
+.cab-stack { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.cab-head { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; }
+/* 上方栏里的统计卡与按钮共用一套外观 */
+.head-card {
+  background: var(--paper); border: 2px solid var(--ink); border-radius: 8px;
+  padding: 7px 16px; display: flex; flex-direction: column; align-items: center;
+  font-family: var(--mono); font-weight: 700; font-size: 15px; color: var(--ink);
+}
+.head-label { font-family: 'Bungee', 'Space Grotesk', sans-serif; font-size: 9px; color: var(--dim); }
+.head-btn {
+  background: var(--paper); border: 2px solid var(--ink); border-radius: 8px;
+  box-shadow: 3px 3px 0 var(--ink); padding: 7px 14px; color: var(--ink);
+  font-family: var(--mono); font-weight: 700; font-size: 14px;
+  transition: transform .1s, box-shadow .1s;
+}
+.head-btn:hover { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
+.head-btn:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
+.head-btn:focus-visible { outline: none; box-shadow: 3px 3px 0 var(--ink), var(--focus-ring); }
+.head-btn:disabled { color: var(--faint); border-color: var(--faint); box-shadow: none; transform: translate(3px, 3px); }
+.head-btn-accent { background: var(--highlight); }
+
+/* 回合筹（当前只有 GOMOKU 用）：两枚指示当前手方的药丸 */
+.chip {
+  font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 1px;
+  border: 2px solid var(--faint); border-radius: 8px; padding: 7px 16px;
+  background: var(--panel); color: var(--dim);
+}
+.chip.is-turn {
+  background: var(--ink); color: var(--panel); border-color: var(--ink);
+  box-shadow: 3px 3px 0 rgba(43, 33, 24, .35);
+}
+
 /* ---- 侧栏（当前只有 TETRIS 用）---- */
 .cab-side { display: flex; flex-direction: column; gap: 12px; width: 110px; flex: none; }
 .side-card {
@@ -274,9 +306,20 @@ button { font-family: inherit; cursor: pointer; }
 .cab-dot { color: var(--faint); }
 
 /* ---- 结算浮层 ---- */
-.settle { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+/*
+ * 浮层比棋盘高时不能被静默裁掉：.screen 是 overflow:hidden 的，
+ * GOMOKU 的 6 行菜单卡（389px）在 320px 的井里就把 QUIT TO HUB 裁没了。
+ * 这里让它自己滚，退路始终够得着。
+ */
+.settle {
+  position: absolute; inset: 0; display: flex;
+  justify-content: center; overflow: auto; padding: 8px 0;
+}
 .settle[hidden] { display: none; }
 .settle-card {
+  /* margin:auto 而非父级的 align-items:center：两者都能居中，但 align-items 会把
+     溢出的上半部分推到可滚动区之外——卡片高过屏幕井时顶边永远够不着 */
+  margin: auto;
   width: 280px; max-width: calc(100% - 32px);
   background: var(--panel); border: 3px solid var(--ink); border-radius: 14px;
   box-shadow: 6px 6px 0 rgba(0, 0, 0, .55); padding: 26px 24px;

@@ -209,6 +209,28 @@ describe('cabinetHtml 插槽', () => {
   });
 });
 
+describe('cabinetHtml 上方栏', () => {
+  it('缺省不渲染上方栏，但 stack 始终在', () => {
+    const html = cabinetHtml(snake, false);
+    expect(html).not.toContain('cab-head');
+    expect(html).toContain('class="cab-stack"');
+  });
+
+  it('head 为 true 时渲染空的上方栏', () => {
+    expect(cabinetHtml({ ...snake, head: true }, false)).toContain('<div class="cab-head"></div>');
+  });
+
+  it('上方栏排在屏幕之前、侧栏之外', () => {
+    const html = cabinetHtml({ ...snake, head: true, side: true }, false);
+    const head = html.indexOf('cab-head');
+    const screen = html.indexOf('class="screen ');
+    const side = html.indexOf('cab-side');
+    expect(head).toBeGreaterThan(-1);
+    expect(head).toBeLessThan(screen);
+    expect(screen).toBeLessThan(side);
+  });
+});
+
 describe('cabinetHtml 顶栏工具按钮与药丸', () => {
   const withTool = {
     ...snake,
