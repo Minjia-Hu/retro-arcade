@@ -59,21 +59,27 @@ export function createGomoku(): Game {
   let hoverCleanup: (() => void) | null = null;
 
   let head: { black: HTMLElement; white: HTMLElement } | null = null;
+  let shownAi: boolean | null = null; // 回合筹文案的缓存；buildHead 里重置
 
   function buildHead(host: HTMLElement): void {
     host.innerHTML = `
-      <div class="chip" data-ref="black"></div>
-      <div class="chip" data-ref="white"></div>`;
+      <div class="chip" data-ref="black" aria-label="黑方">● BLACK</div>
+      <div class="chip" data-ref="white" aria-label="白方">○ WHITE</div>`;
     const q = (r: string) => host.querySelector<HTMLElement>(`[data-ref="${r}"]`)!;
     head = { black: q('black'), white: q('white') };
+    shownAi = false; // 与上面写死的 BLACK/WHITE 默认文案对应
   }
 
   /** 文案随模式变：AI 局是 YOU/CPU，双人局是 BLACK/WHITE（设计稿只画了 AI 那种） */
   function syncHead(): void {
     if (!head || !game) return;
+    // 文案只在切模式时变，却每帧都写会反复重建文本节点——与 2048/MINES 同样做缓存
     const ai = mode !== 'pvp';
-    head.black.textContent = ai ? '● YOU' : '● BLACK';
-    head.white.textContent = ai ? '○ CPU' : '○ WHITE';
+    if (ai !== shownAi) {
+      shownAi = ai;
+      head.black.textContent = ai ? '● YOU' : '● BLACK';
+      head.white.textContent = ai ? '○ CPU' : '○ WHITE';
+    }
     const turn = game.turn;
     head.black.classList.toggle('is-turn', turn === L.BLACK && game.status === 'playing');
     head.white.classList.toggle('is-turn', turn === L.WHITE && game.status === 'playing');
@@ -170,10 +176,6 @@ export function createGomoku(): Game {
         })),
       ],
       hints: [resumable ? 'RESUME OR PICK A MODE' : 'PICK A MODE TO BEGIN'],
-      // 实测：320 高的棋盘装不下「标题 + RESUME + 4 模式 + QUIT」6 行（会被 .screen
-      // 的 overflow 裁切掉 QUIT）。RESUME 在场时 ◀ BACK（顶栏常驻）已能退出，
-      // QUIT TO HUB 在这一态纯属冗余，去掉这一行换回不裁切。
-      quit: !resumable,
     });
   }
 

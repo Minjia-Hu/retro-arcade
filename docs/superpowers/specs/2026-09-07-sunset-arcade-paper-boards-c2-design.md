@@ -203,3 +203,35 @@ SUDOKU 一并改用它——不能只让新代码用而把旧的留成第二份�
 
 C2 完成后 `THEME` 无消费者，**在最后一个任务里删除它**，并同步删掉
 `tests/hub-model.test.ts` 里那条守着它的整体快照断言。
+
+## 执行中定下的几条判断（审查后补记）
+
+- **MINES 的表在 ☰ 菜单期间继续走。** `pausable: false` 意味着没有别的暂停入口，而 ☰ 是
+  玩家最可能当暂停用的按钮。真实扫雷的计时器也不因开菜单而停，所以不改——但这是一条判断，
+  不是疏漏，记在这里免得下一个人当 bug 修。
+- **`.cab-screen` 的 stretch 落点变了。** 加 `.cab-stack` 之后被拉伸的是 stack 而非
+  `.screen`。今天唯一的侧栏消费者 TETRIS 的侧栏比屏幕矮，所以无视觉差异；将来侧栏若高过
+  屏幕，屏幕井不会再跟着拉高。
+- **2048 画布是 324×324 不是 spec 正文写的 320×320**：格间距取 8（`4×71 + 5×8 = 324`），
+  正文那个算式用的是 7。以实现为准。
+- **`quit: false` 的绕行已撤销。** GOMOKU 曾因菜单卡片被裁而隐藏 QUIT TO HUB；根因是
+  `.settle` 用 `align-items: center` + `overflow: auto` 这个 flex 居中溢出陷阱——溢出的
+  上半部分不在可滚动区内。改用 `.settle-card { margin: auto }` 后三种形态顶边都完整可见，
+  绕行随之删除，退路恢复常驻。
+
+## 留给后续的已知问题
+
+- **浮层形状已有三份**（SUDOKU / MINES 的难度菜单、GOMOKU 的模式菜单）：
+  「标题 + 可选 RESUME + N 个选项 + 可选 QUIT」。此刻不抽是对的（语义确实不同），
+  但**第 4 份出现时**应把 `difficultyMenu` 泛化成 `pickerMenu({ title, items, resumable, quit, hints })`，
+  让 `difficultyMenu` 退化成一层薄包装。
+- **四款游戏各有一份同文的 `frozen()`**。不该抽成第五个共用函数——它闭包在两个各游戏私有的
+  局部变量上，传参的噪音比省下的一行还多。真正的归宿是上移到 shell：frame 自己持有
+  `this.paused`、也已经有 `overlayOpen()`，加一个 `ctx.frozen()` 就能让四个游戏一起删掉
+  `paused` 镜像。属 shell 改动，应另立项。
+- **2048 的一个静默僵局**：`logic.ts` 的 `move()` 里 `won` 判定在 `canMove` 之前，
+  若最后一步同时拼出 2048 且填满棋盘，`▶ KEEP GOING` 之后棋盘既动不了也不出结算卡
+  （可用 ↩ UNDO / ↺ NEW 脱身）。`L.canMove` 已导出，在 `index.ts` 里就能关掉，不必碰 logic。
+- **`difficultyMenu` 没有直接单测**，只由 SUDOKU 的 e2e 间接覆盖。
+- **GOMOKU 的 `MODES` 与 `PILL_LABEL` 是两张同 id 的表**，`reportEnd` 里还有一处
+  `find(...)!` 非空断言。合成一张 `Record<Mode, { label, pill }>` 可同时消掉两者。

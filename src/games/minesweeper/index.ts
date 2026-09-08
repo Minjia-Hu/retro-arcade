@@ -37,7 +37,9 @@ export function createMinesweeper(): Game {
   let shownFace = '';
 
   /** 由 difficultyMenu 在 mount 里赋值；☰ 与首次挂载共用 */
-  let showMenu: () => void = () => {};
+  // 默认值故意会抛：本轮踩过「赋值晚于调用」的坑，静默空桩只会变成
+  // 「菜单不弹」的现场调试，抛出来能在开发期就定位
+  let showMenu: () => void = () => { throw new Error('showMenu called before mount'); };
 
   function frozen(): boolean {
     return paused || Boolean(ctx?.overlayOpen());
@@ -45,13 +47,17 @@ export function createMinesweeper(): Game {
 
   function buildHead(host: HTMLElement): void {
     host.innerHTML = `
-      <div class="head-card" data-ref="flags">⚑ 00</div>
+      <div class="head-card" data-ref="flags" aria-label="剩余雷数">⚑ 00</div>
       <button class="head-btn head-btn-accent" data-ref="face" aria-label="重开本局">🙂</button>
-      <div class="head-card" data-ref="time">00:00</div>`;
+      <div class="head-card" data-ref="time" aria-label="用时">00:00</div>`;
     const q = <T extends HTMLElement>(r: string) => host.querySelector<T>(`[data-ref="${r}"]`)!;
     head = { flags: q('flags'), face: q<HTMLButtonElement>('face'), time: q('time') };
     head.face.addEventListener('click', () => {
       head!.face.blur();
+      // 头栏在 .screen 之外，☰ 菜单开着时这个按钮照样点得到。不挡的话玩家以为
+      // 自己在选难度，实际上刚把进行中的盘面清了。结算浮层里的 ▶ NEW GAME
+      // 直接调 replay()，不经过这里，不受影响
+      if (frozen()) return;
       replay();
     });
     shownFlags = '';

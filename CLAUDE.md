@@ -24,14 +24,19 @@ git diff --stat <基线> -- 'src/games/*/logic.ts' 'tests/*-logic.test.ts'   # �
 需要 `logic.ts` 没导出的常量时（例如砖块行高），**在 `index.ts` 里加注释钉住出处，
 不要为了迎合渲染去改 logic**。
 
-### 2. `THEME` 是画布调色板，不是页面主题
+### 2. 画布配色与页面色板是两回事
 
-`src/core/theme.ts` 的 `THEME` 被尚未迁移的游戏在 canvas 里引用。设计交接文档常写
-「替换 THEME」，照做会让那些游戏编译失败并把画布刷成页面底色。已迁移的游戏用 `SCREEN`
-（暖霓虹）。全部迁完才能删 `THEME`。
+**页面色板的唯一真相源是 `src/styles/arcade.css` 的 `:root`**；TS 侧只持有必须由 JS
+内联的那部分。两边都有的值（accent 四色、`--screen-ground`）在两处都写了交叉引用注释。
 
-页面色板的唯一真相源是 `src/styles/arcade.css` 的 `:root`；TS 侧只持有必须由 JS 内联的
-那部分。两边都有的值（accent 四色、`--screen-ground`）在两处都写了交叉引用注释。
+**画布内配色不在那里**：深色屏四款（SNAKE / TETRIS / BREAKOUT / FLAPPY）共用
+`src/core/theme.ts` 的 `SCREEN`；浅色纸盘四款（SUDOKU / 2048 / MINES / GOMOKU）**各自**
+在自己的 `index.ts` 里持有 `PAPER` 常量——它们的配色互不相同，硬凑成一张表只会得到一个
+谁都不合身的抽象。**不要合并它们。**
+
+（历史：曾有一个叫 `THEME` 的画布调色板被 8 个游戏共用。设计交接文档反复写「替换 THEME」，
+照做会让游戏编译失败并把画布刷成页面底色。八个游戏全部迁走后它已被删除，
+文档里再提到它的都是历史记录。）
 
 ### 3. 路由是 `#/<id>`
 

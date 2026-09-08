@@ -46,6 +46,7 @@ export function createG2048(): Game {
   let head: { score: HTMLElement; best: HTMLElement; undo: HTMLButtonElement } | null = null;
   let shownScore = '';
   let shownBest = '';
+  let shownUndoOff: boolean | null = null;
 
   /** 浮层盖住棋盘时，输入整体冻结（照 SUDOKU 的 frozen() 写法） */
   function frozen(): boolean {
@@ -65,6 +66,7 @@ export function createG2048(): Game {
     });
     shownScore = '';
     shownBest = '';
+    shownUndoOff = null;
   }
 
   /** 每帧同步；只在值变了才写 DOM */
@@ -74,7 +76,10 @@ export function createG2048(): Game {
     if (s !== shownScore) { shownScore = s; head.score.textContent = s; }
     const b = padScore(best, 6);
     if (b !== shownBest) { shownBest = b; head.best.textContent = b; }
-    head.undo.disabled = !state.prev;
+    // 浮层开着时 doUndo 会被 frozen 挡下，按钮却仍显示可用——头栏在 .screen 之外点得到，
+    // 点了没反应也没反馈。禁用态一并反映 frozen，顺便补上这个函数里唯一漏掉的缓存
+    const off = !state.prev || frozen();
+    if (off !== shownUndoOff) { shownUndoOff = off; head.undo.disabled = off; }
   }
 
   function newGame(): void {

@@ -63,7 +63,9 @@ export function createSudoku(): Game {
   }
 
   /** 由 difficultyMenu 在 mount 里赋值；backToMenu 与 onTool 共用 */
-  let showMenu: () => void = () => {};
+  // 默认值故意会抛：本轮踩过「赋值晚于调用」的坑，静默空桩只会变成
+  // 「菜单不弹」的现场调试，抛出来能在开发期就定位
+  let showMenu: () => void = () => { throw new Error('showMenu called before mount'); };
 
   function reportSolved(): void {
     if (!state) return;
