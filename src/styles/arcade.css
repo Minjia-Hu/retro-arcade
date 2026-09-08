@@ -251,6 +251,17 @@ button { font-family: inherit; cursor: pointer; }
 .head-btn:disabled { color: var(--faint); border-color: var(--faint); box-shadow: none; transform: translate(3px, 3px); }
 .head-btn-accent { background: var(--highlight); }
 
+/* 回合筹（当前只有 GOMOKU 用）：两枚指示当前手方的药丸 */
+.chip {
+  font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 1px;
+  border: 2px solid var(--faint); border-radius: 8px; padding: 7px 16px;
+  background: var(--panel); color: var(--dim);
+}
+.chip.is-turn {
+  background: var(--ink); color: var(--panel); border-color: var(--ink);
+  box-shadow: 3px 3px 0 rgba(43, 33, 24, .35);
+}
+
 /* ---- 侧栏（当前只有 TETRIS 用）---- */
 .cab-side { display: flex; flex-direction: column; gap: 12px; width: 110px; flex: none; }
 .side-card {
