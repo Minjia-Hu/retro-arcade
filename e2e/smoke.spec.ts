@@ -220,3 +220,58 @@ test('SUDOKU 尚未开局时菜单没有 RESUME', async ({ page }) => {
   await expect(page.locator('.settle-actions .settle-action')).toHaveCount(3);
   await expect(page.locator('.cab-hints')).toHaveText('PICK A DIFFICULTY TO BEGIN');
 });
+
+test('2048 的分数卡与撤销在 DOM 里', async ({ page }) => {
+  await page.goto('/#/g2048');
+  await expect(page.locator('canvas')).toBeVisible();
+  await expect(page.locator('.cab-head .head-card')).toHaveCount(2);
+  await expect(page.locator('[data-act="tool:new"]')).toHaveCount(1);
+
+  // 开局无步可撤；走一步后可撤
+  await expect(page.locator('[data-ref="undo"]')).toBeDisabled();
+  await page.keyboard.press('ArrowLeft');
+  await expect(page.locator('[data-ref="undo"]')).toBeEnabled();
+});
+
+test('MINES 的 🙂 重开本局，☰ 才回难度菜单', async ({ page }) => {
+  await page.goto('/#/minesweeper');
+  await page.click('[data-act="overlay:0"]');            // 选第一档难度
+  await expect(page.locator('.settle-card')).toBeHidden();
+  await expect(page.locator('.cab-pill')).toHaveText('EASY');
+
+  // 🙂 是重开本局：不回菜单、难度不变
+  await page.click('[data-ref="face"]');
+  await expect(page.locator('.settle-card')).toBeHidden();
+  await expect(page.locator('.cab-pill')).toHaveText('EASY');
+
+  // ☰ 才是回难度菜单 —— 这两件事以前挤在同一个热区里
+  await page.click('[data-act="tool:menu"]');
+  await expect(page.locator('.settle-title')).toHaveText('DIFFICULTY');
+});
+
+test('MINES 的计时器首次翻格才起表', async ({ page }) => {
+  await page.goto('/#/minesweeper');
+  await page.click('[data-act="overlay:0"]');
+  await expect(page.locator('[data-ref="time"]')).toHaveText('00:00');
+
+  const box = (await page.locator('canvas').boundingBox())!;
+  await page.mouse.click(box.x + 16, box.y + 16);
+  await expect(page.locator('[data-ref="time"]')).not.toHaveText('00:00', { timeout: 3000 });
+});
+
+test('GOMOKU 的模式菜单有四项，回合筹随模式变', async ({ page }) => {
+  await page.goto('/#/gomoku');
+  await expect(page.locator('.settle-title')).toHaveText('GOMOKU');
+  await expect(page.locator('.settle-actions .settle-action')).toHaveCount(4);
+
+  await page.click('[data-act="overlay:0"]');            // 2 PLAYERS
+  await expect(page.locator('[data-ref="black"]')).toHaveText('● BLACK');
+  await expect(page.locator('[data-ref="white"]')).toHaveText('○ WHITE');
+  await expect(page.locator('[data-ref="black"]')).toHaveClass(/is-turn/);
+
+  // 局面进行中，菜单会多一个 ✕ RESUME 排在最前，所以 AI EASY 的下标是 2 不是 1
+  await page.click('[data-act="tool:menu"]');
+  await expect(page.locator('.settle-actions .settle-action').first()).toHaveText('✕ RESUME');
+  await page.click('[data-act="overlay:2"]');            // AI EASY
+  await expect(page.locator('[data-ref="white"]')).toHaveText('○ CPU');
+});

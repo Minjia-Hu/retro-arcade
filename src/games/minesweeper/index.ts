@@ -103,8 +103,10 @@ export function createMinesweeper(): Game {
     startedAt = 0;
     stoppedAt = 0;
     setCanvasSize(diff.cols * diff.cell, diff.rows * diff.cell);
+    // 顶栏药丸显示当前难度：HUD 里没有别处能看出来，与 SUDOKU 保持一致
+    ctx?.setPill(DIFF_LABEL[diff.id]);
     ctx?.overlay(null);
-    ctx?.audio.play('click');
+    // 不在这里发声：浮层按钮的 click 由 frame 统一负责，重复发声会响两下
   }
 
   function reportEnd(): void {
