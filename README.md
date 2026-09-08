@@ -6,12 +6,64 @@
 - **技术栈** — Vite 5 + TypeScript 5，DOM 直出 + Canvas 2D，无 React/Vue 等框架，无运行时依赖
 - **测试** — Vitest 单测（游戏逻辑与纯函数）+ Playwright 端到端
 
+<p align="center">
+  <img src="docs/screenshots/hub.png" alt="首页：Sunset Arcade 主题的游戏大厅" width="820">
+</p>
+
 ## 游戏
 
-贪吃蛇 · 俄罗斯方块 · 打砖块 · Flappy Bird · 2048 · 扫雷 · 数独 · 五子棋
+8 个游戏共用同一个机柜外壳——顶栏、屏幕井、结算浮层、按键提示条都由 `src/shell/frame.ts`
+统一提供，游戏只管把自己画进屏幕里、把控件填进插槽里。
 
-五子棋带 AI 对手（跑在 Web Worker 里，不阻塞主线程）。所有游戏都支持键盘与触屏，成绩存在
+<table>
+<tr>
+  <td width="50%"><img src="docs/screenshots/snake.png" alt="贪吃蛇" width="100%"></td>
+  <td width="50%"><img src="docs/screenshots/tetris.png" alt="俄罗斯方块" width="100%"></td>
+</tr>
+<tr>
+  <td align="center"><b>SNAKE</b> · 贪吃蛇</td>
+  <td align="center"><b>TETRIS</b> · 俄罗斯方块<br><sub>侧栏与触屏键盘是 DOM，不是画在画布里</sub></td>
+</tr>
+<tr>
+  <td><img src="docs/screenshots/breakout.png" alt="打砖块" width="100%"></td>
+  <td><img src="docs/screenshots/flappy.png" alt="Flappy Bird" width="100%"></td>
+</tr>
+<tr>
+  <td align="center"><b>BREAKOUT</b> · 打砖块</td>
+  <td align="center"><b>FLAPPY</b> · 提示条显示实时最高分</td>
+</tr>
+<tr>
+  <td><img src="docs/screenshots/2048.png" alt="2048" width="100%"></td>
+  <td><img src="docs/screenshots/mines.png" alt="扫雷" width="100%"></td>
+</tr>
+<tr>
+  <td align="center"><b>2048</b> · 分数卡与撤销在上方栏</td>
+  <td align="center"><b>MINES</b> · 扫雷</td>
+</tr>
+<tr>
+  <td><img src="docs/screenshots/sudoku.png" alt="数独" width="100%"></td>
+  <td><img src="docs/screenshots/gomoku.png" alt="五子棋" width="100%"></td>
+</tr>
+<tr>
+  <td align="center"><b>SUDOKU</b> · 数字盘是真按钮，可 Tab 可聚焦</td>
+  <td align="center"><b>GOMOKU</b> · 五子棋，带 AI 对手</td>
+</tr>
+</table>
+
+五子棋的 AI 跑在 Web Worker 里，不阻塞主线程。所有游戏都支持键盘与触屏，成绩存在
 `localStorage`，隐私模式下自动降级为内存存储。
+
+### 深色屏与浅色纸盘
+
+8 个游戏分成两类，配色语言不同：
+
+- **深色屏**（SNAKE / TETRIS / BREAKOUT / FLAPPY）——画布是发光的暖霓虹，共用
+  `src/core/theme.ts` 的 `SCREEN`；屏幕井有内描边与暗角。
+- **浅色纸盘**（SUDOKU / 2048 / MINES / GOMOKU）——奶油底、墨色描边，每个游戏在自己的
+  `index.ts` 里持有 `PAPER` 常量（四者配色确实不同，合并只会得到谁都不合身的抽象）。
+
+棋盘一律画在 canvas 里；数字键盘、难度菜单、计分卡、回合筹这些**周边控件一律是 DOM**——
+可 Tab、有焦点环、触屏命中率高，这是画在画布里做不到的。
 
 ## 快速开始
 
@@ -88,11 +140,12 @@ ctx.setHints(['BEST 000042']); // 替换底部提示条
 
 ## 视觉
 
-当前主题是 **Sunset Arcade**：奶油纸底、墨色描边配硬投影、四色轮转的暖色 accent、
-CSS 绘制的像素图标。深色屏游戏的画布内用一套暖霓虹配色。
+主题叫 **Sunset Arcade**：奶油纸底、墨色描边配硬投影、四色轮转的暖色 accent、
+CSS 绘制的像素图标（每个游戏一个 8×8 网格，渲染成内联 SVG）。
 
-色板的唯一真相源是 `src/styles/arcade.css` 的 `:root`；TypeScript 侧只持有必须由 JS
-内联的那部分（见 `src/core/theme.ts` 的注释）。
+**页面色板的唯一真相源是 `src/styles/arcade.css` 的 `:root`**；TypeScript 侧只持有必须由
+JS 内联的那部分。画布内配色是另一回事，见上面「深色屏与浅色纸盘」。两边都有的值
+（accent 四色、`--screen-ground`）在两处都写了交叉引用注释。
 
 ## License
 
