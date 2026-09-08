@@ -179,7 +179,7 @@ test('SUDOKU 先弹难度菜单，选完出现数字盘', async ({ page }) => {
 test('SUDOKU 的笔记开关键盘与按钮共用同一状态', async ({ page }) => {
   await page.goto('/#/sudoku');
   await page.click('[data-act="overlay:0"]');
-  const notes = page.locator('[data-fn="notes"]');
+  const notes = page.locator('[data-pad="notes"]');
   await expect(notes).not.toHaveClass(/is-on/);
 
   await notes.click();
@@ -206,8 +206,8 @@ test('SUDOKU 菜单开着时冻结盘面，RESUME 能回到当前局', async ({ 
   await expect(page.locator('.cab-hints')).toHaveText('RESUME OR PICK A DIFFICULTY');
 
   // 浮层只覆盖 .screen，控制垫在它外面——按钮点得到，但不该改到被盖住的盘面
-  await page.click('[data-fn="notes"]');
-  await expect(page.locator('[data-fn="notes"]')).not.toHaveClass(/is-on/);
+  await page.click('[data-pad="notes"]');
+  await expect(page.locator('[data-pad="notes"]')).not.toHaveClass(/is-on/);
 
   await page.click('[data-act="overlay:0"]');           // ✕ RESUME
   await expect(page.locator('.settle-card')).toBeHidden();
