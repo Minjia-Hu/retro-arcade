@@ -151,7 +151,11 @@ export function createSudoku(): Game {
   }
 
   function tapAt(cssX: number, cssY: number): void {
-    if (paused || !state || state.status === 'won' || !canvas) return;
+    if (paused || !state || !canvas) return;
+    if (state.status === 'won') {
+      if (performance.now() - endedAt >= 400) backToMenu(); // 与键盘同一条出口
+      return;
+    }
     const rect = canvas.getBoundingClientRect();
     const c = Math.floor(((cssX / rect.width) * W) / CELL);
     const r = Math.floor(((cssY / rect.height) * H) / CELL);
@@ -279,15 +283,16 @@ export function createSudoku(): Game {
       ctx.input.onTapAt(canvas, tapAt);
       ctx.input.onKey((code) => {
         if (paused || !state) return;
+        if (state.status === 'won') {
+          // 胜利横幅（必然开着浮层，所以要排在 overlayOpen 早退之前）：
+          // 纯键盘用户也能返回难度菜单（带 400ms 防误触）
+          if ((code === 'Enter' || code === 'Escape' || code === 'Space')
+            && performance.now() - endedAt >= 400) backToMenu();
+          return;
+        }
         if (ctx?.overlayOpen()) {
           // 菜单开着时键盘也要停手；Escape 给进行中的局一个和 ✕ RESUME 对称的出口
           if (code === 'Escape' && state.status === 'playing') ctx.overlay(null);
-          return;
-        }
-        if (state.status === 'won') {
-          // 胜利横幅：纯键盘用户也能返回难度菜单（带 400ms 防误触）
-          if ((code === 'Enter' || code === 'Escape' || code === 'Space')
-            && performance.now() - endedAt >= 400) backToMenu();
           return;
         }
         if (code.startsWith('Digit') || code.startsWith('Numpad')) {

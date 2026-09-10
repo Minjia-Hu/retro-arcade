@@ -55,6 +55,7 @@ export function createGomoku(): Game {
   let thinking = false;
   let worker: Worker | null = null;
   let token = 0; // 作废过期的 Worker 回复（重开/返回菜单后）
+  let endedAt = 0; // 结算时刻；0 表示结算浮层已被消费（回到菜单）
   let hover = -1; // 悬停中的交叉点 idx，-1 = 无
   let hoverCleanup: (() => void) | null = null;
 
@@ -106,8 +107,8 @@ export function createGomoku(): Game {
       worker = new Worker(new URL('./ai.worker.ts', import.meta.url), { type: 'module' });
       worker.onmessage = (e: MessageEvent) => {
         const { idx, token: replyToken } = e.data as { idx: number; token: number };
+        if (replyToken !== token) return; // 过期回复：玩家已返回菜单或另开新局。先判过期再复位 thinking，否则旧局的回复会解冻新局
         thinking = false;
-        if (replyToken !== token) return; // 过期回复：玩家已返回菜单或另开新局
         if (paused || !game || game.status !== 'playing') return;
         applyAiMove(idx);
       };
@@ -179,8 +180,19 @@ export function createGomoku(): Game {
     });
   }
 
+  /** 结算浮层期间 Space / 点画布 = ▶ NEW GAME（模式菜单不算）。返回是否已消费这次输入 */
+  function restartIfEnded(): boolean {
+    if (!ctx?.overlayOpen() || !game || game.status === 'playing' || !endedAt) return false;
+    if (performance.now() - endedAt >= 400) { // 落子瞬间常有连点
+      endedAt = 0; // 菜单开着时再按不会反复重开菜单
+      showMenu();
+    }
+    return true;
+  }
+
   function reportEnd(): void {
     if (!game) return;
+    endedAt = performance.now();
     const draw = game.status === 'draw';
     const humanWon = mode === 'pvp' || game.winner === L.BLACK;
     ctx?.overlay({
@@ -209,6 +221,7 @@ export function createGomoku(): Game {
   }
 
   function placeStone(cssX: number, cssY: number): void {
+    if (restartIfEnded()) return;
     if (!canInteract() || !game) return;
     const idx = intersectionAt(cssX, cssY);
     if (idx < 0 || game.board[idx] !== L.EMPTY) return;
@@ -322,6 +335,9 @@ export function createGomoku(): Game {
       ctx.onTool('menu', () => showMenu());
 
       ctx.input.onTapAt(canvas, placeStone);
+      ctx.input.onKey((code) => {
+        if (code === 'Space' || code === 'Enter') restartIfEnded();
+      });
 
       // 悬停虚影需要移动坐标，InputService 没有对应方法，直接在画布上挂原生监听
       const onMove = (e: PointerEvent) => {

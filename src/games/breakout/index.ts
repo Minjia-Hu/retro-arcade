@@ -47,10 +47,12 @@ export function createBreakout(): Game {
     ctx?.overlay(null);
   }
 
+  let cssWidth = 0; // 画布 CSS 宽度缓存：pointermove 每秒上百次，逐次 getBoundingClientRect 会强制布局
+
   function dragBy(cssDx: number): void {
     if (paused || !canvas || state.status === 'over') return;
-    const rect = canvas.getBoundingClientRect();
-    L.movePaddle(state, state.paddleX + (cssDx / rect.width) * L.W);
+    if (!cssWidth) cssWidth = canvas.getBoundingClientRect().width;
+    L.movePaddle(state, state.paddleX + (cssDx / cssWidth) * L.W);
   }
 
   function update(dt: number): void {
@@ -190,6 +192,8 @@ export function createBreakout(): Game {
         if (code === 'ArrowLeft' || code === 'KeyA') heldLeft = false;
         else if (code === 'ArrowRight' || code === 'KeyD') heldRight = false;
       });
+      ctx.input.onBlur(() => { heldLeft = false; heldRight = false; }); // 切窗口时 keyup 丢失
+      ctx.onResize(() => { cssWidth = 0; }); // 容器变宽变窄后重新量
 
       loop = new GameLoop(update, render);
       loop.start();

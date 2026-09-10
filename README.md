@@ -81,7 +81,7 @@ npm run preview  # 预览构建产物
 ```
 src/
   core/          与具体游戏无关的基础设施
-    loop.ts        固定步长游戏循环（支持暂停/恢复）
+    loop.ts        变步长游戏循环，dt 上限 50ms（支持暂停/恢复）
     input.ts       键盘、点按、滑动、拖动、长按手势
     audio.ts       WebAudio 音效合成（无音频文件）
     storage.ts     localStorage 封装，不可用时降级到内存

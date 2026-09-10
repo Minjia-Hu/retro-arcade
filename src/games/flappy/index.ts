@@ -98,13 +98,12 @@ export function createFlappy(): Game {
     }
 
     // 地面：条纹 + 墨色顶边
-    const groundH = 28;
-    const gy = L.H - groundH;
+    const gy = L.H - L.GROUND_H; // 地面高度由 logic 持有：致死线就画在这条边上
     for (let x = 0; x < L.W; x += 36) {
       g.fillStyle = '#3a2c1c';
-      g.fillRect(x, gy, 18, groundH);
+      g.fillRect(x, gy, 18, L.GROUND_H);
       g.fillStyle = '#2e2316';
-      g.fillRect(x + 18, gy, 18, groundH);
+      g.fillRect(x + 18, gy, 18, L.GROUND_H);
     }
     g.fillStyle = INK;
     g.fillRect(0, gy, L.W, 3);
@@ -116,7 +115,7 @@ export function createFlappy(): Game {
     g.shadowColor = SCREEN.glow.gold;
     g.shadowBlur = 12;
     g.beginPath();
-    g.roundRect(bx - 12, by - 9, 24, 18, 5);
+    g.roundRect(bx - L.BIRD_R, by - L.BIRD_RY, L.BIRD_R * 2, L.BIRD_RY * 2, 5); // 与判定盒同尺寸
     g.fill();
     g.shadowBlur = 0;
     g.fillStyle = SCREEN.orange;

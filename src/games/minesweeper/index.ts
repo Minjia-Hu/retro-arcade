@@ -65,6 +65,13 @@ export function createMinesweeper(): Game {
     shownFace = '';
   }
 
+  /** 结算浮层期间 Space / 点画布 = ▶ NEW GAME（难度菜单不算）。返回是否已消费这次输入 */
+  function restartIfEnded(): boolean {
+    if (!ctx?.overlayOpen() || !state || (state.status !== 'won' && state.status !== 'lost')) return false;
+    if (performance.now() - stoppedAt >= 400) replay(); // 踩雷瞬间常有连点
+    return true;
+  }
+
   /** 🙂 是重开本局（同难度）；返回难度菜单走顶栏 ☰ —— 这两件事语义不同 */
   function replay(): void {
     if (!state) return;
@@ -146,6 +153,7 @@ export function createMinesweeper(): Game {
   }
 
   function onTapGesture(cssX: number, cssY: number): void {
+    if (restartIfEnded()) return;
     if (frozen() || !state) return;
     const [x, y] = toLogical(cssX, cssY);
     const idx = cellAt(x, y);
@@ -305,6 +313,10 @@ export function createMinesweeper(): Game {
         tap: onTapGesture,
         long: onFlagGesture,
         right: onFlagGesture,
+      });
+      // 扫雷本身是纯指针游戏，键盘只承担结算态的重开
+      ctx.input.onKey((code) => {
+        if (code === 'Space' || code === 'Enter') restartIfEnded();
       });
 
       // 不存档：每次挂载都从难度菜单开始

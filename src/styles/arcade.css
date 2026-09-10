@@ -314,12 +314,16 @@ button { font-family: inherit; cursor: pointer; }
 .settle {
   position: absolute; inset: 0; display: flex;
   justify-content: center; overflow: auto; padding: 8px 0;
+  /* 空白区放行指针：深色屏四款的「TAP TO RETRY」靠画布自己的 onTap，浮层吃掉指针
+     手机上就只能精确点中按钮。卡片本身要拦，见 .settle-card */
+  pointer-events: none;
 }
 .settle[hidden] { display: none; }
 .settle-card {
   /* margin:auto 而非父级的 align-items:center：两者都能居中，但 align-items 会把
      溢出的上半部分推到可滚动区之外——卡片高过屏幕井时顶边永远够不着 */
   margin: auto;
+  pointer-events: auto;
   width: 280px; max-width: calc(100% - 32px);
   background: var(--panel); border: 3px solid var(--ink); border-radius: 14px;
   box-shadow: 6px 6px 0 rgba(0, 0, 0, .55); padding: 26px 24px;

@@ -6,14 +6,30 @@ export function swipeDirection(dx: number, dy: number, threshold = 24): SwipeDir
   return dy > 0 ? 'down' : 'up';
 }
 
+/** 游戏占用的键：拦掉浏览器默认行为，否则机柜高于视口时方向键/空格会把页面滚走 */
+const GAME_KEYS = /^(Arrow(Up|Down|Left|Right)|Space)$/;
+
 export class InputService {
   private disposers: (() => void)[] = [];
 
   /** 各 on* 方法均返回单独的解绑函数；dispose() 仍可整体清理 */
   onKey(handler: (code: string) => void): () => void {
-    const fn = (e: KeyboardEvent) => handler(e.code);
+    const fn = (e: KeyboardEvent) => {
+      if (GAME_KEYS.test(e.code)) e.preventDefault();
+      handler(e.code);
+    };
     window.addEventListener('keydown', fn);
     return this.track(() => window.removeEventListener('keydown', fn));
+  }
+
+  /**
+   * 窗口失焦。按住方向键时 Cmd+Tab 切走，keyup 永远收不到——靠 held 标志驱动自建重复的
+   * 游戏（TETRIS / BREAKOUT）要在这里把标志全部复位，否则回来后方块自己往一边滑。
+   */
+  onBlur(handler: () => void): () => void {
+    const fn = () => handler();
+    window.addEventListener('blur', fn);
+    return this.track(() => window.removeEventListener('blur', fn));
   }
 
   onTap(el: HTMLElement, handler: () => void): () => void {

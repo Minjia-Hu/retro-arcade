@@ -12,6 +12,7 @@ export class GameFrame {
   private screenEl: HTMLElement | null = null;
   private settleEl: HTMLElement | null = null;
   private cabinetEl: HTMLElement | null = null;
+  private pauseBtn: HTMLButtonElement | null = null;
   private baseHints: string[] = [];              // 游戏态的按键提示
   private isOverlayOpen = false;
   private overlayHints: string[] = [];           // 开层时的快照：浮层自带的提示，或冻结当时屏幕上的
@@ -27,6 +28,7 @@ export class GameFrame {
     this.cabinetEl = root.querySelector<HTMLElement>('.cabinet');
     this.screenEl = root.querySelector<HTMLElement>('.screen');
     this.settleEl = root.querySelector<HTMLElement>('.settle');
+    this.pauseBtn = root.querySelector<HTMLButtonElement>('[data-act="pause"]');
     this.baseHints = game.meta.hints ?? [];
 
     // 点击后移除焦点，避免残留焦点让空格键误触按钮。
@@ -134,14 +136,18 @@ export class GameFrame {
       console.error('[arcade] game crashed on destroy:', err);
     }
     this.game = null;
-    // 先收浮层再断引用：浮层按钮持有已 destroy 游戏的 onPress 闭包，而路由切换到
-    // 下一次 open() 之间隔着 await entry.load()，不收会在这个窗口里留下可点的死按钮
+    // 先收浮层与插槽再断引用：浮层按钮和 head/pad 里的按钮都持有已 destroy 游戏的闭包，
+    // 而路由切换到下一次 open() 之间隔着 await entry.load()，不收会在这个窗口里留下
+    // 可点的死按钮（side 没有按钮，但会残留上一局的数字）
     this.clearSettle();
+    this.cabinetEl?.querySelectorAll<HTMLElement>('.cab-head, .cab-side, .cab-pad')
+      .forEach((slot) => { slot.innerHTML = ''; });
     this.input?.dispose();
     this.input = null;
     this.observer?.disconnect();
     this.observer = null;
     this.cabinetEl = null;
+    this.pauseBtn = null;
     this.screenEl = null;
     this.settleEl = null;
     this.baseHints = [];
@@ -187,6 +193,7 @@ export class GameFrame {
     if (!view) {
       this.clearSettle();
       this.isOverlayOpen = false;
+      if (this.pauseBtn) this.pauseBtn.disabled = false;
       this.applyHints();
       return;
     }
@@ -195,6 +202,9 @@ export class GameFrame {
     this.screenEl?.classList.add('is-settled');
     this.overlayHints = view.hints ?? this.baseHints;
     this.isOverlayOpen = true;
+    // 浮层期间暂停没有意义，而且游戏的 retry() 共用 paused 卫语句——
+    // 「死亡 → 点暂停 → 点 RETRY」会得到一颗没反应的死按钮。禁掉比补状态机简单。
+    if (this.pauseBtn) this.pauseBtn.disabled = true;
     this.applyHints();
 
     // 点完就 blur：与顶栏 wire() 同一约定，避免残留焦点让空格键既触发按钮又触发游戏逻辑

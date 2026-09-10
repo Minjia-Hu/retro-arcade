@@ -25,12 +25,13 @@ startRouter(async (route) => {
     location.hash = '#/';
     return;
   }
-  // 写在这里而不是 frame：frame 不知道 id 的来源，且加载可能失败
-  storage.set('lastPlayed', { id: entry.meta.id, at: Date.now() });
   try {
     const game = await entry.load();
     if (token !== nav) return; // 期间用户已跳走
     frame.open(app, game);
+    // 写在这里而不是 frame：frame 不知道 id 的来源。放在 load 之后——加载失败的游戏
+    // 不该出现在首页的 CONTINUE PLAYING 里
+    storage.set('lastPlayed', { id: entry.meta.id, at: Date.now() });
   } catch (err) {
     console.error('[arcade] failed to load game:', err);
     location.hash = '#/';

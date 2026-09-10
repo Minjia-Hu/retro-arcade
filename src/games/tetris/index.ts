@@ -72,16 +72,14 @@ export function createTetris(): Game {
 
   function afterEvents(ev: L.TetrisEvents): void {
     if (ev.locked) ctx?.audio.play('action');
-    if (ev.cleared > 0) {
-      ctx?.audio.play('score');
-      saveBest();
-    }
+    if (ev.cleared > 0) ctx?.audio.play('score');
     if (ev.over) {
       endedAt = performance.now();
-      saveBest();
       ctx?.audio.play('over');
       reportOver();
     }
+    // 无条件落盘：软降 +1、硬降 +2/格 不经过消行，只在消行/终局存的话中途 BACK 会丢分
+    saveBest();
   }
 
   function primary(): void {
@@ -109,8 +107,19 @@ export function createTetris(): Game {
     // 不在这里发声：浮层 RETRY 的 click 由 frame 统一负责，重复发声会响两下
   }
 
+  function releaseAll(): void {
+    heldLeft = false;
+    heldRight = false;
+    heldSoft = false;
+    heldRotate = false;
+    heldSpace = false;
+    heldHold = false;
+  }
+
   function act(id: PadId): void {
     if (paused) return;
+    // 控制垫在浮层覆盖范围之外，结算期间照样点得到；重开只走 primary（Space / RETRY）
+    if (ctx?.overlayOpen()) return;
     if (state.status !== 'playing') {
       primary();
       return;
@@ -342,6 +351,8 @@ export function createTetris(): Game {
         else if (code === 'KeyC') heldHold = false;
       });
 
+      ctx.input.onBlur(releaseAll); // 切窗口时 keyup 丢失，同样要复位
+
       loop = new GameLoop(update, render);
       loop.start();
     },
@@ -353,12 +364,7 @@ export function createTetris(): Game {
 
     resume(): void {
       paused = false;
-      heldLeft = false; // 暂停期间的按键抬起收不到，复位防止恢复后自走
-      heldRight = false;
-      heldSoft = false;
-      heldRotate = false;
-      heldSpace = false;
-      heldHold = false;
+      releaseAll(); // 暂停期间的按键抬起收不到，复位防止恢复后自走
       loop?.resume();
     },
 
@@ -368,10 +374,7 @@ export function createTetris(): Game {
       canvas?.remove();
       canvas = null;
       g = null;
-      // 与 frame.close() 的 clearSettle() 同构：路由切换到下次 open 之间隔着
-      // await entry.load()，不清会在这个窗口里留下一排可点的死按钮
-      if (ctx?.pad) ctx.pad.innerHTML = '';
-      side = null;
+      side = null; // pad / side 的 DOM 由 frame.close() 统一清
       ctx = null; // 事件监听由 frame 的 InputService.dispose() 统一清理
     },
   };
