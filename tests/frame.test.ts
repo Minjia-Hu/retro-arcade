@@ -4,6 +4,7 @@ import { GameFrame } from '../src/shell/frame';
 import { AudioFx } from '../src/core/audio';
 import { ArcadeStorage, memoryBackend } from '../src/core/storage';
 import type { Game, GameContext, GameMeta } from '../src/core/game';
+import css from '../src/styles/arcade.css?raw';
 
 globalThis.ResizeObserver = class {
   observe() {}
@@ -150,5 +151,36 @@ describe('插槽', () => {
   it('按 meta 提供 head，否则为 null', () => {
     expect(mount().ctx.head).toBeNull();
     expect(mount({ head: true }).ctx.head).not.toBeNull();
+  });
+});
+
+describe('浮层与暂停', () => {
+  it('浮层开着时暂停按钮禁用，收起后恢复', () => {
+    const { root, ctx } = mount();
+    const pause = root.querySelector<HTMLButtonElement>('[data-act="pause"]')!;
+    expect(pause.disabled).toBe(false);
+    ctx.overlay({ title: 'X', tone: 'lose', lines: [], actions: [{ label: 'A', onPress: () => {} }] });
+    expect(pause.disabled).toBe(true);
+    ctx.overlay(null);
+    expect(pause.disabled).toBe(false);
+  });
+
+  it('浮层空白区不拦截指针，卡片本身拦截', () => {
+    // 深色屏四款的「TAP TO RETRY」靠画布自己的 onTap；.settle 若吃掉指针事件，手机上就点不着
+    expect(css).toMatch(/\.settle\s*\{[^}]*pointer-events:\s*none/);
+    expect(css).toMatch(/\.settle-card\s*\{[^}]*pointer-events:\s*auto/);
+  });
+});
+
+describe('close', () => {
+  it('清空 head / side / pad，不给下一次 open 之前留下死按钮', () => {
+    const { root, frame, ctx } = mount({ head: true, side: true, pad: true });
+    ctx.head!.innerHTML = '<button>H</button>';
+    ctx.side!.innerHTML = '<span>S</span>';
+    ctx.pad!.innerHTML = '<button>P</button>';
+    frame.close();
+    expect(root.querySelector('.cab-head')!.innerHTML).toBe('');
+    expect(root.querySelector('.cab-side')!.innerHTML).toBe('');
+    expect(root.querySelector('.cab-pad')!.innerHTML).toBe('');
   });
 });
