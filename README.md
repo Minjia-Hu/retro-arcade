@@ -1,152 +1,174 @@
-# Retro Arcade · 复古街机
+# Retro Arcade
 
-一个跑在浏览器里的迷你街机厅：8 个原生实现的小游戏，一个统一的机柜外壳，无前端框架。
+[English](README.md) · [中文](README.zh-CN.md)
 
-- **在线** — `npm run dev` 后打开 http://localhost:5173
-- **技术栈** — Vite 5 + TypeScript 5，DOM 直出 + Canvas 2D，无 React/Vue 等框架，无运行时依赖
-- **测试** — Vitest 单测（游戏逻辑与纯函数）+ Playwright 端到端
+[![CI](https://github.com/Minjia-Hu/retro-arcade/actions/workflows/ci.yml/badge.svg)](https://github.com/Minjia-Hu/retro-arcade/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
+A mini arcade that runs in the browser: 8 classic games, one shared cabinet shell, no framework.
+
+- **Play it** — https://minjia-hu.github.io/retro-arcade/
+- **Stack** — Vite 5 + TypeScript 5, plain DOM + Canvas 2D. No React/Vue, no runtime dependencies.
+- **Tests** — Vitest for game logic and pure functions, Playwright for end-to-end.
+- **Privacy** — no backend, no tracking. Scores live in `localStorage`; the only external request is Google Fonts.
 
 <p align="center">
-  <img src="docs/screenshots/hub.png" alt="首页：Sunset Arcade 主题的游戏大厅，上方是继续游玩、每日挑战与名人堂，下方是 8 个机柜卡片" width="900">
+  <img src="docs/screenshots/hub.png" alt="Home: the Sunset Arcade hub — continue playing, daily challenge and hall of fame on top, 8 cabinet cards below" width="900">
 </p>
 
-## 游戏
+## Games
 
-8 个游戏共用同一个机柜外壳——顶栏、屏幕井、结算浮层、按键提示条都由 `src/shell/frame.ts`
-统一提供，游戏只管把自己画进屏幕里、把控件填进插槽里。
+All 8 games share the same cabinet shell — top bar, screen well, result overlay and key hints come from
+`src/shell/frame.ts`. A game only draws itself into the screen and fills the slots it asks for.
 
 <table>
 <tr>
-  <td width="50%"><img src="docs/screenshots/snake.png" alt="贪吃蛇" width="100%"></td>
-  <td width="50%"><img src="docs/screenshots/tetris.png" alt="俄罗斯方块" width="100%"></td>
+  <td width="50%"><img src="docs/screenshots/snake.png" alt="Snake" width="100%"></td>
+  <td width="50%"><img src="docs/screenshots/tetris.png" alt="Tetris" width="100%"></td>
 </tr>
 <tr>
-  <td align="center"><b>SNAKE</b> · 贪吃蛇</td>
-  <td align="center"><b>TETRIS</b> · 俄罗斯方块<br><sub>侧栏与触屏键盘是 DOM，不是画在画布里</sub></td>
+  <td align="center"><b>SNAKE</b></td>
+  <td align="center"><b>TETRIS</b><br><sub>side panel and touch pad are DOM, not drawn on the canvas</sub></td>
 </tr>
 <tr>
-  <td><img src="docs/screenshots/breakout.png" alt="打砖块" width="100%"></td>
+  <td><img src="docs/screenshots/breakout.png" alt="Breakout" width="100%"></td>
   <td><img src="docs/screenshots/flappy.png" alt="Flappy Bird" width="100%"></td>
 </tr>
 <tr>
-  <td align="center"><b>BREAKOUT</b> · 打砖块</td>
-  <td align="center"><b>FLAPPY</b> · 提示条显示实时最高分</td>
+  <td align="center"><b>BREAKOUT</b></td>
+  <td align="center"><b>FLAPPY</b> · hint bar shows the live high score</td>
 </tr>
 <tr>
   <td><img src="docs/screenshots/2048.png" alt="2048" width="100%"></td>
-  <td><img src="docs/screenshots/mines.png" alt="扫雷" width="100%"></td>
+  <td><img src="docs/screenshots/mines.png" alt="Minesweeper" width="100%"></td>
 </tr>
 <tr>
-  <td align="center"><b>2048</b> · 分数卡与撤销在上方栏</td>
-  <td align="center"><b>MINES</b> · 扫雷</td>
+  <td align="center"><b>2048</b> · score cards and undo in the head bar</td>
+  <td align="center"><b>MINES</b></td>
 </tr>
 <tr>
-  <td><img src="docs/screenshots/sudoku.png" alt="数独" width="100%"></td>
-  <td><img src="docs/screenshots/gomoku.png" alt="五子棋" width="100%"></td>
+  <td><img src="docs/screenshots/sudoku.png" alt="Sudoku" width="100%"></td>
+  <td><img src="docs/screenshots/gomoku.png" alt="Gomoku" width="100%"></td>
 </tr>
 <tr>
-  <td align="center"><b>SUDOKU</b> · 数字盘是真按钮，可 Tab 可聚焦</td>
-  <td align="center"><b>GOMOKU</b> · 五子棋，带 AI 对手</td>
+  <td align="center"><b>SUDOKU</b> · the digit pad is real buttons: focusable, tabbable</td>
+  <td align="center"><b>GOMOKU</b> · five in a row, with an AI opponent</td>
 </tr>
 </table>
 
-五子棋的 AI 跑在 Web Worker 里，不阻塞主线程。所有游戏都支持键盘与触屏，成绩存在
-`localStorage`，隐私模式下自动降级为内存存储。
+The Gomoku AI runs in a Web Worker so it never blocks the main thread. Every game supports keyboard and
+touch. Scores persist in `localStorage` and fall back to in-memory storage in private mode.
 
-### 深色屏与浅色纸盘
+### Dark screens and paper boards
 
-8 个游戏分成两类，配色语言不同：
+The 8 games fall into two visual families:
 
-- **深色屏**（SNAKE / TETRIS / BREAKOUT / FLAPPY）——画布是发光的暖霓虹，共用
-  `src/core/theme.ts` 的 `SCREEN`；屏幕井有内描边与暗角。
-- **浅色纸盘**（SUDOKU / 2048 / MINES / GOMOKU）——奶油底、墨色描边，每个游戏在自己的
-  `index.ts` 里持有 `PAPER` 常量（四者配色确实不同，合并只会得到谁都不合身的抽象）。
+- **Dark screens** (SNAKE / TETRIS / BREAKOUT / FLAPPY) — glowing warm neon on a dark canvas, sharing
+  `SCREEN` from `src/core/theme.ts`; the screen well has an inner stroke and vignette.
+- **Paper boards** (SUDOKU / 2048 / MINES / GOMOKU) — cream paper, ink strokes. Each game keeps its own
+  `PAPER` constant in its `index.ts` (the four palettes really are different; merging them would give
+  an abstraction that fits none).
 
-棋盘一律画在 canvas 里；数字键盘、难度菜单、计分卡、回合筹这些**周边控件一律是 DOM**——
-可 Tab、有焦点环、触屏命中率高，这是画在画布里做不到的。
+Boards are always drawn on canvas. Peripheral controls — digit pad, difficulty menu, score cards,
+turn chips — are always **DOM**: tabbable, with focus rings and good touch targets, which a canvas can't give you.
 
-## 快速开始
+## Getting started
+
+Requires Node 18+. Modern browsers only (uses `roundRect`, Pointer Events, Web Workers — Chrome 99+,
+Safari 16+, Firefox 112+).
 
 ```bash
 npm install
-npm run dev      # 开发服务器
-npm test         # 单元测试
-npm run e2e      # 端到端测试（需先 npx playwright install）
-npm run build    # 类型检查 + 生产构建
-npm run preview  # 预览构建产物
+npm run dev      # dev server
+npm test         # unit tests
+npm run e2e      # end-to-end tests (run `npx playwright install` once first)
+npm run build    # type-check + production build
+npm run preview  # preview the build
 ```
 
-## 代码结构
+## Code layout
 
 ```
 src/
-  core/          与具体游戏无关的基础设施
-    loop.ts        变步长游戏循环，dt 上限 50ms（支持暂停/恢复）
-    input.ts       键盘、点按、滑动、拖动、长按手势
-    audio.ts       WebAudio 音效合成（无音频文件）
-    storage.ts     localStorage 封装，不可用时降级到内存
-    theme.ts       调色板常量
-    game.ts        Game / GameMeta / GameContext 接口
-    format.ts      分数补零
-  shell/         页面外壳
-    router.ts      hash 路由（#/ 为首页，#/<id> 为游戏）
-    hub/           首页：model（纯函数）/ view（HTML 字符串）/ index（DOM 与事件）
-    frame.ts       游戏机柜：顶栏、屏幕井、结算浮层、按键提示条
-    cabinet-view.ts  机柜的纯渲染函数
-    accent.ts      配色轮转
-    pixel-icons.ts 8×8 像素图标 → 内联 SVG
-    escape.ts      HTML 转义（view 层都用字符串拼 HTML）
+  core/          infrastructure with no knowledge of any specific game
+    loop.ts        variable-step game loop, dt capped at 50ms (pause/resume)
+    input.ts       keyboard, tap, swipe, drag and long-press gestures
+    audio.ts       WebAudio sound synthesis (no audio files)
+    storage.ts     localStorage wrapper, falls back to memory when unavailable
+    screen.ts      canvas creation and DPR-aware sizing
+    theme.ts       palette constants for the dark screens
+    game.ts        Game / GameMeta / GameContext interfaces
+    format.ts      score padding, difficulty labels
+  shell/         page shell
+    router.ts      hash router (#/ is the hub, #/<id> is a game)
+    hub/           home page: model (pure) / view (HTML string) / index (DOM and events)
+    frame.ts       the cabinet: top bar, screen well, result overlay, key hints
+    cabinet-view.ts  pure render functions for the cabinet
+    difficulty-menu.ts  shared difficulty overlay (Sudoku, Minesweeper)
+    pad.ts         renders a row of touch-pad buttons
+    accent.ts      accent color rotation
+    pixel-icons.ts 8×8 pixel icons → inline SVG
+    escape.ts      HTML escaping (views build HTML as strings)
   games/<id>/
-    logic.ts       纯逻辑：状态与规则，不碰 DOM/Canvas，可完整单测
-    index.ts       渲染与输入：把 logic 的状态画到 canvas 上
+    logic.ts       pure logic: state and rules, no DOM/Canvas, fully unit-testable
+    index.ts       rendering and input: draws logic state onto the canvas
 ```
 
-### 一条贯穿全局的约定：逻辑与渲染分离
+### One rule that runs through everything: logic and rendering are separate
 
-每个游戏都拆成 `logic.ts` 与 `index.ts`。**`logic.ts` 里没有任何 DOM 或 Canvas 调用**，
-状态转移是纯函数，所以能脱离浏览器完整单测——`tests/*-logic.test.ts` 就是这么来的。
-`index.ts` 只负责把状态画出来、把输入翻译成逻辑调用。
+Every game is split into `logic.ts` and `index.ts`. **`logic.ts` has no DOM or Canvas calls** — state
+transitions are pure functions, so it can be tested without a browser; that's where `tests/*-logic.test.ts`
+comes from. `index.ts` only draws state and translates input into logic calls.
 
-这条约定的直接好处：整轮视觉改版可以只动 `index.ts`，`logic.ts` 与其单测一行不改，
-「有没有不小心改到玩法」因此变成一条可执行的检查：
+The payoff: a whole visual redesign can touch only `index.ts`, with `logic.ts` and its tests unchanged.
+"Did we accidentally change gameplay?" becomes a runnable check:
 
 ```bash
-git diff --stat <基线> -- 'src/games/*/logic.ts' 'tests/*-logic.test.ts'   # 应为空
+git diff --stat <base> -- 'src/games/*/logic.ts' 'tests/*-logic.test.ts'   # should be empty
 ```
 
-### 游戏怎么接进机柜
+### How a game plugs into the cabinet
 
-游戏实现 `Game` 接口（`src/core/game.ts`），由 `frame.ts` 挂载。机柜通过 `GameContext`
-向游戏提供音效、存储、输入、结算浮层与可选的侧栏/控制垫插槽：
+A game implements the `Game` interface (`src/core/game.ts`) and is mounted by `frame.ts`. The cabinet
+hands the game a `GameContext` with audio, storage, input, the result overlay and optional slots
+(head bar, side panel, touch pad):
 
 ```ts
-ctx.settle({ title: 'GAME OVER', tone: 'lose', lines: [...], action: {...} });
-ctx.settle(null);            // 收起浮层
-ctx.setHints(['BEST 000042']); // 替换底部提示条
+ctx.overlay({
+  title: 'GAME OVER',
+  tone: 'lose',
+  lines: ['SCORE 000420', 'BEST 001330'],
+  actions: [{ label: '▶ RETRY', onPress: retry }],
+  hints: ['SPACE / TAP TO RETRY'],
+});
+ctx.overlay(null);              // dismiss
+ctx.setHints(['BEST 000042']);  // replace the bottom hint bar
 ```
 
-`GameMeta` 上的 `side` / `pad` / `pausable` / `hints` / `screen` 决定机柜为这个游戏渲染
-成什么样。新增游戏时在 `src/games/registry.ts` 登记即可，首页会自动出现对应卡片。
+`GameMeta` fields (`head` / `side` / `pad` / `pausable` / `hints` / `screen` / `tools`) decide what the
+cabinet renders for a game. To add a game, register it in `src/games/registry.ts` — the hub picks it up.
 
-## 开发工作流
+## Design docs
 
-`docs/superpowers/` 记录了每一轮改动的设计与计划：
+`docs/superpowers/` holds the design notes and implementation plans for every round of work:
 
-- `specs/` — 设计文档：要做什么、范围决策、刻意的取舍与偏离
-- `plans/` — 实现计划：拆成可独立验收的任务，每步含完整代码与验证命令
+- `specs/` — what to build, scope decisions, deliberate trade-offs and departures from the mockups
+- `plans/` — implementation plans broken into independently verifiable tasks
 
-动手前先写 spec 再写 plan，是这个仓库一直以来的做法。范围决策和「为什么没照设计稿做」
-都记在 spec 里，代码里则用注释钉住那些不写就会被后人「修正」回去的地方。
+Writing the spec before the plan, and the plan before the code, is how this repo has always worked.
+Scope decisions and "why we didn't follow the mockup here" live in the spec; in code, comments pin the
+things that would otherwise get "fixed" back by the next person.
 
-## 视觉
+## Visual theme
 
-主题叫 **Sunset Arcade**：奶油纸底、墨色描边配硬投影、四色轮转的暖色 accent、
-CSS 绘制的像素图标（每个游戏一个 8×8 网格，渲染成内联 SVG）。
+The theme is **Sunset Arcade**: cream paper, ink strokes with hard drop shadows, four warm accent colors
+in rotation, and CSS-drawn pixel icons (one 8×8 grid per game, rendered as inline SVG).
 
-**页面色板的唯一真相源是 `src/styles/arcade.css` 的 `:root`**；TypeScript 侧只持有必须由
-JS 内联的那部分。画布内配色是另一回事，见上面「深色屏与浅色纸盘」。两边都有的值
-（accent 四色、`--screen-ground`）在两处都写了交叉引用注释。
+**The single source of truth for the page palette is `:root` in `src/styles/arcade.css`**; TypeScript
+holds only the values JavaScript has to inline. Canvas colors are a separate matter — see "Dark screens
+and paper boards" above. Values that exist on both sides (the four accents, `--screen-ground`) carry
+cross-reference comments in both places.
 
 ## License
 
-未指定。
+[MIT](LICENSE)

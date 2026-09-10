@@ -2,6 +2,16 @@
   "name": "retro-arcade",
   "private": true,
   "version": "0.1.0",
+  "description": "A mini arcade in the browser: 8 classic games, one cabinet shell, no framework.",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Minjia-Hu/retro-arcade.git"
+  },
+  "homepage": "https://minjia-hu.github.io/retro-arcade/",
+  "engines": {
+    "node": ">=18"
+  },
   "type": "module",
   "scripts": {
     "dev": "vite",

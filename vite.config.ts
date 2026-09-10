@@ -1,6 +1,7 @@
 import { defineConfig } from 'vitest/config';
 
-// base 保持 '/'；部署 GitHub Pages 时（阶段 5）改为 '/retro-arcade/'
+// base 保持 '/'：本地开发与 e2e 都在根路径。GitHub Pages 挂在 /retro-arcade/ 子路径下，
+// 由 .github/workflows/ci.yml 用 `vite build --base=/retro-arcade/` 传入，不在这里写死
 export default defineConfig({
   base: '/',
   // 限定单测目录，避免 Vitest 误收集 e2e/ 下的 Playwright 用例
