@@ -74,6 +74,10 @@ git diff --stat <基线> -- 'src/games/*/logic.ts' 'tests/*-logic.test.ts'   # �
 - Vitest 默认把 CSS 导入桩成空串；需要读 `arcade.css` 内容的测试依赖 `vite.config.ts` 里的
   `test.css: true`。
 
+## 提交信息
+
+commit message 一律英文（标题与正文），祈使语气，正文写「为什么」。
+
 ## 命令
 
 ```bash
