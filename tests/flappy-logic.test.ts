@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
-  createState, flap, tick, H, BIRD_X, BIRD_R, PIPE_W, PIPE_GAP,
+  createState, flap, tick, H, BIRD_X, BIRD_R, BIRD_RY, GROUND_H, PIPE_W, PIPE_GAP,
 } from '../src/games/flappy/logic';
 
 const rand = () => 0.5; // 固定随机数便于断言
@@ -112,5 +112,37 @@ describe('flappy logic', () => {
     tick(s, 0.016, rand);
     tick(s, 0.016, rand);
     expect(s.score).toBe(1);
+  });
+
+  it('落到地面顶边即死，不必穿到画布底边', () => {
+    const s = createState();
+    flap(s);
+    s.birdY = H - GROUND_H - BIRD_RY - 1; // 身体下沿距地面 1px
+    s.birdVy = 100; // 本帧下移 ≥ 1px
+    tick(s, 0.05, rand);
+    expect(s.status).toBe('dead');
+  });
+
+  it('缺口无论随机值多大都不会低于地面', () => {
+    // rand=1 是最往下的缺口；生成分支此前零覆盖
+    const s = createState();
+    flap(s);
+    s.birdY = H / 2;
+    tick(s, 0.001, () => 1);
+    expect(s.pipes).toHaveLength(1);
+    expect(s.pipes[0].gapY + PIPE_GAP / 2).toBeLessThanOrEqual(H - GROUND_H);
+    expect(s.pipes[0].gapY - PIPE_GAP / 2).toBeGreaterThanOrEqual(0);
+  });
+
+  it('纵向判定用身体半高（比横向半径小），画面上没碰到管口就不死', () => {
+    const s = createState();
+    flap(s);
+    // 管道正压在小鸟 x 上；小鸟身体下沿恰好贴着缺口下沿，比 BIRD_R 判定多出的那圈不算碰
+    s.pipes.push({ x: BIRD_X - PIPE_W / 2, gapY: H / 2, passed: false });
+    s.birdY = H / 2 + PIPE_GAP / 2 - BIRD_RY - 0.5;
+    s.birdVy = 0;
+    tick(s, 0.0001, rand);
+    expect(BIRD_RY).toBeLessThan(BIRD_R);
+    expect(s.status).toBe('playing');
   });
 });
