@@ -7,7 +7,7 @@
 - **测试** — Vitest 单测（游戏逻辑与纯函数）+ Playwright 端到端
 
 <p align="center">
-  <img src="docs/screenshots/hub.png" alt="首页：Sunset Arcade 主题的游戏大厅" width="820">
+  <img src="docs/screenshots/hub.png" alt="首页：Sunset Arcade 主题的游戏大厅，上方是继续游玩、每日挑战与名人堂，下方是 8 个机柜卡片" width="900">
 </p>
 
 ## 游戏
