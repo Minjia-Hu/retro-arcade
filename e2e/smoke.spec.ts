@@ -227,9 +227,11 @@ test('2048 的分数卡与撤销在 DOM 里', async ({ page }) => {
   await expect(page.locator('.cab-head .head-card')).toHaveCount(2);
   await expect(page.locator('[data-act="tool:new"]')).toHaveCount(1);
 
-  // 开局无步可撤；走一步后可撤
+  // 开局无步可撤；走一步后可撤。
+  // 起手两块位置随机，恰好都贴左时 ← 不算一步；← 与 ↑ 不可能同时无效
   await expect(page.locator('[data-ref="undo"]')).toBeDisabled();
   await page.keyboard.press('ArrowLeft');
+  await page.keyboard.press('ArrowUp');
   await expect(page.locator('[data-ref="undo"]')).toBeEnabled();
 });
 
@@ -274,4 +276,108 @@ test('GOMOKU 的模式菜单有四项，回合筹随模式变', async ({ page })
   await expect(page.locator('.settle-actions .settle-action').first()).toHaveText('✕ RESUME');
   await page.click('[data-act="overlay:2"]');            // AI EASY
   await expect(page.locator('[data-ref="white"]')).toHaveText('○ CPU');
+});
+
+// ---- 纸盘四款：结算浮层写着「SPACE / TAP …」，就得真的能按 ----
+
+test('SUDOKU 解完后按 Space 回到难度菜单', async ({ page }) => {
+  // 种一个只差一格的存档：读档路径不弹菜单，填上最后一格就 SOLVED
+  const solution = [
+    5, 3, 4, 6, 7, 8, 9, 1, 2,
+    6, 7, 2, 1, 9, 5, 3, 4, 8,
+    1, 9, 8, 3, 4, 2, 5, 6, 7,
+    8, 5, 9, 7, 6, 1, 4, 2, 3,
+    4, 2, 6, 8, 5, 3, 7, 9, 1,
+    7, 1, 3, 9, 2, 4, 8, 5, 6,
+    9, 6, 1, 5, 3, 7, 2, 8, 4,
+    2, 8, 7, 4, 1, 9, 6, 3, 5,
+    3, 4, 5, 2, 8, 6, 1, 7, 9,
+  ];
+  const puzzle = solution.slice();
+  puzzle[0] = 0;
+  await page.goto('/');
+  await page.evaluate((save) => localStorage.setItem('arcade.sudoku.save', JSON.stringify(save)), {
+    p: puzzle, s: solution, v: puzzle.slice(), n: Array.from({ length: 81 }, () => []), d: 'easy', st: 'playing',
+  });
+  await page.goto('/#/sudoku');
+  await expect(page.locator('canvas')).toBeVisible();
+  await expect(page.locator('.settle-card')).toBeHidden();
+
+  const box = (await page.locator('canvas').boundingBox())!;
+  await page.mouse.click(box.x + 16, box.y + 16); // 第 0 格
+  await page.keyboard.press('Digit5');
+  await expect(page.locator('.settle-title')).toHaveText('SOLVED!');
+
+  await page.waitForTimeout(450); // 400ms 防误触
+  await page.keyboard.press('Space');
+  await expect(page.locator('.settle-title')).toHaveText('DIFFICULTY');
+});
+
+test('GOMOKU 分出胜负后按 Space 回到模式菜单', async ({ page }) => {
+  await page.goto('/#/gomoku');
+  await page.click('[data-act="overlay:0"]'); // 2 PLAYERS
+  await expect(page.locator('.settle-card')).toBeHidden();
+
+  // 画布逻辑 320×320，交叉点 px(c) = 20 + c*20；黑子第 7 行连五，白子第 8 行陪跑
+  const box = (await page.locator('canvas').boundingBox())!;
+  const k = box.width / 320;
+  const at = (c: number, r: number) => page.mouse.click(box.x + (20 + c * 20) * k, box.y + (20 + r * 20) * k);
+  for (let c = 0; c < 5; c++) {
+    await at(c, 7);
+    if (c < 4) await at(c, 8);
+  }
+  await expect(page.locator('.settle-title')).toHaveText('BLACK WINS');
+
+  await page.waitForTimeout(450);
+  await page.keyboard.press('Space');
+  await expect(page.locator('.settle-title')).toHaveText('GOMOKU');
+});
+
+test('MINES 结束后按 Space 同难度重开', async ({ page }) => {
+  await page.goto('/#/minesweeper');
+  await page.click('[data-act="overlay:0"]'); // EASY 9×9
+  await expect(page.locator('.settle-card')).toBeHidden();
+
+  // 雷是随机的：逐格点过去，要么踩雷要么清盘，两种结算都接受
+  const box = (await page.locator('canvas').boundingBox())!;
+  const cell = box.width / 9;
+  outer: for (let r = 0; r < 9; r++) {
+    for (let c = 0; c < 9; c++) {
+      await page.mouse.click(box.x + (c + 0.5) * cell, box.y + (r + 0.5) * cell);
+      if (await page.locator('.settle-card').isVisible()) break outer;
+    }
+  }
+  await expect(page.locator('.settle-title')).toHaveText(/BOOM|CLEARED!/);
+
+  await page.waitForTimeout(450);
+  await page.keyboard.press('Space');
+  await expect(page.locator('.settle-card')).toBeHidden();
+  await expect(page.locator('.cab-pill')).toHaveText('EASY'); // 同难度
+  await expect(page.locator('[data-ref="time"]')).toHaveText('00:00'); // 新局
+});
+
+test('2048 结束后按 Space 开新局', async ({ page }) => {
+  test.setTimeout(120_000);
+  await page.goto('/#/g2048');
+  await expect(page.locator('canvas')).toBeVisible();
+
+  // 方块序列是随机的：循环四个方向直到走投无路。若先摸到 2048!（极小概率）就点 NEW GAME 继续
+  const dirs = ['ArrowUp', 'ArrowRight', 'ArrowDown', 'ArrowLeft'];
+  const settle = page.locator('.settle-card');
+  for (let i = 0; i < 4000; i++) {
+    await page.keyboard.press(dirs[i % 4]);
+    if (i % 25 === 0 && await settle.isVisible()) {
+      if ((await page.locator('.settle-title').textContent()) === '2048!') {
+        await page.click('[data-act="overlay:1"]');
+        continue;
+      }
+      break;
+    }
+  }
+  await expect(page.locator('.settle-title')).toHaveText(/GAME OVER|NEW HIGH SCORE/);
+
+  await page.waitForTimeout(450);
+  await page.keyboard.press('Space');
+  await expect(settle).toBeHidden();
+  await expect(page.locator('[data-ref="score"]')).toHaveText('000000');
 });

@@ -42,6 +42,7 @@ export function createG2048(): Game {
   let best = 0;
   let bestAtStart = 0;
   let paused = false;
+  let endedAt = 0;
 
   let head: { score: HTMLElement; best: HTMLElement; undo: HTMLButtonElement } | null = null;
   let shownScore = '';
@@ -80,6 +81,16 @@ export function createG2048(): Game {
     // 点了没反应也没反馈。禁用态一并反映 frozen，顺便补上这个函数里唯一漏掉的缓存
     const off = !state.prev || frozen();
     if (off !== shownUndoOff) { shownUndoOff = off; head.undo.disabled = off; }
+  }
+
+  /**
+   * 结算浮层期间 Space / 点画布 = ▶ NEW GAME。只认 over：2048! 浮层是 KEEP GOING /
+   * NEW GAME 二选一，不该由空格替玩家决定。返回是否已消费这次输入。
+   */
+  function restartIfEnded(): boolean {
+    if (!ctx?.overlayOpen() || state.status !== 'over') return false;
+    if (performance.now() - endedAt >= 400) newGame(); // 结束瞬间常有连点
+    return true;
   }
 
   function newGame(): void {
@@ -130,6 +141,7 @@ export function createG2048(): Game {
       ctx?.storage.set('best.g2048', best);
     }
     if (state.status !== prevStatus) {
+      endedAt = performance.now();
       if (state.status === 'won') ctx?.audio.play('win');
       else if (state.status === 'over') ctx?.audio.play('over');
       if (state.status !== 'playing') reportEnd();
@@ -205,7 +217,9 @@ export function createG2048(): Game {
       ctx.onTool('new', newGame);
 
       ctx.input.onSwipe(canvas, doMove);
+      ctx.input.onTapAt(canvas, () => { restartIfEnded(); }); // 与 onSwipe 互斥：<10px 才算点按
       ctx.input.onKey((code) => {
+        if ((code === 'Space' || code === 'Enter') && restartIfEnded()) return;
         if (frozen()) return;
         const dir = KEY_DIR[code];
         if (dir) doMove(dir);
