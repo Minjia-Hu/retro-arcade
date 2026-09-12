@@ -45,7 +45,7 @@ export function hubHtml(m: HubModel): string {
           <div class="panel daily">
             <span class="panel-label daily-label">${esc(m.daily.dateLabel)}</span>
             <span class="daily-body">${dailyBody(m.daily.prefix, m.daily.name, m.daily.suffix)}</span>
-            <span class="daily-hint">NEW CABINET EVERY DAY → BRAGGING RIGHTS ONLY</span>
+            <span class="daily-hint">DAILY PICK → BRAGGING RIGHTS ONLY</span>
             <button class="btn-accept" data-goto="${esc(m.daily.id)}">ACCEPT ▸</button>
           </div>
 

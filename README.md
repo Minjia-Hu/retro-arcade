@@ -19,7 +19,7 @@
 
 - **Tiny.** The whole arcade — eight games, the Gomoku AI, the UI — ships as **34 KB gzipped**. Smaller than most single screenshots.
 - **Zero runtime dependencies.** Vite + TypeScript at build time; in the browser it's plain DOM and Canvas 2D. No React, no game engine.
-- **Every rule is a pure function.** Each game's logic has no DOM or Canvas calls, so it is tested without a browser: **269 unit tests** on the rules, **28 Playwright tests** on the UI, all in CI.
+- **Every rule is a pure function.** Each game's logic has no DOM or Canvas calls, so it is tested without a browser: **269 unit tests** across the game rules, shared modules and UI logic, plus **28 Playwright tests** in a real browser, all in CI.
 - **Keyboard and touch, everywhere.** Swipe to steer the snake, long-press to flag a mine, tap a real button to enter a digit. Controls that need to be accessible are DOM, not pixels.
 - **A Gomoku opponent that thinks off the main thread.** Minimax with α-β pruning in a Web Worker, three strengths.
 - **No backend, no tracking.** Scores live in `localStorage`. The only network request is Google Fonts.

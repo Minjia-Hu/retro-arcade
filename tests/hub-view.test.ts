@@ -122,7 +122,7 @@ describe('daily challenge copy', () => {
   // The handoff copy promised a hall entry; the hint must describe what actually happens.
   it('the hint does not promise a hall entry', () => {
     const html = hubHtml(model());
-    expect(html).toContain('<span class="daily-hint">NEW CABINET EVERY DAY → BRAGGING RIGHTS ONLY</span>');
+    expect(html).toContain('<span class="daily-hint">DAILY PICK → BRAGGING RIGHTS ONLY</span>');
     expect(html).not.toMatch(/JOINS THE HALL/);
   });
 });

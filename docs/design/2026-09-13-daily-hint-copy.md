@@ -10,8 +10,10 @@
 
 ## 决定
 
-- 提示语改为 `NEW CABINET EVERY DAY → BRAGGING RIGHTS ONLY`。
-  - 描述的是现有行为：每天按日期哈希换一个游戏，`ACCEPT ▸` 只是跳转过去。
+- 提示语改为 `DAILY PICK → BRAGGING RIGHTS ONLY`。
+  - 描述的是现有行为：每天按日期哈希选一个游戏，`ACCEPT ▸` 只是跳转过去。
+  - 不写「NEW ... EVERY DAY」：哈希取模会撞，例如 2026-09-29 与 09-30 都选中 Tetris，
+    「每天换新」偶尔失实；「DAILY PICK」只说「今天选的」，不承诺与昨天不同。
   - 「bragging rights only」明说没有奖励、没有上榜，语气仍是街机口吻。
   - 去掉末尾的 `▼`：它原本指向下方 Hall of Fame，暗示两者有关联，而 Hall 只是各游戏最高分
     的前三名，与挑战无关。
@@ -23,5 +25,7 @@
 
 - `src/shell/hub/view.ts` — 一行文案。
 - `tests/hub-view.test.ts` — 新增断言：提示语不再承诺上榜。
+- `README.md` / `README.zh-CN.md` — 顺手修正测试描述：269 条单测里只有 123 条在 8 个 `*-logic.test.ts`，
+  其余 146 条是公共模块与首页/机柜视图，原文「规则层 269 条单测」把一半以上算错了地方。
 - `docs/screenshots/hub.png` — 重截，视口 1440 宽、DPR 2，预置分数与 2026-09-12 那次一致
   （Snake 38），日期固定为 2026-09-12 以保持画面中的挑战游戏不变。
