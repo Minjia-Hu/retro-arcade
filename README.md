@@ -1,6 +1,6 @@
 # 🕹️ Retro Arcade
 
-**8 classic games in one browser cabinet. No framework, 35 KB gzipped, fully tested.**
+**8 classic games in one browser cabinet. No framework, 34 KB gzipped, fully tested.**
 
 [English](README.md) · [中文](README.zh-CN.md)
 
@@ -17,7 +17,7 @@
 
 ## Highlights
 
-- **Tiny.** The whole arcade — eight games, the Gomoku AI, the UI — ships as **35 KB gzipped**. Smaller than most single screenshots.
+- **Tiny.** The whole arcade — eight games, the Gomoku AI, the UI — ships as **34 KB gzipped**. Smaller than most single screenshots.
 - **Zero runtime dependencies.** Vite + TypeScript at build time; in the browser it's plain DOM and Canvas 2D. No React, no game engine.
 - **Every rule is a pure function.** Each game's logic has no DOM or Canvas calls, so it is tested without a browser: **268 unit tests** on the rules, **28 Playwright tests** on the UI, all in CI.
 - **Keyboard and touch, everywhere.** Swipe to steer the snake, long-press to flag a mine, tap a real button to enter a digit. Controls that need to be accessible are DOM, not pixels.
