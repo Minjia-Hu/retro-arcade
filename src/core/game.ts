@@ -6,46 +6,46 @@ export interface GameMeta {
   id: string;
   name: string;
   icon: string;
-  /** 首页展示用的英文大写名；缺省时回退到 name */
+  /** Upper-case English name for the hub; falls back to `name` */
   displayName?: string;
-  /** 机柜底部的按键提示，用 · 分隔渲染 */
+  /** Key hints in the cabinet's bottom bar, rendered separated by · */
   hints?: string[];
-  /** 屏幕井风格：深色屏或浅色纸盘，缺省 dark */
+  /** Screen-well style: dark screen or paper board, default dark */
   screen?: 'dark' | 'paper';
-  /** 需要屏幕井上方的一行 DOM 时置 true，内容由游戏自己填 */
+  /** true to get a DOM row above the screen well; the game fills it */
   head?: boolean;
-  /** 需要屏幕井右侧的侧栏时置 true，内容由游戏自己填 */
+  /** true to get a side panel right of the screen well; the game fills it */
   side?: boolean;
-  /** 需要屏幕下方的触屏控制垫时置 true，内容由游戏自己填 */
+  /** true to get a touch pad below the screen; the game fills it */
   pad?: boolean;
-  /** 顶栏是否渲染暂停按钮，缺省 true。FLAPPY 按设计稿不显示 */
+  /** Whether the top bar renders a pause button, default true. FLAPPY hides it per the mockups */
   pausable?: boolean;
-  /** 顶栏右侧的额外按钮，排在 SND 之前 */
+  /** Extra buttons on the right of the top bar, placed before SND */
   tools?: { id: string; label: string; aria: string }[];
 }
 
 export interface OverlayAction {
   label: string;
   onPress: () => void;
-  /** primary 为 accent 底色的主按钮，secondary 为描边按钮。缺省 primary */
+  /** primary is the accent-filled main button, secondary is outlined. Default primary */
   kind?: 'primary' | 'secondary';
 }
 
 export interface OverlayView {
-  /** 标题文案，如 GAME OVER / SOLVED! / SELECT DIFFICULTY */
+  /** Title text, e.g. GAME OVER / SOLVED! / SELECT DIFFICULTY */
   title: string;
-  /** 决定标题颜色：lose→magenta、win→teal、record→gold */
+  /** Picks the title colour: lose → magenta, win → teal, record → gold */
   tone: 'lose' | 'win' | 'record';
-  /** 说明行，等宽字体渲染 */
+  /** Detail lines, rendered in the monospace font */
   lines: string[];
-  /** 一到多个操作按钮，按顺序纵向排列 */
+  /** One or more action buttons, stacked vertically in order */
   actions: OverlayAction[];
   /**
-   * 浮层期间的底部按键提示，覆盖游戏当前设置的提示（`meta.hints` 或最近一次
-   * `ctx.setHints`）。不给则沿用之。
+   * Bottom-bar key hints while the overlay is open, overriding whatever the game set
+   * (`meta.hints` or the latest `ctx.setHints`). Omit to keep the current hints.
    */
   hints?: string[];
-  /** 是否显示 QUIT TO HUB，缺省 true */
+  /** Whether to show QUIT TO HUB, default true */
   quit?: boolean;
 }
 
@@ -53,25 +53,26 @@ export interface GameContext {
   audio: AudioFx;
   storage: ArcadeStorage;
   input: InputService;
-  /** 注册容器尺寸变化回调，返回解除函数 */
+  /** Register a container-resize callback; returns the unsubscribe function */
   onResize(cb: () => void): () => void;
-  /** 展示或收起浮层（开始菜单、结算卡片）；传 null 收起 */
+  /** Show or dismiss the overlay (start menu, result card); pass null to dismiss */
   overlay(view: OverlayView | null): void;
-  /** 上方栏容器；meta.head 为 true 时可用，否则为 null */
+  /** Head-bar container; available when meta.head is true, otherwise null */
   head: HTMLElement | null;
-  /** 侧栏容器；meta.side 为 true 时可用，否则为 null */
+  /** Side-panel container; available when meta.side is true, otherwise null */
   side: HTMLElement | null;
-  /** 控制垫容器；meta.pad 为 true 时可用，否则为 null */
+  /** Touch-pad container; available when meta.pad is true, otherwise null */
   pad: HTMLElement | null;
-  /** 替换底部按键提示条 */
+  /** Replace the bottom key-hint bar */
   setHints(hints: string[]): void;
-  /** 注册顶栏自定义按钮的点击处理；id 需与 meta.tools 中的一致 */
+  /** Register a click handler for a custom top-bar button; id must match one in meta.tools */
   onTool(id: string, handler: () => void): void;
-  /** 改写游戏名右侧的药丸；传 null 隐藏 */
+  /** Set the pill next to the game name; pass null to hide it */
   setPill(text: string | null): void;
   /**
-   * 浮层是否正开着。frame 是唯一知道这件事的一方，游戏据此决定要不要吃掉输入——
-   * 有的游戏希望浮层期间 Space 仍能重开（结算态），有的希望完全冻结（开始菜单）。
+   * Whether an overlay is open. The frame is the only party that knows; games use it to
+   * decide whether to swallow input — some want Space to restart while the result card is
+   * up, others want a complete freeze while the start menu is up.
    */
   overlayOpen(): boolean;
 }

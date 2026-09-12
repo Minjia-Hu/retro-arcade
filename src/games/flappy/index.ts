@@ -5,7 +5,7 @@ import * as L from './logic';
 import { padScore } from '../../core/format';
 import { createScreenCanvas } from '../../core/screen';
 
-/** 与 arcade.css 的 --ink 对应，改一处要同步另一处（canvas 读不到 CSS 变量） */
+/** Mirrors --ink in arcade.css; change both together (canvas can't read CSS variables) */
 const INK = '#2b2118';
 
 
@@ -24,7 +24,7 @@ export function createFlappy(): Game {
   function act(): void {
     if (paused) return;
     if (state.status === 'dead') {
-      if (performance.now() - diedAt < 400) return; // 死亡瞬间常有连点，给结算浮层一点展示时间
+      if (performance.now() - diedAt < 400) return; // taps pile up at the moment of death; give the overlay a moment on screen
       restart();
       ctx?.audio.play('click');
       return;
@@ -33,7 +33,7 @@ export function createFlappy(): Game {
     ctx?.audio.play('action');
   }
 
-  /** 浮层 RETRY 按钮的入口：共用 paused 卫语句，但不继承 400ms 防连点 */
+  /** Entry point for the overlay's RETRY button: shares the paused guard but not the 400ms debounce */
   function retry(): void {
     if (paused) return;
     restart();
@@ -53,7 +53,7 @@ export function createFlappy(): Game {
       if (state.score > best) {
         best = state.score;
         ctx?.storage.set('best.flappy', best);
-        ctx?.setHints([`BEST ${padScore(best, 6)}`]); // 设计稿 2c 的提示条显示实时最高分
+        ctx?.setHints([`BEST ${padScore(best, 6)}`]); // mockup 2c shows the live best in the hint bar
       }
     }
     if (state.status === 'dead' && !deadHandled) {
@@ -73,7 +73,7 @@ export function createFlappy(): Game {
 
   function render(): void {
     if (!g) return;
-    // 背景：竖向渐变（设计稿 2c）
+    // Background: vertical gradient (mockup 2c)
     const sky = g.createLinearGradient(0, 0, 0, L.H);
     sky.addColorStop(0, SCREEN.ground);
     sky.addColorStop(0.6, SCREEN.ground);
@@ -82,7 +82,7 @@ export function createFlappy(): Game {
     g.fillRect(0, 0, L.W, L.H);
     g.textBaseline = 'alphabetic';
 
-    // 管道：teal 填充 + 深色描边 + 左侧高光
+    // Pipes: teal fill + dark stroke + highlight on the left
     for (const p of state.pipes) {
       const top = p.gapY - L.PIPE_GAP / 2;
       const bottomY = p.gapY + L.PIPE_GAP / 2;
@@ -97,8 +97,8 @@ export function createFlappy(): Game {
       }
     }
 
-    // 地面：条纹 + 墨色顶边
-    const gy = L.H - L.GROUND_H; // 地面高度由 logic 持有：致死线就画在这条边上
+    // Ground: stripes + ink top edge
+    const gy = L.H - L.GROUND_H; // logic owns the ground height: the death line is drawn exactly on this edge
     for (let x = 0; x < L.W; x += 36) {
       g.fillStyle = '#3a2c1c';
       g.fillRect(x, gy, 18, L.GROUND_H);
@@ -108,14 +108,14 @@ export function createFlappy(): Game {
     g.fillStyle = INK;
     g.fillRect(0, gy, L.W, 3);
 
-    // 小鸟：gold 身 + orange 喙 + 深色眼
+    // Bird: gold body + orange beak + dark eye
     const bx = L.BIRD_X;
     const by = state.birdY;
     g.fillStyle = SCREEN.gold;
     g.shadowColor = SCREEN.glow.gold;
     g.shadowBlur = 12;
     g.beginPath();
-    g.roundRect(bx - L.BIRD_R, by - L.BIRD_RY, L.BIRD_R * 2, L.BIRD_RY * 2, 5); // 与判定盒同尺寸
+    g.roundRect(bx - L.BIRD_R, by - L.BIRD_RY, L.BIRD_R * 2, L.BIRD_RY * 2, 5); // same size as the hitbox
     g.fill();
     g.shadowBlur = 0;
     g.fillStyle = SCREEN.orange;
@@ -125,7 +125,7 @@ export function createFlappy(): Game {
     g.arc(bx + 2, by - 4, 2.5, 0, Math.PI * 2);
     g.fill();
 
-    // 分数：Bungee 大字 + 墨色投影
+    // Score: big Bungee digits + ink shadow
     g.textAlign = 'center';
     g.fillStyle = INK;
     g.font = `34px 'Bungee', ${SCREEN.mono}`;
@@ -133,7 +133,7 @@ export function createFlappy(): Game {
     g.fillStyle = SCREEN.white;
     g.fillText(padScore(state.score, 2), L.W / 2, 55);
 
-    // 开局提示留在画布内；GAME OVER 走 ctx.settle 的 DOM 浮层
+    // The start hint stays on the canvas; GAME OVER is the DOM overlay
     if (state.status === 'ready') {
       g.fillStyle = SCREEN.gold;
       g.font = `700 14px ${SCREEN.mono}`;
@@ -148,9 +148,9 @@ export function createFlappy(): Game {
       name: 'FLAPPY BIRD',
       icon: '🐦',
       displayName: 'FLAPPY',
-      hints: ['BEST 000000'], // 挂载时由 setHints 覆写为真实值
+      hints: ['BEST 000000'], // overwritten with the real value by setHints on mount
       screen: 'dark',
-      pausable: false, // 设计稿 2c 的顶栏只有 SND
+      pausable: false, // mockup 2c's top bar has only SND
     },
 
     mount(container: HTMLElement, context: GameContext): void {
@@ -185,7 +185,7 @@ export function createFlappy(): Game {
       canvas?.remove();
       canvas = null;
       g = null;
-      ctx = null; // 事件监听由 frame 的 InputService.dispose() 统一清理
+      ctx = null; // listeners are cleaned up by frame's InputService.dispose()
     },
   };
 }

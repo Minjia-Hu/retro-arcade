@@ -6,7 +6,7 @@ import {
 const rand = () => 0.5;
 
 describe('snake logic', () => {
-  it('初始状态：ready、3 节、向右、食物在界内且不在蛇身上', () => {
+  it('initial state: ready, 3 segments, heading right, food in bounds and off the snake', () => {
     const s = createState(rand);
     expect(s.status).toBe('ready');
     expect(s.snake).toHaveLength(3);
@@ -19,27 +19,27 @@ describe('snake logic', () => {
     expect(s.snake.some((c) => c.x === s.food.x && c.y === s.food.y)).toBe(false);
   });
 
-  it('180° 掉头被忽略且不开局', () => {
+  it('a 180° turn is ignored and does not start the game', () => {
     const s = createState(rand);
-    setDirection(s, 'left'); // 当前向右
+    setDirection(s, 'left'); // currently heading right
     expect(s.nextDir).toBe('right');
     expect(s.status).toBe('ready');
   });
 
-  it('合法转向使游戏开局', () => {
+  it('a legal turn starts the game', () => {
     const s = createState(rand);
     setDirection(s, 'up');
     expect(s.status).toBe('playing');
     expect(s.nextDir).toBe('up');
   });
 
-  it('ready 状态下 tick 不移动', () => {
+  it('tick while ready does not move', () => {
     const s = createState(rand);
     tick(s, 1, rand);
     expect(s.snake[0]).toEqual({ x: 10, y: 15 });
   });
 
-  it('累积一个步进间隔后前进一格', () => {
+  it('advances one cell after one step interval accumulates', () => {
     const s = createState(rand);
     setDirection(s, 'right');
     tick(s, stepInterval(0), rand);
@@ -47,7 +47,7 @@ describe('snake logic', () => {
     expect(s.snake).toHaveLength(3);
   });
 
-  it('吃到食物：加分、变长、食物换位且不在蛇身上', () => {
+  it('eating: scores, grows, food relocates off the snake', () => {
     const s = createState(rand);
     s.food = { x: 11, y: 15 };
     setDirection(s, 'right');
@@ -59,7 +59,7 @@ describe('snake logic', () => {
     expect(s.snake.some((c) => c.x === s.food.x && c.y === s.food.y)).toBe(false);
   });
 
-  it('撞墙判死', () => {
+  it('hitting a wall kills', () => {
     const s = createState(rand);
     s.snake = [{ x: COLS - 1, y: 5 }, { x: COLS - 2, y: 5 }, { x: COLS - 3, y: 5 }];
     s.dir = 'right';
@@ -71,32 +71,32 @@ describe('snake logic', () => {
     expect(s.status).toBe('dead');
   });
 
-  it('撞到自己身体判死', () => {
+  it('hitting its own body kills', () => {
     const s = createState(rand);
     s.snake = [{ x: 5, y: 5 }, { x: 6, y: 5 }, { x: 6, y: 6 }, { x: 5, y: 6 }, { x: 4, y: 6 }];
     s.dir = 'left';
     s.nextDir = 'left';
     s.food = { x: 0, y: 0 };
-    setDirection(s, 'down'); // 头 (5,5) 下方 (5,6) 是身体（非尾巴）
+    setDirection(s, 'down'); // (5,6) below the head (5,5) is body, not tail
     const ev = tick(s, stepInterval(0), rand);
     expect(ev.died).toBe(true);
     expect(s.status).toBe('dead');
   });
 
-  it('走进即将移开的尾巴格是合法的', () => {
+  it('entering the tail cell that is about to move away is legal', () => {
     const s = createState(rand);
     s.snake = [{ x: 5, y: 5 }, { x: 6, y: 5 }, { x: 6, y: 6 }, { x: 5, y: 6 }];
     s.dir = 'left';
     s.nextDir = 'left';
     s.food = { x: 0, y: 0 };
-    setDirection(s, 'down'); // (5,6) 是尾巴，本步会移开
+    setDirection(s, 'down'); // (5,6) is the tail and moves away this step
     tick(s, stepInterval(0), rand);
     expect(s.status).toBe('playing');
     expect(s.snake[0]).toEqual({ x: 5, y: 6 });
     expect(s.snake).toHaveLength(4);
   });
 
-  it('dead 状态下 tick 冻结世界', () => {
+  it('tick while dead freezes the world', () => {
     const s = createState(rand);
     s.status = 'dead';
     const ev = tick(s, 1, rand);
@@ -105,39 +105,39 @@ describe('snake logic', () => {
     expect(ev.died).toBe(false);
   });
 
-  it('步进间隔随分数缩短且有下限', () => {
+  it('the step interval shrinks with score and has a floor', () => {
     expect(stepInterval(0)).toBeGreaterThan(stepInterval(10));
     expect(stepInterval(500)).toBe(stepInterval(1000));
-    // 封顶不能来得太早：休闲玩家多在 10–30 分死，30 分时还得有余量；45 分才到极限速
+    // The floor must not arrive too early: casual games end around 10–30 apples, so 30 still needs headroom; 45 is top speed
     expect(stepInterval(30)).toBeGreaterThan(stepInterval(1000));
     expect(stepInterval(45)).toBe(stepInterval(1000));
   });
 
-  it('spawnFood 只落在空闲格', () => {
+  it('spawnFood lands only on free cells', () => {
     const zero = () => 0;
     const food = spawnFood([{ x: 0, y: 0 }, { x: 1, y: 0 }], zero);
-    expect(food).toEqual({ x: 2, y: 0 }); // 行优先扫描的第一个空格
+    expect(food).toEqual({ x: 2, y: 0 }); // the first free cell in row-major order
   });
 
-  it('一次 tick 累积两个间隔则前进两格', () => {
+  it('one tick spanning two intervals advances two cells', () => {
     const s = createState(rand);
     setDirection(s, 'right');
     tick(s, stepInterval(0) * 2, rand);
     expect(s.snake[0]).toEqual({ x: 12, y: 15 });
   });
 
-  it('同一间隔内两次输入：最后一个合法输入生效', () => {
-    const s = createState(rand); // 向右
+  it('two inputs within one interval: the last legal one wins', () => {
+    const s = createState(rand); // heading right
     setDirection(s, 'up');
-    setDirection(s, 'down'); // 相对当前 dir(right) 合法，覆盖 up
+    setDirection(s, 'down'); // legal relative to the current dir (right); overrides up
     tick(s, stepInterval(0), rand);
     expect(s.snake[0]).toEqual({ x: 10, y: 16 });
   });
 
-  it('同一间隔内两次输入：非法的第二个输入被拒', () => {
-    const s = createState(rand); // 向右
+  it('two inputs within one interval: an illegal second one is rejected', () => {
+    const s = createState(rand); // heading right
     setDirection(s, 'up');
-    setDirection(s, 'left'); // 相对当前 dir(right) 是掉头，拒绝
+    setDirection(s, 'left'); // a reversal relative to the current dir (right); rejected
     expect(s.nextDir).toBe('up');
     tick(s, stepInterval(0), rand);
     expect(s.snake[0]).toEqual({ x: 10, y: 14 });

@@ -1,17 +1,17 @@
-// 扁平网格行优先存储；延迟布雷（首次 reveal 时避开点击格及其邻域）实现首点安全
+// Flat row-major grid; mines are placed lazily on the first reveal, avoiding the clicked cell and its neighbours, so the first click is always safe
 export interface Difficulty {
   id: 'easy' | 'medium' | 'hard';
   name: string;
   cols: number;
   rows: number;
   mines: number;
-  cell: number; // 渲染格边长 px（board 恒宽 288 = cols × cell）
+  cell: number; // rendered cell size in px (the board is always 288 wide = cols × cell)
 }
 
 export const DIFFICULTIES: Difficulty[] = [
-  { id: 'easy', name: '初级', cols: 9, rows: 9, mines: 10, cell: 32 },
-  { id: 'medium', name: '中级', cols: 12, rows: 16, mines: 30, cell: 24 },
-  { id: 'hard', name: '高级', cols: 16, rows: 24, mines: 80, cell: 18 },
+  { id: 'easy', name: 'Beginner', cols: 9, rows: 9, mines: 10, cell: 32 },
+  { id: 'medium', name: 'Intermediate', cols: 12, rows: 16, mines: 30, cell: 24 },
+  { id: 'hard', name: 'Expert', cols: 16, rows: 24, mines: 80, cell: 18 },
 ];
 
 export interface Cell {
@@ -77,7 +77,7 @@ function placeMines(s: MineState, safeIdx: number, rand: () => number): void {
   const banned = new Set([safeIdx, ...neighbors(s.diff, safeIdx)]);
   const candidates: number[] = [];
   for (let i = 0; i < s.grid.length; i++) if (!banned.has(i)) candidates.push(i);
-  // 部分 Fisher-Yates：洗出前 mines 个
+  // Partial Fisher-Yates: shuffle out the first `mines` entries
   for (let i = 0; i < s.diff.mines; i++) {
     const j = i + Math.floor(rand() * (candidates.length - i));
     [candidates[i], candidates[j]] = [candidates[j], candidates[i]];
@@ -104,7 +104,7 @@ export function reveal(s: MineState, idx: number, rand: () => number = Math.rand
     return ev;
   }
 
-  // 洪水展开（迭代栈式 DFS，无递归；展开结果与 BFS 相同）：零格扩张，数字格作为边界揭开但不扩张；跳过插旗格
+  // Flood fill (iterative stack DFS, no recursion; same result as BFS): zero cells expand, numbered cells are revealed as the border but don't expand; flagged cells are skipped
   const queue = [idx];
   while (queue.length > 0) {
     const i = queue.pop()!;
@@ -120,8 +120,8 @@ export function reveal(s: MineState, idx: number, rand: () => number = Math.rand
   }
   ev.revealedSome = true;
 
-  // 胜利以棋盘实际雷数为准（而非难度配置值）：语义上"所有非雷格全开"才是赢，
-  // 也让手工构造棋盘的测试与生产路径共享同一条判定
+  // Win is judged by the mines actually on the board, not the difficulty's count: "every non-mine
+  // cell revealed" is what winning means, and hand-built test boards share the production check
   const totalMines = s.grid.reduce((n, c) => n + (c.mine ? 1 : 0), 0);
   if (s.revealed === s.grid.length - totalMines) {
     s.status = 'won';

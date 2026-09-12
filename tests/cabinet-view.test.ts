@@ -3,7 +3,7 @@ import { cabinetHtml, hintsBarHtml, overlayHtml } from '../src/shell/cabinet-vie
 import type { GameMeta, OverlayView } from '../src/core/game';
 
 const snake: GameMeta = {
-  id: 'snake', name: '贪吃蛇', icon: '🐍', displayName: 'SNAKE',
+  id: 'snake', name: 'Snake', icon: '🐍', displayName: 'SNAKE',
   hints: ['↑↓←→ / WASD MOVE', 'SPACE START'], screen: 'dark',
 };
 
@@ -13,52 +13,52 @@ const settle: OverlayView = {
   actions: [{ label: '▶ RETRY', onPress: () => {} }],
 };
 
-describe('cabinetHtml 顶栏', () => {
-  it('三个操作按钮各一个', () => {
+describe('cabinetHtml top bar', () => {
+  it('one of each of the three action buttons', () => {
     const html = cabinetHtml(snake, false);
     for (const act of ['back', 'pause', 'mute']) {
       expect(html.match(new RegExp(`data-act="${act}"`, 'g'))!.length).toBe(1);
     }
   });
 
-  it('优先用 displayName，缺省回退 name', () => {
+  it('prefers displayName, falls back to name', () => {
     expect(cabinetHtml(snake, false)).toContain('>SNAKE<');
-    expect(cabinetHtml({ id: 'x', name: '数独', icon: '✏️' }, false)).toContain('>数独<');
+    expect(cabinetHtml({ id: 'x', name: 'Sudoku', icon: '✏️' }, false)).toContain('>Sudoku<');
   });
 
-  it('机柜根节点带该游戏的 accent 色调 class', () => {
+  it('the cabinet root carries the game\'s accent tone class', () => {
     expect(cabinetHtml(snake, false)).toContain('class="cabinet accent-teal"');
     expect(cabinetHtml({ id: 'tetris', name: 'T', icon: 't' }, false)).toContain('accent-magenta');
   });
 
-  it('静音时 SND 按钮带 is-off', () => {
+  it('SND carries is-off while muted', () => {
     expect(cabinetHtml(snake, true)).toContain('class="cab-btn is-off" data-act="mute"');
     expect(cabinetHtml(snake, false)).toContain('class="cab-btn" data-act="mute"');
   });
 });
 
-describe('cabinetHtml 屏幕井', () => {
-  it('游戏挂载点、玻璃层、浮层容器齐全', () => {
+describe('cabinetHtml screen well', () => {
+  it('mount point, glass layer and overlay container are all present', () => {
     const html = cabinetHtml(snake, false);
     expect(html).toContain('class="screen-body"');
     expect(html).toContain('class="screen-glass"');
     expect(html).toMatch(/class="settle"[^>]*\shidden/);
   });
 
-  it('screen 风格由 meta 决定，缺省 dark', () => {
+  it('screen style comes from meta, default dark', () => {
     expect(cabinetHtml(snake, false)).toContain('screen screen-dark');
     expect(cabinetHtml({ ...snake, screen: 'paper' }, false)).toContain('screen screen-paper');
     expect(cabinetHtml({ id: 'x', name: 'X', icon: 'x' }, false)).toContain('screen screen-dark');
   });
 });
 
-describe('cabinetHtml 无障碍', () => {
-  it('SND 按钮用 aria-pressed 承载静音状态', () => {
+describe('cabinetHtml accessibility', () => {
+  it('SND exposes the mute state via aria-pressed', () => {
     expect(cabinetHtml(snake, true)).toContain('aria-pressed="true"');
     expect(cabinetHtml(snake, false)).toContain('aria-pressed="false"');
   });
 
-  it('浮层容器是 live region —— 刻意不自动聚焦，靠它播报结算结果', () => {
+  it('the overlay container is a live region — deliberately not auto-focused; it announces the result', () => {
     const html = cabinetHtml(snake, false);
     expect(html).toContain('role="status"');
     expect(html).toContain('aria-live="polite"');
@@ -66,47 +66,47 @@ describe('cabinetHtml 无障碍', () => {
 });
 
 describe('hintsBarHtml', () => {
-  it('多条用中点分隔', () => {
+  it('multiple entries are separated by a middle dot', () => {
     expect(hintsBarHtml(['A', 'B'])).toBe(
       '<p class="cab-hints"><span>A</span><span class="cab-dot">·</span><span>B</span></p>',
     );
   });
 
-  it('空数组返回空串，调用方据此不渲染该条', () => {
+  it('an empty array returns \'\', so the caller skips the bar', () => {
     expect(hintsBarHtml([])).toBe('');
   });
 
-  it('提示文案被转义', () => {
+  it('hint text is escaped', () => {
     expect(hintsBarHtml(['<b>X</b>'])).toContain('&lt;b&gt;X&lt;/b&gt;');
   });
 });
 
-describe('cabinetHtml 按键提示', () => {
-  it('多条提示用中点分隔', () => {
+describe('cabinetHtml key hints', () => {
+  it('multiple hints are separated by a middle dot', () => {
     const html = cabinetHtml(snake, false);
     expect(html).toContain('<span>↑↓←→ / WASD MOVE</span><span class="cab-dot">·</span><span>SPACE START</span>');
   });
 
-  it('没有提示时不渲染提示条', () => {
+  it('no hint bar without hints', () => {
     expect(cabinetHtml({ id: 'x', name: 'X', icon: 'x' }, false)).not.toContain('cab-hints');
   });
 });
 
 describe('overlayHtml', () => {
-  it('三种 tone 对应三种标题 class', () => {
+  it('three tones map to three title classes', () => {
     expect(overlayHtml(settle)).toContain('settle-title settle-title-lose');
     expect(overlayHtml({ ...settle, tone: 'win' })).toContain('settle-title-win');
     expect(overlayHtml({ ...settle, tone: 'record' })).toContain('settle-title-record');
   });
 
-  it('分数行逐行渲染', () => {
+  it('score lines render one per line', () => {
     const html = overlayHtml(settle);
     expect(html.match(/class="settle-line"/g)!.length).toBe(2);
     expect(html).toContain('>SCORE 0042<');
     expect(html).toContain('>BEST 003840<');
   });
 
-  it('两个按钮各带自己的 data-act', () => {
+  it('both buttons carry their own data-act', () => {
     const html = overlayHtml(settle);
     expect(html).toContain('data-act="overlay:0"');
     expect(html).toContain('data-act="overlay-quit"');
@@ -115,7 +115,7 @@ describe('overlayHtml', () => {
   });
 });
 
-describe('overlayHtml 多动作', () => {
+describe('overlayHtml multiple actions', () => {
   const menu: OverlayView = {
     title: 'SELECT DIFFICULTY', tone: 'win', lines: [],
     actions: [
@@ -125,35 +125,35 @@ describe('overlayHtml 多动作', () => {
     ],
   };
 
-  it('每个动作各一个按钮，按下标寻址', () => {
+  it('one button per action, addressed by index', () => {
     const html = overlayHtml(menu);
-    // 用 <button class="settle-action 前缀而非裸的 class="settle-action，
-    // 否则外层容器的 class="settle-actions"（复数）也会被这条正则误计入
+    // Match the <button class="settle-action prefix rather than a bare class="settle-action,
+    // or the outer container's class="settle-actions" (plural) is counted too
     expect(html.match(/<button class="settle-action/g)!.length).toBe(3);
     for (const i of [0, 1, 2]) expect(html).toContain(`data-act="overlay:${i}"`);
     expect(html).toContain('>EASY<');
     expect(html).toContain('>HARD<');
   });
 
-  it('kind 决定主次按钮样式，缺省为主按钮', () => {
+  it('kind picks primary/secondary styling, default primary', () => {
     expect(overlayHtml(menu)).toContain('settle-action settle-action-secondary');
     expect(overlayHtml({ ...menu, actions: [{ label: 'GO', onPress: () => {} }] }))
       .toContain('class="settle-action" data-act="overlay:0"');
   });
 
-  it('quit 为 false 时不渲染 QUIT TO HUB', () => {
+  it('quit: false omits QUIT TO HUB', () => {
     expect(overlayHtml({ ...menu, quit: false })).not.toContain('overlay-quit');
     expect(overlayHtml(menu)).toContain('overlay-quit');
   });
 });
 
-describe('转义', () => {
-  it('机柜里的游戏名被转义', () => {
+describe('escaping', () => {
+  it('the game name in the cabinet is escaped', () => {
     expect(cabinetHtml({ id: 'x', name: '<b>PWN</b>', icon: 'x' }, false))
       .toContain('&lt;b&gt;PWN&lt;/b&gt;');
   });
 
-  it('浮层里的标题与分数行被转义', () => {
+  it('overlay title and score lines are escaped', () => {
     const html = overlayHtml({ ...settle, title: '<script>x</script>', lines: ['A & B'] });
     expect(html).not.toContain('<script>');
     expect(html).toContain('&lt;script&gt;x&lt;/script&gt;');
@@ -161,36 +161,36 @@ describe('转义', () => {
   });
 });
 
-describe('cabinetHtml 可选暂停', () => {
-  it('缺省渲染暂停按钮', () => {
+describe('cabinetHtml optional pause', () => {
+  it('renders the pause button by default', () => {
     expect(cabinetHtml(snake, false)).toContain('data-act="pause"');
   });
 
-  it('pausable 为 false 时不渲染暂停按钮', () => {
+  it('pausable: false omits the pause button', () => {
     const html = cabinetHtml({ ...snake, pausable: false }, false);
     expect(html).not.toContain('data-act="pause"');
-    expect(html).toContain('data-act="mute"'); // 静音按钮仍在
+    expect(html).toContain('data-act="mute"'); // the mute button stays
   });
 });
 
-describe('cabinetHtml 插槽', () => {
-  it('缺省不渲染侧栏与控制垫', () => {
+describe('cabinetHtml slots', () => {
+  it('no side panel or pad by default', () => {
     const html = cabinetHtml(snake, false);
     expect(html).not.toContain('cab-side');
     expect(html).not.toContain('cab-pad');
   });
 
-  it('side 为 true 时在屏幕井里渲染空侧栏', () => {
+  it('side: true renders an empty side panel inside the screen well', () => {
     expect(cabinetHtml({ ...snake, side: true }, false)).toContain('<div class="cab-side"></div>');
   });
 
-  it('pad 为 true 时在屏幕井之后渲染空控制垫', () => {
+  it('pad: true renders an empty pad after the screen well', () => {
     expect(cabinetHtml({ ...snake, pad: true }, false)).toContain('<div class="cab-pad"></div>');
   });
 
-  it('控制垫排在提示条之前', () => {
+  it('the pad comes before the hint bar', () => {
     const html = cabinetHtml({ ...snake, pad: true }, false);
-    // 先确认两者都真的在，否则缺席时 indexOf 返回 -1，这条断言会形同虚设
+    // Confirm both exist first: a missing one makes indexOf return -1 and the assertion meaningless
     const pad = html.indexOf('cab-pad');
     const hints = html.indexOf('cab-hints');
     expect(pad).toBeGreaterThan(-1);
@@ -198,7 +198,7 @@ describe('cabinetHtml 插槽', () => {
     expect(pad).toBeLessThan(hints);
   });
 
-  it('侧栏排在屏幕井之内、控制垫之前', () => {
+  it('the side panel sits inside the screen well, before the pad', () => {
     const html = cabinetHtml({ ...snake, side: true, pad: true }, false);
     const screen = html.indexOf('class="screen ');
     const side = html.indexOf('cab-side');
@@ -209,18 +209,18 @@ describe('cabinetHtml 插槽', () => {
   });
 });
 
-describe('cabinetHtml 上方栏', () => {
-  it('缺省不渲染上方栏，但 stack 始终在', () => {
+describe('cabinetHtml head bar', () => {
+  it('no head bar by default, but the stack is always there', () => {
     const html = cabinetHtml(snake, false);
     expect(html).not.toContain('cab-head');
     expect(html).toContain('class="cab-stack"');
   });
 
-  it('head 为 true 时渲染空的上方栏', () => {
+  it('head: true renders an empty head bar', () => {
     expect(cabinetHtml({ ...snake, head: true }, false)).toContain('<div class="cab-head"></div>');
   });
 
-  it('上方栏排在屏幕之前、侧栏之外', () => {
+  it('the head bar comes before the screen and outside the side panel', () => {
     const html = cabinetHtml({ ...snake, head: true, side: true }, false);
     const head = html.indexOf('cab-head');
     const screen = html.indexOf('class="screen ');
@@ -231,37 +231,37 @@ describe('cabinetHtml 上方栏', () => {
   });
 });
 
-describe('cabinetHtml 顶栏工具按钮与药丸', () => {
+describe('cabinetHtml tool buttons and pill', () => {
   const withTool = {
     ...snake,
-    tools: [{ id: 'menu', label: '☰', aria: '难度菜单' }],
+    tools: [{ id: 'menu', label: '☰', aria: 'Difficulty menu' }],
   };
 
-  it('工具按钮用 tool: 前缀，避开 back/pause/mute 的命名空间', () => {
+  it('tool buttons use the tool: prefix, clear of the back/pause/mute namespace', () => {
     const html = cabinetHtml(withTool, false);
     expect(html).toContain('data-act="tool:menu"');
     expect(html).toContain('>☰<');
   });
 
-  it('工具按钮排在 SND 之前', () => {
+  it('tool buttons come before SND', () => {
     const html = cabinetHtml(withTool, false);
     expect(html.indexOf('tool:menu')).toBeLessThan(html.indexOf('data-act="mute"'));
   });
 
-  it('缺省不渲染工具按钮，药丸渲染但隐藏', () => {
+  it('no tool buttons by default; the pill renders hidden', () => {
     const html = cabinetHtml(snake, false);
     expect(html).not.toContain('data-act="tool:');
-    // 药丸始终渲染、靠 hidden 控制显隐，这样 setPill 不必凭空插入节点
+    // The pill is always rendered and toggled via hidden, so setPill never inserts a node
     expect(html).toMatch(/class="cab-pill"[^>]*\shidden/);
   });
 
-  it('药丸渲染在游戏名之后，起手隐藏（内容只能来自 ctx.setPill）', () => {
+  it('the pill renders after the game name, hidden at first (content only comes from ctx.setPill)', () => {
     const html = cabinetHtml(withTool, false);
     expect(html.indexOf('cab-name')).toBeLessThan(html.indexOf('cab-pill'));
     expect(html).toContain('hidden></span>');
   });
 
-  it('工具按钮与 pausable:false 可以并存', () => {
+  it('tool buttons and pausable:false can coexist', () => {
     const html = cabinetHtml({ ...withTool, pausable: false }, false);
     expect(html).not.toContain('data-act="pause"');
     expect(html).toContain('data-act="tool:menu"');

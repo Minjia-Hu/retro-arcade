@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { GameLoop } from '../src/core/loop';
 
-// 手动驱动的 raf：收集回调，由测试逐帧触发
+// Manually driven rAF: collects callbacks for the test to fire frame by frame
 function manualRaf() {
   const queue: ((t: number) => void)[] = [];
   return {
@@ -11,30 +11,30 @@ function manualRaf() {
 }
 
 describe('GameLoop', () => {
-  it('按帧调用 update(dt 秒) 和 render', () => {
+  it('calls update(dt seconds) and render per frame', () => {
     const calls: number[] = [];
     let renders = 0;
     const m = manualRaf();
     const loop = new GameLoop((dt) => calls.push(dt), () => { renders += 1; }, m.raf);
     loop.start();
-    m.fire(1000); // 首帧建立基准，dt=0
+    m.fire(1000); // first frame sets the time base, dt=0
     m.fire(1016); // +16ms
     expect(calls.length).toBe(2);
     expect(calls[1]).toBeCloseTo(0.016, 3);
     expect(renders).toBe(2);
   });
 
-  it('dt 上限 50ms（后台切回不产生大跳帧）', () => {
+  it('dt is capped at 50ms (no huge step when returning from background)', () => {
     const calls: number[] = [];
     const m = manualRaf();
     const loop = new GameLoop((dt) => calls.push(dt), () => {}, m.raf);
     loop.start();
     m.fire(0);
-    m.fire(5000); // 5 秒后切回
+    m.fire(5000); // back after 5 seconds
     expect(calls[1]).toBe(0.05);
   });
 
-  it('pause 后不再 update，resume 后恢复且不补帧', () => {
+  it('no update while paused; resume continues without catching up', () => {
     const calls: number[] = [];
     const m = manualRaf();
     const loop = new GameLoop((dt) => calls.push(dt), () => {}, m.raf);
@@ -44,13 +44,13 @@ describe('GameLoop', () => {
     m.fire(100);
     expect(calls.length).toBe(1);
     loop.resume();
-    m.fire(200); // resume 后首帧重新建立基准
+    m.fire(200); // first frame after resume re-establishes the base
     m.fire(216);
     expect(calls.length).toBe(3);
     expect(calls[2]).toBeCloseTo(0.016, 3);
   });
 
-  it('stop 后彻底停止', () => {
+  it('stop halts completely', () => {
     let n = 0;
     const m = manualRaf();
     const loop = new GameLoop(() => { n += 1; }, () => {}, m.raf);
@@ -61,7 +61,7 @@ describe('GameLoop', () => {
     expect(n).toBe(1);
   });
 
-  it('重复 start 不会叠加并行 rAF 链', () => {
+  it('a repeated start does not stack parallel rAF chains', () => {
     let n = 0;
     const m = manualRaf();
     const loop = new GameLoop(() => { n += 1; }, () => {}, m.raf);

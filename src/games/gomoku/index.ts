@@ -7,15 +7,15 @@ import { AI_LEVELS, findBestMove, type AiLevel } from './ai';
 const W = 320;
 const H = 320;
 const MARGIN = 20;
-const GAP = (W - 2 * MARGIN) / (L.SIZE - 1); // 交叉点间距
-const STONE_R = 11; // 棋子直径 22
+const GAP = (W - 2 * MARGIN) / (L.SIZE - 1); // spacing between intersections
+const STONE_R = 11; // stone diameter 22
 
 function at(x: number, y: number): number { return y * L.SIZE + x; }
 function px(c: number): number { return MARGIN + c * GAP; }
 
-const STAR = [at(3, 3), at(11, 3), at(3, 11), at(11, 11), L.CENTER]; // 星位
+const STAR = [at(3, 3), at(11, 3), at(3, 11), at(11, 11), L.CENTER]; // star points
 
-/** 纸盘配色（设计稿 2f） */
+/** Paper palette (mockup 2f) */
 const PAPER = {
   board: '#efe0c3',
   line: '#b5a88f',
@@ -35,18 +35,18 @@ const MODES: { id: 'pvp' | AiLevel['id']; label: string }[] = [
 ];
 
 /**
- * 顶栏药丸用的短标签：cab-pill 不换行，实测 MODES 里带空格的两词标签
- * （如 "2 PLAYERS"）会在 GOMOKU 这种较长的 displayName 旁挤到换行，
- * 把游戏名挤成省略号。药丸只需单词，浮层按钮仍用 MODES 的完整标签。
+ * Short labels for the top-bar pill: cab-pill doesn't wrap, and the two-word MODES labels
+ * ("2 PLAYERS") next to a long displayName like GOMOKU forced a line break and squeezed the
+ * game name into an ellipsis. The pill needs one word; overlay buttons keep the full MODES labels.
  */
 const PILL_LABEL: Record<'pvp' | AiLevel['id'], string> = {
   pvp: 'PVP', easy: 'EASY', medium: 'MEDIUM', hard: 'HARD',
 };
 
 export function createGomoku(): Game {
-  let game: L.GomokuState | null = null; // null = 尚未开局（模式菜单开着）
+  let game: L.GomokuState | null = null; // null = not started (mode menu open)
   let mode: 'pvp' | AiLevel['id'] = 'pvp';
-  let aiLevel: AiLevel | null = null; // null = 双人
+  let aiLevel: AiLevel | null = null; // null = two players
   let canvas: HTMLCanvasElement | null = null;
   let g: CanvasRenderingContext2D | null = null;
   let loop: GameLoop | null = null;
@@ -54,13 +54,13 @@ export function createGomoku(): Game {
   let paused = false;
   let thinking = false;
   let worker: Worker | null = null;
-  let token = 0; // 作废过期的 Worker 回复（重开/返回菜单后）
-  let endedAt = 0; // 结算时刻；0 表示结算浮层已被消费（回到菜单）
-  let hover = -1; // 悬停中的交叉点 idx，-1 = 无
+  let token = 0; // invalidates stale Worker replies (after restart / back to menu)
+  let endedAt = 0; // when the game ended; 0 means the result overlay was consumed (back to menu)
+  let hover = -1; // hovered intersection, -1 = none
   let hoverCleanup: (() => void) | null = null;
 
   let head: { black: HTMLElement; white: HTMLElement } | null = null;
-  let shownAi: boolean | null = null; // 回合筹文案的缓存；buildHead 里重置
+  let shownAi: boolean | null = null; // cache for the turn-chip labels; reset in buildHead
 
   function buildHead(host: HTMLElement): void {
     host.innerHTML = `
@@ -68,13 +68,13 @@ export function createGomoku(): Game {
       <div class="chip" data-ref="white" aria-label="White">○ WHITE</div>`;
     const q = (r: string) => host.querySelector<HTMLElement>(`[data-ref="${r}"]`)!;
     head = { black: q('black'), white: q('white') };
-    shownAi = false; // 与上面写死的 BLACK/WHITE 默认文案对应
+    shownAi = false; // matches the hard-coded BLACK/WHITE defaults above
   }
 
-  /** 文案随模式变：AI 局是 YOU/CPU，双人局是 BLACK/WHITE（设计稿只画了 AI 那种） */
+  /** Labels follow the mode: YOU/CPU against the AI, BLACK/WHITE for two players (the mockup only shows the AI case) */
   function syncHead(): void {
     if (!head || !game) return;
-    // 文案只在切模式时变，却每帧都写会反复重建文本节点——与 2048/MINES 同样做缓存
+    // The labels only change with the mode, but writing them every frame rebuilds text nodes — cached like 2048/MINES
     const ai = mode !== 'pvp';
     if (ai !== shownAi) {
       shownAi = ai;
@@ -86,14 +86,14 @@ export function createGomoku(): Game {
     head.white.classList.toggle('is-turn', turn === L.WHITE && game.status === 'playing');
   }
 
-  /** 浮层盖住棋盘时，输入整体冻结（照 SUDOKU 的 frozen() 写法） */
+  /** All input freezes while an overlay covers the board (same frozen() as SUDOKU) */
   function frozen(): boolean {
     return paused || Boolean(ctx?.overlayOpen());
   }
 
   function humanCanPlay(): boolean {
     if (!game || game.status !== 'playing' || thinking) return false;
-    if (aiLevel && game.turn === L.WHITE) return false; // 轮到 AI
+    if (aiLevel && game.turn === L.WHITE) return false; // the AI's turn
     return true;
   }
 
@@ -107,14 +107,14 @@ export function createGomoku(): Game {
       worker = new Worker(new URL('./ai.worker.ts', import.meta.url), { type: 'module' });
       worker.onmessage = (e: MessageEvent) => {
         const { idx, token: replyToken } = e.data as { idx: number; token: number };
-        if (replyToken !== token) return; // 过期回复：玩家已返回菜单或另开新局。先判过期再复位 thinking，否则旧局的回复会解冻新局
+        if (replyToken !== token) return; // stale reply: the player went back to the menu or started over. Check before clearing thinking, or an old game's reply unfreezes the new one
         thinking = false;
         if (paused || !game || game.status !== 'playing') return;
         applyAiMove(idx);
       };
       return worker;
     } catch {
-      worker = null; // 环境不支持 Worker 时降级为主线程计算
+      worker = null; // no Worker support: fall back to the main thread
       return null;
     }
   }
@@ -126,7 +126,7 @@ export function createGomoku(): Game {
     if (w) {
       w.postMessage({ board: game.board.slice(), player: game.turn, depth: aiLevel.depth, token });
     } else {
-      // 无 Worker：主线程直接算（仍可玩，只是可能瞬卡）
+      // No Worker: compute on the main thread (playable, may stutter briefly)
       const idx = findBestMove(game.board.slice(), game.turn, aiLevel.depth, Math.random);
       applyAiMove(idx);
     }
@@ -159,7 +159,7 @@ export function createGomoku(): Game {
     ctx?.overlay(null);
     ctx?.setPill(PILL_LABEL[m]);
     ctx?.audio.play('click');
-    // 人执黑先手，AI 执白，无需首手请求
+    // The human is black and moves first, the AI is white; no opening request needed
   }
 
   function showMenu(): void {
@@ -180,11 +180,11 @@ export function createGomoku(): Game {
     });
   }
 
-  /** 结算浮层期间 Space / 点画布 = ▶ NEW GAME（模式菜单不算）。返回是否已消费这次输入 */
+  /** While the result overlay is up, Space / a canvas tap = ▶ NEW GAME (not for the mode menu). Returns whether the input was consumed */
   function restartIfEnded(): boolean {
     if (!ctx?.overlayOpen() || !game || game.status === 'playing' || !endedAt) return false;
-    if (performance.now() - endedAt >= 400) { // 落子瞬间常有连点
-      endedAt = 0; // 菜单开着时再按不会反复重开菜单
+    if (performance.now() - endedAt >= 400) { // clicks pile up at the moment of the last move
+      endedAt = 0; // pressing again with the menu open doesn't reopen it
       showMenu();
     }
     return true;
@@ -204,14 +204,14 @@ export function createGomoku(): Game {
     });
   }
 
-  /** CSS 坐标 → 逻辑坐标（画布固定 320×320，无需按当前视图换算） */
+  /** CSS coordinates → logic coordinates (the canvas is a fixed 320×320, no view scaling) */
   function toLogical(cssX: number, cssY: number): [number, number] {
     if (!canvas) return [0, 0];
     const rect = canvas.getBoundingClientRect();
     return [(cssX / rect.width) * W, (cssY / rect.height) * H];
   }
 
-  /** 最近交叉点；落在棋盘外返回 -1 */
+  /** Nearest intersection; -1 when outside the board */
   function intersectionAt(cssX: number, cssY: number): number {
     const [x, y] = toLogical(cssX, cssY);
     const c = Math.round((x - MARGIN) / GAP);
@@ -265,12 +265,12 @@ export function createGomoku(): Game {
     if (!g) return;
     const cx = px(idx % L.SIZE);
     const cy = px(Math.floor(idx / L.SIZE));
-    // 投影
+    // Shadow
     g.beginPath();
     g.arc(cx + 1, cy + 2, STONE_R, 0, Math.PI * 2);
     g.fillStyle = PAPER.shadow;
     g.fill();
-    // 棋子本体 + ink 描边
+    // Stone + ink stroke
     g.beginPath();
     g.arc(cx, cy, STONE_R, 0, Math.PI * 2);
     g.fillStyle = player === L.BLACK ? PAPER.black : PAPER.white;
@@ -278,7 +278,7 @@ export function createGomoku(): Game {
     g.lineWidth = 2;
     g.strokeStyle = PAPER.ink;
     g.stroke();
-    // 内侧高光（黑）/ 阴影（白）
+    // Inner highlight (black) / shade (white)
     g.beginPath();
     g.arc(cx - STONE_R * 0.3, cy - STONE_R * 0.3, STONE_R * 0.4, 0, Math.PI * 2);
     g.fillStyle = player === L.BLACK ? 'rgba(255, 255, 255, .2)' : PAPER.whiteShade;
@@ -314,16 +314,16 @@ export function createGomoku(): Game {
   return {
     meta: {
       id: 'gomoku',
-      name: '五子棋',
+      name: 'Gomoku',
       icon: '⚫',
       displayName: 'GOMOKU',
       hints: ['CLICK TO PLACE', 'FIVE IN A ROW WINS'],
       screen: 'paper',
       head: true,
       pausable: false,
-      // ☰（同 MINES/SUDOKU）而非 "↺ NEW"：这颗按钮开的是模式菜单，不是直接重开一局；
-      // 实测 "↺ NEW" + 长名 GOMOKU + 模式药丸三者会挤到顶栏换行（NEW 折成两行、
-      // GOMOKU 被省略号截断），换回单字符按钮后腾出的空间正好够用。
+      // ☰ (as in MINES/SUDOKU) rather than "↺ NEW": this button opens the mode menu, it doesn't
+      // restart directly; and "↺ NEW" + the long name GOMOKU + the mode pill wrapped the top bar
+      // (NEW on two lines, GOMOKU truncated). A single-character button frees exactly enough room.
       tools: [{ id: 'menu', label: '☰', aria: 'Mode menu' }],
     },
 
@@ -339,7 +339,7 @@ export function createGomoku(): Game {
         if (code === 'Space' || code === 'Enter') restartIfEnded();
       });
 
-      // 悬停虚影需要移动坐标，InputService 没有对应方法，直接在画布上挂原生监听
+      // The hover ghost needs move coordinates, which InputService doesn't offer; native listeners go straight on the canvas
       const onMove = (e: PointerEvent) => {
         if (!canvas) return;
         const rect = canvas.getBoundingClientRect();
@@ -354,10 +354,10 @@ export function createGomoku(): Game {
         canvas?.removeEventListener('pointercancel', clearHover);
       };
 
-      // 不存档：每次挂载都从模式菜单开始
+      // No save: every mount starts at the mode menu
       showMenu();
 
-      loop = new GameLoop(() => {}, render); // 无时间模拟，仅驱动渲染
+      loop = new GameLoop(() => {}, render); // no simulation, just drives rendering
       loop.start();
     },
 
@@ -367,7 +367,7 @@ export function createGomoku(): Game {
     destroy(): void {
       loop?.stop();
       loop = null;
-      token += 1; // 作废在途 Worker 回复
+      token += 1; // invalidate in-flight Worker replies
       worker?.terminate();
       worker = null;
       hoverCleanup?.();
@@ -376,7 +376,7 @@ export function createGomoku(): Game {
       canvas = null;
       g = null;
       head = null;
-      ctx = null; // 事件监听由 frame 的 InputService.dispose() 统一清理
+      ctx = null; // listeners are cleaned up by frame's InputService.dispose()
     },
   };
 }

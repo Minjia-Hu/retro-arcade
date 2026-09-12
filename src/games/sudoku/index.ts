@@ -7,11 +7,11 @@ import { difficultyMenu } from '../../shell/difficulty-menu';
 import * as L from './logic';
 
 const CELL = 32;
-const W = 9 * CELL; // 288：画布只剩棋盘，边框圆角由 .screen 提供
+const W = 9 * CELL; // 288: the canvas is just the board; border and radius come from .screen
 const H = W;
 const SAVE_KEY = 'sudoku.save';
 
-/** 纸盘配色（设计稿 1c）。与 arcade.css 的同名变量对应，改一处要同步另一处 */
+/** Paper palette (mockup 1c). Mirrors the same-named variables in arcade.css; change both together */
 const PAPER = {
   ground: '#f6efe3',
   ink: '#2b2118',
@@ -25,7 +25,7 @@ const PAPER = {
 } as const;
 
 export function createSudoku(): Game {
-  let state: L.SudokuState | null = null; // null = 难度菜单
+  let state: L.SudokuState | null = null; // null = difficulty menu
   let canvas: HTMLCanvasElement | null = null;
   let g: CanvasRenderingContext2D | null = null;
   let loop: GameLoop | null = null;
@@ -51,7 +51,7 @@ export function createSudoku(): Game {
     syncPad();
     ctx?.setPill(DIFF_LABEL[diff.id]);
     ctx?.overlay(null);
-    // 不在这里发声：浮层按钮的 click 由 frame 统一负责，重复发声会响两下
+    // No sound here: frame plays the click for overlay buttons, a second one would double up
     save();
   }
 
@@ -62,9 +62,9 @@ export function createSudoku(): Game {
     showMenu();
   }
 
-  /** 由 difficultyMenu 在 mount 里赋值；backToMenu 与 onTool 共用 */
-  // 默认值故意会抛：本轮踩过「赋值晚于调用」的坑，静默空桩只会变成
-  // 「菜单不弹」的现场调试，抛出来能在开发期就定位
+  /** Assigned by difficultyMenu in mount; shared by backToMenu and onTool */
+  // The default throws on purpose: "assigned after it was called" bit us once, and a silent
+  // stub only turns into "the menu doesn't open" debugging; throwing pins it down in dev
   let showMenu: () => void = () => { throw new Error('showMenu called before mount'); };
 
   function reportSolved(): void {
@@ -72,7 +72,7 @@ export function createSudoku(): Game {
     ctx?.overlay({
       title: 'SOLVED!',
       tone: 'win',
-      // 设计稿还写了用时与失误数，但 SudokuState 里没有这两项数据源，不造假
+      // The mockup also shows time and mistakes, but SudokuState has no source for either; don't fake them
       lines: [DIFF_LABEL[state.diff.id]],
       actions: [{ label: '▶ NEW PUZZLE', onPress: backToMenu }],
       hints: ['SPACE / TAP FOR A NEW PUZZLE'],
@@ -87,7 +87,7 @@ export function createSudoku(): Game {
     padButtons(
       row('digits'),
       [1, 2, 3, 4, 5, 6, 7, 8, 9].map((d) => ({
-        id: String(d), label: String(d), aria: `填入 ${d}`, variant: 'pad-btn-digit',
+        id: String(d), label: String(d), aria: `Enter ${d}`, variant: 'pad-btn-digit',
       })),
       (id) => applyDigit(Number(id)),
     );
@@ -97,7 +97,7 @@ export function createSudoku(): Game {
       { id: 'notes', label: '✎ NOTES', aria: 'Notes mode', variant: 'pad-btn-wide' },
       { id: 'check', label: '⚑ CHECK', aria: 'Highlight conflicts', variant: 'pad-btn-wide' },
     ], (id) => {
-      // eraseSelected 自己有 frozen 守卫；这里再挡一次是为了 notes/check 两个开关
+      // eraseSelected has its own frozen guard; this one is for the notes/check toggles
       if (frozen()) return;
       if (id === 'erase') eraseSelected();
       else if (id === 'notes') { notesMode = !notesMode; syncPad(); }
@@ -112,22 +112,22 @@ export function createSudoku(): Game {
     syncPad();
   }
 
-  /** 两个开关按钮的激活态。键盘路径改了状态也要调，否则 DOM 上的激活态会失真 */
+  /** Active state of the two toggle buttons. The keyboard path must call it too, or the DOM state drifts */
   function syncPad(): void {
     padRefs?.notes.classList.toggle('is-on', notesMode);
     padRefs?.check.classList.toggle('is-on', showErrors);
   }
 
   /**
-   * 浮层盖住棋盘时，整个控制垫都该冻结。
-   * 浮层只覆盖 .screen，而 .cab-pad 在它外面照样可点；键盘更是直达。
+   * While an overlay covers the board, the whole pad should freeze.
+   * The overlay only covers .screen; .cab-pad sits outside and stays clickable, and the keyboard goes straight through.
    */
   function frozen(): boolean {
     return paused || Boolean(ctx?.overlayOpen());
   }
 
   function applyDigit(v: number): void {
-    // !state 留在这里而不是收进 frozen()：否则 TS 无法收窄 state 的类型
+    // !state stays here rather than inside frozen(): otherwise TS can't narrow state's type
     if (!state || selected < 0 || frozen()) return;
     const ok = notesMode ? L.toggleNote(state, selected, v) : L.setValue(state, selected, v);
     if (!ok) return;
@@ -153,7 +153,7 @@ export function createSudoku(): Game {
   function tapAt(cssX: number, cssY: number): void {
     if (paused || !state || !canvas) return;
     if (state.status === 'won') {
-      if (performance.now() - endedAt >= 400) backToMenu(); // 与键盘同一条出口
+      if (performance.now() - endedAt >= 400) backToMenu(); // same exit as the keyboard
       return;
     }
     const rect = canvas.getBoundingClientRect();
@@ -171,7 +171,7 @@ export function createSudoku(): Game {
     selected = r * 9 + c;
   }
 
-  /** 只画 9×9 棋盘；HUD、数字盘、功能按钮、难度菜单都在 DOM 里 */
+  /** Draws only the 9×9 board; HUD, digit pad, function buttons and difficulty menu are DOM */
   function renderBoard(): void {
     if (!g) return;
     g.fillStyle = PAPER.ground;
@@ -181,7 +181,7 @@ export function createSudoku(): Game {
     const bad = s && showErrors ? L.conflicts(s.values) : new Set<number>();
     const selVal = s && selected >= 0 ? s.values[selected] : 0;
 
-    // 选中格与同数高亮、冲突格底色
+    // Selected cell and same-digit highlight, conflict background
     for (let i = 0; i < 81; i++) {
       const cx = (i % 9) * CELL;
       const cy = Math.floor(i / 9) * CELL;
@@ -192,7 +192,7 @@ export function createSudoku(): Game {
       g.fillRect(cx, cy, CELL, CELL);
     }
 
-    // 数字与笔记
+    // Digits and notes
     if (s) {
       g.textAlign = 'center';
       g.textBaseline = 'middle';
@@ -215,7 +215,7 @@ export function createSudoku(): Game {
       }
     }
 
-    // 细格线
+    // Thin grid lines
     g.strokeStyle = PAPER.line;
     g.lineWidth = 1;
     for (let k = 1; k < 9; k++) {
@@ -225,7 +225,7 @@ export function createSudoku(): Game {
       g.moveTo(0, k * CELL + .5); g.lineTo(W, k * CELL + .5);
       g.stroke();
     }
-    // 3×3 分隔线
+    // 3×3 box lines
     g.strokeStyle = PAPER.ink;
     g.lineWidth = 2;
     for (let k = 3; k < 9; k += 3) {
@@ -246,13 +246,13 @@ export function createSudoku(): Game {
   return {
     meta: {
       id: 'sudoku',
-      name: '数独',
+      name: 'Sudoku',
       icon: '✏️',
       displayName: 'SUDOKU',
       hints: ['TAP CELL', 'THEN A NUMBER'],
       screen: 'paper',
       pad: true,
-      pausable: false, // 回合制，暂停无意义
+      pausable: false, // turn-based, pausing is meaningless
       tools: [{ id: 'menu', label: '☰', aria: 'Difficulty menu' }],
     },
 
@@ -260,7 +260,7 @@ export function createSudoku(): Game {
       ctx = context;
       ({ canvas, g } = createScreenCanvas(container, W, H));
 
-      // 菜单必须先建：下面的 else 分支会立刻调它，晚赋值会调到空函数桩
+      // The menu must exist first: the else branch below calls it immediately, and a late assignment hits the stub
       showMenu = difficultyMenu({
         ctx,
         difficulties: L.DIFFICULTIES,
@@ -270,7 +270,7 @@ export function createSudoku(): Game {
       ctx.onTool('menu', () => showMenu());
       if (ctx.pad) buildPad(ctx.pad);
 
-      // 恢复进行中盘面；没有存档才弹难度菜单
+      // Restore a board in progress; only without a save does the difficulty menu open
       const restored = L.deserialize(ctx.storage.get(SAVE_KEY, null));
       if (restored) {
         state = restored;
@@ -284,14 +284,14 @@ export function createSudoku(): Game {
       ctx.input.onKey((code) => {
         if (paused || !state) return;
         if (state.status === 'won') {
-          // 胜利横幅（必然开着浮层，所以要排在 overlayOpen 早退之前）：
-          // 纯键盘用户也能返回难度菜单（带 400ms 防误触）
+          // Win banner (an overlay is necessarily open, so this must precede the overlayOpen early
+          // return): keyboard-only players can get back to the difficulty menu (400ms debounce)
           if ((code === 'Enter' || code === 'Escape' || code === 'Space')
             && performance.now() - endedAt >= 400) backToMenu();
           return;
         }
         if (ctx?.overlayOpen()) {
-          // 菜单开着时键盘也要停手；Escape 给进行中的局一个和 ✕ RESUME 对称的出口
+          // The keyboard stops while the menu is open; Escape mirrors ✕ RESUME for a game in progress
           if (code === 'Escape' && state.status === 'playing') ctx.overlay(null);
           return;
         }
@@ -300,14 +300,14 @@ export function createSudoku(): Game {
           if (d >= 1 && d <= 9) applyDigit(d);
           else if (d === 0) eraseSelected();
         } else if (code === 'Backspace' || code === 'Delete') eraseSelected();
-        else if (code === 'KeyN') { notesMode = !notesMode; syncPad(); } // 到这里已过 frozen 门
+        else if (code === 'KeyN') { notesMode = !notesMode; syncPad(); } // past the frozen gate by here
         else if (code === 'ArrowUp') moveSel(-1, 0);
         else if (code === 'ArrowDown') moveSel(1, 0);
         else if (code === 'ArrowLeft') moveSel(0, -1);
         else if (code === 'ArrowRight') moveSel(0, 1);
       });
 
-      loop = new GameLoop(() => {}, render); // 无时间模拟，仅驱动渲染
+      loop = new GameLoop(() => {}, render); // no simulation, just drives rendering
       loop.start();
     },
 
@@ -321,7 +321,7 @@ export function createSudoku(): Game {
       canvas = null;
       g = null;
       padRefs = null;
-      ctx = null; // 事件监听由 frame 的 InputService.dispose() 统一清理
+      ctx = null; // listeners are cleaned up by frame's InputService.dispose()
     },
   };
 }

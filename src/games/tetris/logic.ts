@@ -1,11 +1,11 @@
-// 10×20 扁平棋盘，0 空、1-7 = 方块类型+1。
-// 形状/旋转/消行/重力曲线沿用作者早前一版已验证的实现，移植为纯函数。
+// Flat 10×20 board: 0 empty, 1–7 = piece type + 1.
+// Shapes, rotation, line clearing and the gravity curve follow an earlier, proven implementation of the author's, ported to pure functions.
 export const COLS = 10;
 export const ROWS = 20;
 
 export interface PieceDef {
-  size: number; // 旋转包围盒边长
-  spawn: [number, number][]; // 出生形状（SRS 朝向）
+  size: number; // side of the rotation bounding box
+  spawn: [number, number][]; // spawn shape (SRS orientation)
 }
 
 // 0:I 1:O 2:T 3:S 4:Z 5:J 6:L
@@ -19,7 +19,7 @@ export const PIECE_DEFS: PieceDef[] = [
   { size: 3, spawn: [[2, 0], [0, 1], [1, 1], [2, 1]] },
 ];
 
-/** 出生形状经顺时针公式 [size-1-y, x] 推导任意旋转态（O 为 2×2，天然恒等） */
+/** Any rotation derives from the spawn shape via the clockwise formula [size-1-y, x] (O is 2×2, so it's the identity) */
 export function rotatedCells(type: number, rot: number): [number, number][] {
   const def = PIECE_DEFS[type];
   let cells = def.spawn;
@@ -64,7 +64,7 @@ export function levelOf(lines: number): number {
   return Math.floor(lines / 10) + 1;
 }
 
-/** 几何衰减重力：0.8s × 0.82^(level-1)，下限 0.08s */
+/** Geometrically decaying gravity: 0.8s × 0.82^(level-1), floor 0.08s */
 export function dropInterval(lines: number): number {
   return Math.max(0.08, 0.8 * Math.pow(0.82, levelOf(lines) - 1));
 }
@@ -78,7 +78,7 @@ function refillBag(s: TetrisState, rand: () => number): void {
   s.bag.push(...types);
 }
 
-/** bag 少于 2 时补充，保证 next 预览始终有效 */
+/** Refill when the bag has fewer than 2, so the next preview is always valid */
 export function drawFromBag(s: TetrisState, rand: () => number): number {
   if (s.bag.length < 2) refillBag(s, rand);
   return s.bag.shift()!;
@@ -196,7 +196,7 @@ function lockPiece(s: TetrisState, rand: () => number): TetrisEvents {
     s.board[y * COLS + (s.current.x + cx)] = s.current.type + 1;
   }
 
-  // 消行：保留非满行，顶部补空行
+  // Clear lines: keep the non-full rows, pad empty rows on top
   const rows: number[][] = [];
   for (let y = 0; y < ROWS; y++) {
     const row = s.board.slice(y * COLS, (y + 1) * COLS);
@@ -207,11 +207,11 @@ function lockPiece(s: TetrisState, rand: () => number): TetrisEvents {
   s.board = rows.flat();
 
   if (ev.cleared > 0) {
-    s.score += LINE_SCORES[ev.cleared] * levelOf(s.lines); // 用消行前的等级计分
+    s.score += LINE_SCORES[ev.cleared] * levelOf(s.lines); // scored at the level before the clear
     s.lines += ev.cleared;
   }
 
-  // 终局双保险：锁定格高于顶部，或新块出生即碰撞
+  // Two game-over checks: a locked cell above the top, or the new piece colliding on spawn
   if (aboveTop) {
     s.status = 'over';
     ev.over = true;

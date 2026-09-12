@@ -8,7 +8,7 @@ const EASY = DIFFICULTIES[0];
 const zero = () => 0;
 
 describe('minesweeper logic', () => {
-  it('三档难度参数正确', () => {
+  it('three tiers with the right parameters', () => {
     expect(DIFFICULTIES.map((d) => [d.cols, d.rows, d.mines])).toEqual([
       [9, 9, 10],
       [12, 16, 30],
@@ -16,7 +16,7 @@ describe('minesweeper logic', () => {
     ]);
   });
 
-  it('初始状态：ready、无雷、零旗', () => {
+  it('initial state: ready, no mines, zero flags', () => {
     const s = createState(EASY);
     expect(s.status).toBe('ready');
     expect(s.grid).toHaveLength(81);
@@ -24,14 +24,14 @@ describe('minesweeper logic', () => {
     expect(s.flags).toBe(0);
   });
 
-  it('neighbors：角 3 个、中心 8 个', () => {
+  it('neighbors: 3 at a corner, 8 in the middle', () => {
     expect(neighbors(EASY, 0)).toHaveLength(3);
     expect(neighbors(EASY, 40)).toHaveLength(8);
   });
 
-  it('首点必不踩雷（含 8 邻域），且布雷数正确', () => {
+  it('the first click is never a mine (including its 8 neighbours), and the mine count is right', () => {
     const s = createState(EASY);
-    reveal(s, 40, zero); // rand=0 是最"想"把雷放在前面的对抗序列
+    reveal(s, 40, zero); // rand=0 is the adversarial sequence that most wants to put mines first
     expect(s.status).not.toBe('lost');
     expect(s.grid.filter((c) => c.mine)).toHaveLength(10);
     for (const i of [40, ...neighbors(EASY, 40)]) {
@@ -39,7 +39,7 @@ describe('minesweeper logic', () => {
     }
   });
 
-  it('computeAdjacency：角上一颗雷，三邻格 adj 为 1', () => {
+  it('computeAdjacency: one mine in a corner gives its three neighbours adj 1', () => {
     const s = createState(EASY);
     s.grid[0].mine = true;
     computeAdjacency(s);
@@ -49,7 +49,7 @@ describe('minesweeper logic', () => {
     expect(s.grid[11].adj).toBe(0);
   });
 
-  it('洪水展开：单雷棋盘从远角揭开即胜（80 格全开）', () => {
+  it('flood fill: on a one-mine board, revealing the far corner wins (all 80 cells open)', () => {
     const s = createState(EASY);
     s.grid[0].mine = true;
     computeAdjacency(s);
@@ -58,10 +58,10 @@ describe('minesweeper logic', () => {
     expect(ev.won).toBe(true);
     expect(s.status).toBe('won');
     expect(s.revealed).toBe(80);
-    expect(s.grid[0].revealed).toBe(false); // 雷本身不被展开
+    expect(s.grid[0].revealed).toBe(false); // the mine itself is not revealed
   });
 
-  it('展开跳过插旗格：旗未拔则不胜，拔旗补开后胜', () => {
+  it('flood fill skips flagged cells: no win while the flag stays, win after unflagging and revealing', () => {
     const s = createState(EASY);
     s.grid[0].mine = true;
     computeAdjacency(s);
@@ -76,7 +76,7 @@ describe('minesweeper logic', () => {
     expect(ev.won).toBe(true);
   });
 
-  it('踩雷：lost、爆雷事件、所有雷翻开', () => {
+  it('hitting a mine: lost, exploded event, every mine revealed', () => {
     const s = createState(EASY);
     s.grid[0].mine = true;
     s.grid[17].mine = true;
@@ -89,7 +89,7 @@ describe('minesweeper logic', () => {
     expect(s.grid[17].revealed).toBe(true);
   });
 
-  it('插旗开关与计数；已开格不能插旗', () => {
+  it('flag toggling and counting; revealed cells cannot be flagged', () => {
     const s = createState(EASY);
     expect(toggleFlag(s, 3)).toBe(true);
     expect(s.flags).toBe(1);
@@ -99,7 +99,7 @@ describe('minesweeper logic', () => {
     expect(toggleFlag(s, 5)).toBe(false);
   });
 
-  it('插旗格不可被 reveal', () => {
+  it('a flagged cell cannot be revealed', () => {
     const s = createState(EASY);
     s.grid[0].mine = true;
     computeAdjacency(s);
@@ -110,7 +110,7 @@ describe('minesweeper logic', () => {
     expect(s.status).toBe('playing');
   });
 
-  it('终局后 reveal 与 toggleFlag 均被拒绝', () => {
+  it('after the game ends, reveal and toggleFlag are both rejected', () => {
     const s = createState(EASY);
     s.grid[0].mine = true;
     computeAdjacency(s);
@@ -121,7 +121,7 @@ describe('minesweeper logic', () => {
     expect(toggleFlag(s, 40)).toBe(false);
   });
 
-  it('重复 reveal 已开格是无事件空操作', () => {
+  it('revealing an already-revealed cell is an eventless no-op', () => {
     const s = createState(EASY);
     s.grid[0].mine = true;
     computeAdjacency(s);
@@ -132,9 +132,9 @@ describe('minesweeper logic', () => {
     expect(ev.won).toBe(false);
   });
 
-  it('生产路径胜利：placeMines 布雷后翻完全部非雷格', () => {
+  it('winning via the production path: placeMines then revealing every non-mine cell', () => {
     const s = createState(EASY);
-    reveal(s, 40, zero); // zero rand 使雷确定落在 0..9
+    reveal(s, 40, zero); // zero rand puts the mines deterministically at 0..9
     for (let i = 0; i < s.grid.length; i++) {
       const c = s.grid[i];
       if (!c.mine && !c.revealed) reveal(s, i, zero);
@@ -143,7 +143,7 @@ describe('minesweeper logic', () => {
     expect(s.revealed).toBe(71);
   });
 
-  it('ready 时先插旗：点旗格不触发布雷', () => {
+  it('flagging while ready: clicking a flagged cell does not place mines', () => {
     const s = createState(EASY);
     toggleFlag(s, 40);
     const ev = reveal(s, 40, zero);

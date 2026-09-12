@@ -26,42 +26,42 @@ function model(patch: Partial<HubModel> = {}): HubModel {
 
 const count = (html: string, re: RegExp) => html.match(re)?.length ?? 0;
 
-describe('导航属性的分工', () => {
-  // e2e 用 page.click('[data-id="flappy"]')，Playwright 是 strict mode。
-  // 若 hero 按钮也用 data-id，只在该游戏恰好被日期哈希选中的那 ~1/8 天才会撞车，
-  // e2e 会变成按日期偶发失败。这里用不依赖日期、不依赖浏览器的断言钉死分工。
-  it('data-id 只出现在网格卡片上', () => {
+describe('navigation attribute split', () => {
+  // e2e uses page.click('[data-id="flappy"]') and Playwright is in strict mode. If the hero
+  // button also used data-id, it would collide only on the ~1/8 of days the date hash picks
+  // that game — a flaky-by-date e2e. This pins the split without depending on date or browser.
+  it('data-id appears only on grid cards', () => {
     const html = hubHtml(model());
-    expect(count(html, /data-id=/g)).toBe(2); // 等于 cards 数量
+    expect(count(html, /data-id=/g)).toBe(2); // equals the number of cards
     expect(count(html, /<button class="card /g)).toBe(2);
   });
 
-  it('data-goto 只出现在 hero 的两个按钮上', () => {
+  it('data-goto appears only on the two hero buttons', () => {
     const html = hubHtml(model());
     expect(count(html, /data-goto=/g)).toBe(2);
     expect(html).toContain('class="btn-start" data-goto="tetris"');
     expect(html).toContain('class="btn-accept" data-goto="minesweeper"');
   });
 
-  it('两组属性不会落在同一个元素上', () => {
+  it('the two attributes never land on the same element', () => {
     expect(hubHtml(model())).not.toMatch(/data-id="[^"]*"[^>]*data-goto=|data-goto="[^"]*"[^>]*data-id=/);
   });
 });
 
-describe('e2e 依赖的选择器', () => {
-  it('保留 .hub-title 与 .card', () => {
+describe('selectors e2e depends on', () => {
+  it('keeps .hub-title and .card', () => {
     const html = hubHtml(model());
     expect(html).toContain('class="hub-title"');
     expect(count(html, /class="card accent-/g)).toBe(2);
   });
 
-  it('卡片不带 disabled，八张都可进入', () => {
+  it('cards are not disabled; all eight are enterable', () => {
     expect(hubHtml(model())).not.toContain('disabled');
   });
 });
 
-describe('accent 以色调 class 下发，视图里没有 hex', () => {
-  it('图标与药丸靠 class 取色，不写内联颜色', () => {
+describe('accent is passed as a tone class; no hex in the view', () => {
+  it('icons and pills take colour from a class, no inline colours', () => {
     const html = hubHtml(model());
     expect(html).toContain('class="card accent-teal"');
     expect(html).toContain('class="panel continue accent-magenta"');
@@ -70,26 +70,26 @@ describe('accent 以色调 class 下发，视图里没有 hex', () => {
 });
 
 describe('footer', () => {
-  it('SOUND 是开关按钮，文案与 aria-pressed 随 muted 变', () => {
+  it('SOUND is a toggle button; label and aria-pressed follow muted', () => {
     const on = hubHtml(model());
     expect(on).toMatch(/<button class="hub-toggle" data-act="sound" aria-pressed="false">SOUND ON<\/button>/);
     const off = hubHtml(model({ footer: { games: '', muted: true, copyright: '', repoUrl: '' } }));
     expect(off).toMatch(/aria-pressed="true">SOUND OFF<\/button>/);
   });
 
-  it('有指向仓库的链接，新标签打开且不泄露 opener', () => {
+  it('links to the repo in a new tab without leaking opener', () => {
     const html = hubHtml(model());
     expect(html).toMatch(/<a class="hub-link" href="https:\/\/example\.com\/repo" target="_blank" rel="noopener">SOURCE ON GITHUB/);
   });
 
-  it('开关与链接的样式在 arcade.css 里', () => {
+  it('toggle and link styles exist in arcade.css', () => {
     expect(css).toMatch(/\.hub-toggle[^{]*\{/);
     expect(css).toMatch(/\.hub-link\s*\{[^}]*color:\s*var\(--orange\)/);
   });
 });
 
-describe('转义', () => {
-  it('文案里的 HTML 元字符被转义，不会破坏结构', () => {
+describe('escaping', () => {
+  it('HTML metacharacters in copy are escaped and cannot break structure', () => {
     const html = hubHtml(model({
       footer: { games: '<script>alert("x")</script> & co', muted: false, copyright: '', repoUrl: '' },
     }));
@@ -97,7 +97,7 @@ describe('转义', () => {
     expect(html).toContain('&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt; &amp; co');
   });
 
-  it('游戏名里的元字符同样被转义', () => {
+  it('metacharacters in game names are escaped too', () => {
     const html = hubHtml(model({
       cards: [{ id: 'x', name: '<b>PWN</b>', accent: 'teal', pill: 'NO RECORD', hasRecord: false }],
     }));
@@ -105,34 +105,34 @@ describe('转义', () => {
   });
 });
 
-describe('每日挑战文案拼接', () => {
-  it('suffix 为空时不留多余空格', () => {
+describe('daily challenge copy', () => {
+  it('no stray space when suffix is empty', () => {
     const html = hubHtml(model({
       daily: { dateLabel: 'D', prefix: 'CLEAR 10 LINES IN', name: 'TETRIS', suffix: '', id: 'tetris' },
     }));
     expect(html).toContain('CLEAR 10 LINES IN <b>TETRIS</b></span>');
   });
 
-  it('游戏名被 <b> 包住以便高亮', () => {
+  it('the game name is wrapped in <b> for highlighting', () => {
     expect(hubHtml(model())).toContain('CLEAR <b>MINES</b> IN UNDER 60 SECONDS');
   });
 });
 
-describe('色调名与样式表的对应', () => {
-  // TS 只传色调名，色值全在 CSS。这条断言防止两边命名漂移——
-  // 漂移的表现会很别扭：图标没颜色，药丸底色也丢了。
-  it('每个 AccentTone 在 arcade.css 里都有对应的 class', () => {
+describe('tone names map to the stylesheet', () => {
+  // TS passes tone names only; the values live in CSS. This guards against the two drifting
+  // apart — the symptom is awkward: icons lose their colour and pills lose their fill.
+  it('every AccentTone has a class in arcade.css', () => {
     for (const tone of ['teal', 'magenta', 'orange', 'gold']) {
-      // 只断言映射关系，不锁死同一条规则里还写了什么（机柜的 --glow 就写在这里）
-      expect(css, `缺少 .accent-${tone}`).toMatch(
+      // Assert the mapping only, not whatever else the rule contains (the cabinet's --glow lives here)
+      expect(css, `missing .accent-${tone}`).toMatch(
         new RegExp(`\\.accent-${tone}\\s*\\{[^}]*--accent:\\s*var\\(--${tone}\\)`),
       );
     }
   });
 
-  it('每个 HallTone 在 arcade.css 里都有对应的 class', () => {
+  it('every HallTone has a class in arcade.css', () => {
     for (const tone of ['gold', 'dim', 'faint']) {
-      expect(css, `缺少 .hall-row-${tone}`).toMatch(new RegExp(`\\.hall-row-${tone}\\s*\\{`));
+      expect(css, `missing .hall-row-${tone}`).toMatch(new RegExp(`\\.hall-row-${tone}\\s*\\{`));
     }
   });
 });

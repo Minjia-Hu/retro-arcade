@@ -1,15 +1,16 @@
-/** dpr 上限 3：再高只增显存不增观感 */
+/** DPR capped at 3: beyond that it only costs memory, not sharpness */
 const MAX_DPR = 3;
 
 /**
- * 设定画布的显示尺寸与 backing store。
+ * Set the canvas's display size and backing store.
  *
- * **只设 style.width，不设 height**：高度靠替换元素的内在比例推导，配合 arcade.css 的
- * `.screen-body canvas { height: auto }`，窄屏才能等比缩小不溢出。显式设高会让缩放失效
- * 并撑破机柜。
+ * **Set style.width only, never height**: height follows the replaced element's intrinsic ratio,
+ * which together with `.screen-body canvas { height: auto }` in arcade.css is what lets narrow
+ * screens scale the canvas down without overflowing. An explicit height breaks that scaling
+ * and bursts the cabinet.
  *
- * 用 `setTransform` 而非 `scale`：重设 canvas.width/height 会清空变换，叠加 scale 在
- * 反复调用时会累乘。
+ * `setTransform` rather than `scale`: resetting canvas.width/height clears the transform, and a
+ * stacked scale would multiply up on repeated calls.
  */
 export function resizeScreenCanvas(
   canvas: HTMLCanvasElement,
@@ -24,7 +25,7 @@ export function resizeScreenCanvas(
   g.setTransform(dpr, 0, 0, dpr, 0, 0);
 }
 
-/** 建立游戏画布并挂到容器上。运行时要改尺寸的游戏之后再调 resizeScreenCanvas */
+/** Create the game canvas and mount it. Games that change size at runtime call resizeScreenCanvas afterwards */
 export function createScreenCanvas(
   host: HTMLElement,
   w: number,

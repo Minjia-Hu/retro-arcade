@@ -5,20 +5,20 @@ import { padButtons } from '../src/shell/pad';
 const host = () => document.createElement('div');
 
 describe('padButtons', () => {
-  it('每个定义渲染一个按钮，带 aria 与可选 variant', () => {
+  it('renders one button per definition, with aria and optional variant', () => {
     const el = host();
     padButtons(el, [
-      { id: 'a', label: 'A', aria: '甲' },
-      { id: 'b', label: 'B', aria: '乙', variant: 'pad-btn-wide' },
+      { id: 'a', label: 'A', aria: 'Alpha' },
+      { id: 'b', label: 'B', aria: 'Beta', variant: 'pad-btn-wide' },
     ], () => {});
     const btns = el.querySelectorAll('button');
     expect(btns).toHaveLength(2);
     expect(btns[0].className).toBe('pad-btn');
-    expect(btns[0].getAttribute('aria-label')).toBe('甲');
+    expect(btns[0].getAttribute('aria-label')).toBe('Alpha');
     expect(btns[1].className).toBe('pad-btn pad-btn-wide');
   });
 
-  it('点击回传 id', () => {
+  it('click reports the id', () => {
     const el = host();
     const hit: string[] = [];
     padButtons(el, [{ id: 'x', label: 'X', aria: 'X' }], (id) => hit.push(id));
@@ -26,7 +26,7 @@ describe('padButtons', () => {
     expect(hit).toEqual(['x']);
   });
 
-  it('点完就 blur —— 与顶栏 wire() 同一约定', () => {
+  it('blurs after click — same convention as the top-bar wire()', () => {
     const el = host();
     document.body.appendChild(el);
     padButtons(el, [{ id: 'x', label: 'X', aria: 'X' }], () => {});
@@ -37,7 +37,7 @@ describe('padButtons', () => {
     expect(document.activeElement).not.toBe(b);
   });
 
-  it('标签会被转义', () => {
+  it('labels are escaped', () => {
     const el = host();
     padButtons(el, [{ id: 'x', label: '<b>X</b>', aria: 'X' }], () => {});
     expect(el.innerHTML).toContain('&lt;b&gt;X&lt;/b&gt;');

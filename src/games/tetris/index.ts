@@ -7,11 +7,11 @@ import { createScreenCanvas } from '../../core/screen';
 import { padButtons } from '../../shell/pad';
 
 const CELL = 22;
-const W = L.COLS * CELL; // 220：画布只剩棋盘，边框圆角由 .screen 提供
+const W = L.COLS * CELL; // 220: the canvas is just the board; border and radius come from .screen
 const H = L.ROWS * CELL; // 440
-const REPEAT_DELAY = 0.11; // 按住左右/软降的重复间隔（秒）
+const REPEAT_DELAY = 0.11; // repeat interval (s) while holding left/right/soft drop
 
-/** 七种方块循环取暖霓虹四色（设计稿 2a 的 NE 对象就是这四色） */
+/** The seven pieces cycle through the four warm neon colours (the NE object in mockup 2a) */
 const PIECE_TONES = ['teal', 'gold', 'pink', 'orange'] as const;
 const pieceFill = (type: number): string => SCREEN[PIECE_TONES[type % PIECE_TONES.length]];
 const pieceGlow = (type: number): string => SCREEN.glow[PIECE_TONES[type % PIECE_TONES.length]];
@@ -44,12 +44,12 @@ export function createTetris(): Game {
   let heldSpace = false;
   let heldHold = false;
   let repeatTimer = 0;
-  let bestAtStart = 0; // 本局开始前的最高分，用来判断是否刷新纪录
+  let bestAtStart = 0; // best before this game started, to detect a new record
   let side: {
     next: HTMLElement; hold: HTMLElement;
     score: HTMLElement; level: HTMLElement; best: HTMLElement;
   } | null = null;
-  let shownNext: number | null = -1; // 侧栏迷你块的重绘节流：仅在换块时改 innerHTML
+  let shownNext: number | null = -1; // throttles the side-panel mini piece: innerHTML changes only when the piece changes
   let shownHold: number | null = -1;
 
   function saveBest(): void {
@@ -78,7 +78,7 @@ export function createTetris(): Game {
       ctx?.audio.play('over');
       reportOver();
     }
-    // 无条件落盘：软降 +1、硬降 +2/格 不经过消行，只在消行/终局存的话中途 BACK 会丢分
+    // Always persist: soft drop +1 and hard drop +2/cell don't go through a line clear, and saving only on clear/game over lost those points on BACK
     saveBest();
   }
 
@@ -94,7 +94,7 @@ export function createTetris(): Game {
     }
   }
 
-  /** 浮层 RETRY 按钮的入口：共用 paused 卫语句，但不继承 primary 的 400ms 防连点 */
+  /** Entry point for the overlay's RETRY button: shares the paused guard but not primary's 400ms debounce */
   function retry(): void {
     if (paused) return;
     restart();
@@ -104,7 +104,7 @@ export function createTetris(): Game {
     state = L.createState();
     bestAtStart = best;
     ctx?.overlay(null);
-    // 不在这里发声：浮层 RETRY 的 click 由 frame 统一负责，重复发声会响两下
+    // No sound here: frame plays the click for the overlay's RETRY, a second one would double up
   }
 
   function releaseAll(): void {
@@ -118,7 +118,7 @@ export function createTetris(): Game {
 
   function act(id: PadId): void {
     if (paused) return;
-    // 控制垫在浮层覆盖范围之外，结算期间照样点得到；重开只走 primary（Space / RETRY）
+    // The pad sits outside the overlay and stays clickable during the result screen; restarting goes through primary only (Space / RETRY)
     if (ctx?.overlayOpen()) return;
     if (state.status !== 'playing') {
       primary();
@@ -132,7 +132,7 @@ export function createTetris(): Game {
     else if (id === 'hold') doHold();
   }
 
-  /** hold 也可能触发终局（换入的块出生即碰撞），必须补查 status */
+  /** hold can end the game too (the swapped-in piece may collide on spawn), so re-check status */
   function doHold(): void {
     if (!L.holdPiece(state)) return;
     if (state.status === 'over') {
@@ -151,7 +151,7 @@ export function createTetris(): Game {
   }
 
   function update(dt: number): void {
-    // 按住重复（键盘）：左右互斥，软降独立
+    // Key repeat: left/right are exclusive, soft drop is independent
     if (state.status === 'playing' && (heldLeft !== heldRight || heldSoft)) {
       repeatTimer += dt;
       while (repeatTimer >= REPEAT_DELAY) {
@@ -165,7 +165,7 @@ export function createTetris(): Game {
     afterEvents(L.tick(state, dt));
   }
 
-  /** 单格：填充 + 同色辉光 + 设计稿的斜面（右下暗、左上亮） */
+  /** One cell: fill + same-colour glow + the mockup's bevel (dark bottom-right, light top-left) */
   function drawCell(px: number, py: number, size: number, type: number): void {
     if (!g) return;
     g.fillStyle = pieceFill(type);
@@ -173,7 +173,7 @@ export function createTetris(): Game {
     g.shadowBlur = 8;
     g.fillRect(px, py, size, size);
     g.shadowBlur = 0;
-    const b = Math.max(2, Math.round(size / 7)); // 22px 格对应 3px 斜面
+    const b = Math.max(2, Math.round(size / 7)); // a 22px cell gets a 3px bevel
     g.fillStyle = 'rgba(0, 0, 0, .3)';
     g.fillRect(px + size - b, py, b, size);
     g.fillRect(px, py + size - b, size, b);
@@ -183,10 +183,10 @@ export function createTetris(): Game {
   }
 
   /**
-   * 迷你块用 DOM 小方块拼，按**实际包围盒**居中于 44×30。
-   * 不能拿 def.size 当高度：rotation 0 下没有方块真占满 def.size 行
-   * （I 只有 1 行、其余 2 行），照 def.size 算出的 oy 会是负数，
-   * T/S/Z/J/L 会越出卡片上沿顶到 NEXT 标签底下。宽高都参与 size 约束。
+   * The mini piece is built from DOM squares, centred in 44×30 by its ACTUAL bounding box.
+   * def.size can't be the height: at rotation 0 no piece fills def.size rows (I uses 1, the
+   * rest 2), so an oy computed from def.size goes negative and T/S/Z/J/L poke out of the card's
+   * top edge under the NEXT label. Both width and height are constrained by size.
    */
   function miniHtml(type: number | null): string {
     if (type === null) return '';
@@ -221,11 +221,11 @@ export function createTetris(): Game {
   }
 
   function buildPad(host: HTMLElement): void {
-    // PAD 的字段与 PadButton 一致，直接传，不必再 map 一层
+    // PAD's fields match PadButton; pass it straight through, no extra map
     padButtons(host, PAD, (id) => act(id as PadId));
   }
 
-  /** 每帧同步侧栏；迷你块只在换块时重绘，避免 60fps 反复写 innerHTML */
+  /** Sync the side panel every frame; the mini piece redraws only when it changes, not at 60fps */
   function syncSide(): void {
     if (!side) return;
     if (state.next !== shownNext) {
@@ -253,7 +253,7 @@ export function createTetris(): Game {
       }
     }
 
-    // 当前块（y<0 的部分不画）
+    // Current piece (the part above y<0 is not drawn)
     if (state.status !== 'over') {
       for (const [cx, cy] of L.rotatedCells(state.current.type, state.current.rot)) {
         const y = state.current.y + cy;
@@ -261,7 +261,7 @@ export function createTetris(): Game {
       }
     }
 
-    // 开局提示留在画布内；GAME OVER 走 ctx.settle 的 DOM 浮层
+    // The start hint stays on the canvas; GAME OVER is the DOM overlay
     if (state.status === 'ready') {
       g.fillStyle = 'rgba(26, 20, 16, .75)';
       g.fillRect(0, H / 2 - 40, W, 80);
@@ -280,7 +280,7 @@ export function createTetris(): Game {
   return {
     meta: {
       id: 'tetris',
-      name: '俄罗斯方块',
+      name: 'Tetris',
       icon: '🧱',
       displayName: 'TETRIS',
       hints: ['←→ MOVE', '↑ ROTATE', '↓ DROP', 'SPACE HARD DROP'],
@@ -303,13 +303,13 @@ export function createTetris(): Game {
         if (paused) return;
         if (state.status !== 'playing') {
           if (code === 'Enter' || code === 'Space') {
-            if (code === 'Space') heldSpace = true; // 防止重开后按住的空格立即硬降
+            if (code === 'Space') heldSpace = true; // a Space still held after restart must not hard-drop immediately
             primary();
           }
           return;
         }
-        // held 标志双重职责：驱动自建重复定时器，并吸收 OS 键盘自动重复
-        //（keydown 会以系统重复率反复触发，不滤会叠加成不可控的移动/连续硬降）
+        // The held flags do two jobs: drive our own repeat timer, and absorb the OS key repeat
+        // (keydown fires at the system rate; unfiltered it stacks into runaway moves / repeated hard drops)
         if (code === 'ArrowLeft' || code === 'KeyA') {
           if (!heldLeft) {
             heldLeft = true;
@@ -351,7 +351,7 @@ export function createTetris(): Game {
         else if (code === 'KeyC') heldHold = false;
       });
 
-      ctx.input.onBlur(releaseAll); // 切窗口时 keyup 丢失，同样要复位
+      ctx.input.onBlur(releaseAll); // keyup is lost on window switch; reset here too
 
       loop = new GameLoop(update, render);
       loop.start();
@@ -364,7 +364,7 @@ export function createTetris(): Game {
 
     resume(): void {
       paused = false;
-      releaseAll(); // 暂停期间的按键抬起收不到，复位防止恢复后自走
+      releaseAll(); // keyups during pause never arrive; reset so nothing auto-moves on resume
       loop?.resume();
     },
 
@@ -374,8 +374,8 @@ export function createTetris(): Game {
       canvas?.remove();
       canvas = null;
       g = null;
-      side = null; // pad / side 的 DOM 由 frame.close() 统一清
-      ctx = null; // 事件监听由 frame 的 InputService.dispose() 统一清理
+      side = null; // pad / side DOM is cleared by frame.close()
+      ctx = null; // listeners are cleaned up by frame's InputService.dispose()
     },
   };
 }

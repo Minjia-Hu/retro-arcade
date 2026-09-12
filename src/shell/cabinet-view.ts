@@ -10,7 +10,7 @@ const TITLE_CLASS: Record<OverlayView['tone'], string> = {
   record: 'settle-title-record',
 };
 
-/** 底部按键提示条；没有提示时返回空串（不渲染该条） */
+/** Bottom key-hint bar; returns '' when there are no hints (the bar is not rendered) */
 export function hintsBarHtml(hints: string[]): string {
   if (!hints.length) return '';
   const items = hints
@@ -19,7 +19,7 @@ export function hintsBarHtml(hints: string[]): string {
   return `<p class="cab-hints">${items}</p>`;
 }
 
-/** 机柜外壳。游戏挂载到 .screen-body，浮层由 overlayHtml 填进 .settle */
+/** The cabinet shell. Games mount into .screen-body; overlayHtml fills .settle */
 export function cabinetHtml(meta: GameMeta, muted: boolean): string {
   const name = meta.displayName ?? meta.name;
   const hintsHtml = hintsBarHtml(meta.hints ?? []);
@@ -32,7 +32,7 @@ export function cabinetHtml(meta: GameMeta, muted: boolean): string {
   const toolsHtml = (meta.tools ?? [])
     .map((t) => `<button class="cab-btn" data-act="tool:${esc(t.id)}" aria-label="${esc(t.aria)}">${esc(t.label)}</button>`)
     .join('');
-  // 药丸始终渲染、起手隐藏，靠 ctx.setPill 填内容——这样它不必凭空插入节点
+  // The pill is always rendered, hidden at first, and filled via ctx.setPill — so it never has to be inserted from nowhere
   const pillHtml = '<span class="cab-pill" aria-label="Current difficulty" hidden></span>';
 
   return `
@@ -40,7 +40,7 @@ export function cabinetHtml(meta: GameMeta, muted: boolean): string {
       <div class="cab-bar">
         <button class="cab-btn" data-act="back">◀ BACK</button>
         <span class="cab-id">
-          <!-- pixelIconSvg 的输出只由白名单查表与数字构成，不含任何入参文本，故不转义 -->
+          <!-- pixelIconSvg's output is built only from a whitelist lookup and numbers, never from input text, so it is not escaped -->
           <span class="px px-xs">${pixelIconSvg(meta.id)}</span>
           <span class="cab-name">${esc(name)}</span>
           ${pillHtml}
@@ -67,7 +67,7 @@ export function cabinetHtml(meta: GameMeta, muted: boolean): string {
     </div>`;
 }
 
-/** 浮层卡片。按钮的点击由 frame 绑定，data-act 用下标寻址 */
+/** The overlay card. Button clicks are bound by frame; data-act addresses them by index */
 export function overlayHtml(view: OverlayView): string {
   const lines = view.lines
     .map((l) => `<span class="settle-line">${esc(l)}</span>`)

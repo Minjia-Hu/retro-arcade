@@ -8,6 +8,6 @@ export function parseHash(hash: string): Route {
 export function startRouter(onChange: (route: Route) => void): () => void {
   const fire = () => onChange(parseHash(location.hash));
   window.addEventListener('hashchange', fire);
-  fire(); // 启动时按当前 hash 渲染一次
+  fire(); // render once for the current hash on startup
   return () => window.removeEventListener('hashchange', fire);
 }

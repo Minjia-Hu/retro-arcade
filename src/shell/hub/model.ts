@@ -6,12 +6,12 @@ import type { AccentTone } from '../accent';
 
 export type { AccentTone };
 
-/** 分数补零到 6 位；位数不够时保留原样，不截断 */
+/** Zero-pad a score to 6 digits; wider values are kept, never truncated */
 export function padScore(n: number): string {
   return String(Math.max(0, Math.floor(n))).padStart(6, '0');
 }
 
-/** 相对时间文案，全大写以配合街机风格 */
+/** Relative-time copy, upper-case to match the arcade style */
 export function relativeTime(at: number, now: number): string {
   const ms = Math.max(0, now - at);
   const min = Math.floor(ms / 60_000);
@@ -24,21 +24,21 @@ export function relativeTime(at: number, now: number): string {
   return 'A WHILE AGO';
 }
 
-/** 本地日期键，用作每日内容的种子 */
+/** Local date key, the seed for the daily content */
 export function dateKey(now: Date): string {
   const m = String(now.getMonth() + 1).padStart(2, '0');
   const d = String(now.getDate()).padStart(2, '0');
   return `${now.getFullYear()}-${m}-${d}`;
 }
 
-/** djb2 变体，返回非负整数 */
+/** djb2 variant returning a non-negative integer */
 export function hashDate(key: string): number {
   let h = 5381;
   for (let i = 0; i < key.length; i++) h = ((h * 33) ^ key.charCodeAt(i)) >>> 0;
   return h >>> 0;
 }
 
-/** 行的语义色调，具体颜色由 CSS 的 .hall-row-* 决定 */
+/** Semantic tone of a row; the colours live in CSS (.hall-row-*) */
 export type HallTone = 'gold' | 'dim' | 'faint';
 
 export interface HallRow {
@@ -48,15 +48,15 @@ export interface HallRow {
   tone: HallTone;
 }
 
-/** 首页展示名，缺 displayName 时回退中文名 */
+/** Display name for the hub; falls back to `name` when displayName is missing */
 function label(entry: GameEntry): string {
   return entry.meta.displayName ?? entry.meta.name;
 }
 
 /**
- * 读单个游戏最高分。存量脏数据和 0 分一律当作没有成绩——各游戏都是 `score > best`
- * 才写盘且 best 初值为 0，所以 0 本就不该被持久化。这里统一口径，避免卡片显示
- * BEST 000000 而 Hall of Fame 又把它排除。
+ * Read one game's best score. Legacy junk and a score of 0 both count as no record — every
+ * game only persists when `score > best` and best starts at 0, so 0 should never have been
+ * stored. One rule here keeps a card from showing BEST 000000 while the Hall of Fame excludes it.
  */
 function bestOf(storage: ArcadeStorage, id: string): number | null {
   const raw = storage.get<unknown>(`best.${id}`, null);
@@ -96,7 +96,7 @@ export interface DailyModel {
   id: string;
 }
 
-/** 渲染为「prefix 游戏名 suffix」，suffix 可为空 */
+/** Rendered as "prefix GAME suffix"; suffix may be empty */
 export const CHALLENGES: Record<string, { prefix: string; suffix: string }> = {
   snake: { prefix: 'SURVIVE', suffix: 'FOR 20 APPLES STRAIGHT' },
   tetris: { prefix: 'CLEAR 10 LINES IN', suffix: '' },
@@ -144,9 +144,10 @@ export interface CardModel {
 export const REPO_URL = 'https://github.com/Minjia-Hu/retro-arcade';
 
 /**
- * footer 三段各司其职：games 是装饰、muted 是开关（首页也能关声音，不必进游戏找 SND）、
- * repoUrl 是出口（从分享链接进来的人没有别的路知道代码在哪）。
- * 不用带星数的第三方小组件：会加载外部脚本，且 0 星时是减分。
+ * Each footer part has one job: games is decoration, muted is a toggle (sound can be turned off
+ * on the hub without entering a game to find SND), repoUrl is the exit (someone arriving from a
+ * shared link has no other way to find the source). No star-count widget: it would load a
+ * third-party script, and "Star 0" sells nothing.
  */
 export interface FooterModel {
   games: string;
@@ -165,7 +166,7 @@ export interface HubModel {
 
 interface LastPlayed { id: string; at: number }
 
-/** 读上次游玩记录；任何不合法都当作没玩过 */
+/** Read the last-played record; anything malformed counts as never played */
 function readLastPlayed(storage: ArcadeStorage): LastPlayed | null {
   const raw = storage.get<unknown>('lastPlayed', null);
   if (raw === null || typeof raw !== 'object') return null;
@@ -191,7 +192,7 @@ export function buildFeatured(storage: ArcadeStorage, now: Date): FeaturedModel 
       meta: `${bestText} · LAST PLAYED ${relativeTime(last.at, now.getTime())}`,
     };
   }
-  // 没有历史时按日期挑一个，保证当天稳定、跨天变化
+  // With no history, pick one by date: stable within a day, different across days
   const index = hashDate(`${dateKey(now)}:new`) % GAMES.length;
   const entry = GAMES[index];
   return {
@@ -219,7 +220,7 @@ export function buildCards(storage: ArcadeStorage): CardModel[] {
 }
 
 export function buildHubModel(storage: ArcadeStorage, now: Date): HubModel {
-  const muted = storage.get<boolean>('muted', false); // 读法与 audio.ts 保持一致
+  const muted = storage.get<boolean>('muted', false); // read the same way audio.ts does
   return {
     featured: buildFeatured(storage, now),
     daily: buildDaily(now),

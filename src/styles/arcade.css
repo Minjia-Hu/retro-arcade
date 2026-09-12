@@ -7,13 +7,13 @@
   --faint: #b5a88f;
   --pill-off: #e6dcc8;
   --highlight: #ffe08a;
-  /* accent 色轮。TS 只传色调名（见 model.ts 的 AccentTone），色值只有这里持有 */
+  /* The accent wheel. TS passes tone names only (AccentTone in model.ts); the values live only here */
   --teal: #0b7285;
   --magenta: #d6336c;
   --orange: #e8590c;
   --gold: #e67700;
   --well: #efe5d3;
-  --screen-ground: #1a1410; /* 与 src/core/theme.ts 的 SCREEN.ground 对应，改一处要同步另一处 */
+  --screen-ground: #1a1410; /* mirrors SCREEN.ground in src/core/theme.ts; change both together */
   --mono: 'JetBrains Mono', ui-monospace, monospace;
   --focus-ring: 0 0 0 4px rgba(232, 89, 12, .35);
 }
@@ -29,7 +29,7 @@ body {
 #app { min-height: 100vh; display: flex; flex-direction: column; }
 button { font-family: inherit; cursor: pointer; }
 
-/* ---- 首页：marquee ---- */
+/* ---- Hub: marquee ---- */
 .hub { max-width: 1440px; margin: 0 auto; width: 100%; padding: 36px 48px 32px; }
 .marquee {
   background: var(--panel); border: 3px solid var(--ink); border-radius: 14px;
@@ -56,7 +56,7 @@ button { font-family: inherit; cursor: pointer; }
   letter-spacing: clamp(1px, .6vw, 5px);
 }
 
-/* ---- 首页：hero ---- */
+/* ---- Hub: hero ---- */
 .hero { display: grid; grid-template-columns: 1.25fr .75fr; gap: 22px; margin-top: 26px; }
 .hero-side { display: flex; flex-direction: column; gap: 22px; }
 .panel {
@@ -116,7 +116,7 @@ button { font-family: inherit; cursor: pointer; }
 .hall-score { font-weight: 700; }
 .hall-note { font-size: 11px; color: var(--faint); letter-spacing: 1px; margin-top: auto; }
 
-/* ---- 首页：游戏网格 ---- */
+/* ---- Hub: game grid ---- */
 .grid-heading {
   text-align: center; font-family: 'Bungee', 'Space Grotesk', sans-serif;
   font-size: 14px; margin: 34px 0 18px;
@@ -144,9 +144,10 @@ button { font-family: inherit; cursor: pointer; }
 .card-pill-off { background: var(--pill-off); color: var(--dim); border-color: var(--faint); }
 
 /*
- * TS 传色调名，这里映射成局部 --accent，供图标与药丸取用。
- * --glow 不是 --accent 的半透明版：--accent 是纸面深色（顶栏图标、药丸底），
- * --glow 是屏幕内的暖霓虹色（机柜屏幕井的内描边），两套色板刻意不同源，别"修正"它。
+ * TS passes a tone name; here it maps to a local --accent for icons and pills.
+ * --glow is NOT a translucent --accent: --accent is the dark paper colour (top-bar icon, pill
+ * fill), --glow is the warm neon inside the screen (the screen well's inner stroke). The two
+ * palettes are deliberately different — don't "fix" it.
  */
 .accent-teal { --accent: var(--teal); --glow: rgba(46, 230, 200, .35); }
 .accent-magenta { --accent: var(--magenta); --glow: rgba(255, 92, 158, .35); }
@@ -164,7 +165,7 @@ button { font-family: inherit; cursor: pointer; }
   font-size: 12px; color: var(--dim);
   letter-spacing: 3px; font-weight: 500; margin-top: 24px;
 }
-/* footer 里的开关与链接：外观与旁边的文字一致，靠下划线表明可点 */
+/* Footer toggle and link: look like the text around them; the underline says they're clickable */
 .hub-toggle, .hub-link {
   font: inherit; letter-spacing: inherit; color: inherit;
   background: none; border: none; padding: 0; cursor: pointer;
@@ -183,7 +184,7 @@ button { font-family: inherit; cursor: pointer; }
   .btn-start, .btn-accept, .card, .cab-btn, .settle-action, .pad-btn, .head-btn, .hub-toggle, .hub-link { transition: none; }
 }
 
-/* ---- 游戏机柜 ---- */
+/* ---- Game cabinet ---- */
 .cabinet {
   margin: 28px auto;
   width: 100%;
@@ -218,7 +219,7 @@ button { font-family: inherit; cursor: pointer; }
 .cab-btn:hover { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
 .cab-btn:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
 .cab-btn:focus-visible { outline: none; box-shadow: 3px 3px 0 var(--ink), var(--focus-ring); }
-/* 静音：按钮压平并变淡，表示已关闭 */
+/* Muted: the button sits pressed and dimmed to read as off */
 .cab-btn.is-off {
   transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink);
   color: var(--faint); border-color: var(--faint);
@@ -232,7 +233,7 @@ button { font-family: inherit; cursor: pointer; }
 .screen-paper { background: var(--paper); }
 .screen-body { display: block; line-height: 0; }
 .screen-body canvas { display: block; max-width: 100%; height: auto; }
-/* 暗角必须盖在 canvas 之上：CSS 的 inset 阴影画在内容之下，会被 canvas 位图整个遮住 */
+/* The vignette must sit above the canvas: CSS inset shadows paint beneath content and would be hidden by the canvas bitmap */
 .screen-glass {
   position: absolute; inset: 0; pointer-events: none; border-radius: 7px;
   box-shadow: inset 0 0 0 2px var(--glow, transparent), inset 0 0 40px rgba(0, 0, 0, .6);
@@ -243,7 +244,7 @@ button { font-family: inherit; cursor: pointer; }
 
 .cab-stack { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .cab-head { display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; }
-/* 上方栏里的统计卡与按钮共用一套外观 */
+/* Stat cards and buttons in the head bar share one look */
 .head-card {
   background: var(--paper); border: 2px solid var(--ink); border-radius: 8px;
   padding: 7px 16px; display: flex; flex-direction: column; align-items: center;
@@ -262,7 +263,7 @@ button { font-family: inherit; cursor: pointer; }
 .head-btn:disabled { color: var(--faint); border-color: var(--faint); box-shadow: none; transform: translate(3px, 3px); }
 .head-btn-accent { background: var(--highlight); }
 
-/* 回合筹（当前只有 GOMOKU 用）：两枚指示当前手方的药丸 */
+/* Turn chips (only GOMOKU for now): two pills showing whose turn it is */
 .chip {
   font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 1px;
   border: 2px solid var(--faint); border-radius: 8px; padding: 7px 16px;
@@ -273,7 +274,7 @@ button { font-family: inherit; cursor: pointer; }
   box-shadow: 3px 3px 0 rgba(43, 33, 24, .35);
 }
 
-/* ---- 侧栏（当前只有 TETRIS 用）---- */
+/* ---- Side panel (only TETRIS for now) ---- */
 .cab-side { display: flex; flex-direction: column; gap: 12px; width: 110px; flex: none; }
 .side-card {
   background: var(--panel); border: 2px solid var(--ink); border-radius: 10px;
@@ -287,7 +288,7 @@ button { font-family: inherit; cursor: pointer; }
 .side-piece { position: relative; display: block; width: 44px; height: 30px; overflow: hidden; }
 .side-piece i { position: absolute; box-shadow: inset -2px -2px 0 rgba(0, 0, 0, .25); }
 
-/* ---- 触屏控制垫（当前只有 TETRIS 用）---- */
+/* ---- Touch pad (only TETRIS for now) ---- */
 .cab-pad {
   display: flex; justify-content: center; flex-wrap: wrap; gap: 8px;
   padding: 12px; border-top: 3px solid var(--ink);
@@ -302,7 +303,7 @@ button { font-family: inherit; cursor: pointer; }
 .pad-btn:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
 .pad-btn:focus-visible { outline: none; box-shadow: 3px 3px 0 var(--ink), var(--focus-ring); }
 
-/* 数独数字盘：比默认 pad-btn 窄，一行放得下 9 个 */
+/* Sudoku digit pad: narrower than the default pad-btn so nine fit on one row */
 .cab-pad-rows { flex-direction: column; gap: 10px; }
 .pad-row { display: flex; justify-content: center; gap: 6px; flex-wrap: wrap; }
 .pad-btn-digit { width: 33px; height: 38px; font-family: var(--mono); font-size: 16px; }
@@ -316,23 +317,25 @@ button { font-family: inherit; cursor: pointer; }
 }
 .cab-dot { color: var(--faint); }
 
-/* ---- 结算浮层 ---- */
+/* ---- Result overlay ---- */
 /*
- * 浮层比棋盘高时不能被静默裁掉：.screen 是 overflow:hidden 的，
- * GOMOKU 的 6 行菜单卡（389px）在 320px 的井里就把 QUIT TO HUB 裁没了。
- * 这里让它自己滚，退路始终够得着。
+ * An overlay taller than the board must not be clipped silently: .screen is overflow:hidden,
+ * and GOMOKU's six-row menu card (389px) in a 320px well lost QUIT TO HUB entirely.
+ * Let it scroll so the way out is always reachable.
  */
 .settle {
   position: absolute; inset: 0; display: flex;
   justify-content: center; overflow: auto; padding: 8px 0;
-  /* 空白区放行指针：深色屏四款的「TAP TO RETRY」靠画布自己的 onTap，浮层吃掉指针
-     手机上就只能精确点中按钮。卡片本身要拦，见 .settle-card */
+  /* The empty area lets pointer events through: the dark-screen games' TAP TO RETRY relies on
+     the canvas's own onTap, and an overlay that swallowed pointers would leave phones with only
+     the button to hit precisely. The card itself catches them, see .settle-card */
   pointer-events: none;
 }
 .settle[hidden] { display: none; }
 .settle-card {
-  /* margin:auto 而非父级的 align-items:center：两者都能居中，但 align-items 会把
-     溢出的上半部分推到可滚动区之外——卡片高过屏幕井时顶边永远够不着 */
+  /* margin:auto rather than align-items:center on the parent: both centre, but align-items pushes
+     the overflowing top half out of the scrollable area — a card taller than the well would never
+     reveal its top edge */
   margin: auto;
   pointer-events: auto;
   width: 280px; max-width: calc(100% - 32px);
@@ -363,7 +366,7 @@ button { font-family: inherit; cursor: pointer; }
 }
 .settle-action-secondary:hover { transform: translate(2px, 2px); box-shadow: 1px 1px 0 var(--ink); }
 .settle-action-secondary:active { transform: translate(3px, 3px); box-shadow: 0 0 0 var(--ink); }
-/* 必须显式写：.settle-action:focus-visible 特异度更高，否则次按钮聚焦时会跳成主按钮外观 */
+/* Must be explicit: .settle-action:focus-visible is more specific, and a focused secondary button would otherwise jump to the primary look */
 .settle-action-secondary:focus-visible { outline: none; box-shadow: 3px 3px 0 var(--ink), var(--focus-ring); }
 .settle-quit {
   font-size: 12px; font-weight: 700; letter-spacing: 2px;
@@ -371,7 +374,7 @@ button { font-family: inherit; cursor: pointer; }
 }
 .settle-quit:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 4px; }
 
-/* ---- 错误兜底 ---- */
+/* ---- Error fallback ---- */
 .frame-error {
   flex: 1; display: flex; flex-direction: column; gap: 16px;
   align-items: center; justify-content: center;

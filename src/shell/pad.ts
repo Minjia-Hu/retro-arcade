@@ -4,13 +4,14 @@ export interface PadButton {
   id: string;
   label: string;
   aria: string;
-  /** 额外 class，如 pad-btn-digit / pad-btn-wide */
+  /** Extra class, e.g. pad-btn-digit / pad-btn-wide */
   variant?: string;
 }
 
 /**
- * 在控制垫（或其中一行）里渲染一排按钮并接上点击。
- * 点完统一 blur——与顶栏 wire() 同一约定，避免残留焦点让空格键既触发按钮又触发游戏逻辑。
+ * Render a row of buttons into the touch pad (or one of its rows) and wire their clicks.
+ * Every click blurs — same convention as the top-bar wire(), so a lingering focus can't make
+ * Space hit both the button and the game.
  */
 export function padButtons(
   host: HTMLElement,

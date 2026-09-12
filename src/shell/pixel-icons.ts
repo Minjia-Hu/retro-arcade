@@ -1,6 +1,6 @@
 export type Cell = [number, number];
 
-/** 横向连续填充 y 行上 x∈[a,b] 的像素 */
+/** Fill the run of pixels x∈[a,b] on row y */
 const row = (a: number, b: number, y: number): Cell[] => {
   const out: Cell[] = [];
   for (let x = a; x <= b; x++) out.push([x, y]);
@@ -16,7 +16,7 @@ const sudokuCells: Cell[] = [];
 for (let y = 0; y < 8; y++) sudokuCells.push([2, y], [5, y]);
 for (let x = 0; x < 8; x++) if (x !== 2 && x !== 5) sudokuCells.push([x, 2], [x, 5]);
 
-/** 8×8 单色像素图标，key 为 registry 中的游戏 id */
+/** 8×8 single-colour pixel icons, keyed by game id from the registry */
 export const PIXELS: Record<string, Cell[]> = {
   snake: [...row(1, 6, 0), [6, 1], ...row(1, 6, 2), [1, 3], ...row(1, 6, 4), [6, 5], ...row(1, 6, 6)],
   tetris: [...row(1, 6, 1), ...row(1, 6, 2), ...row(3, 4, 3), ...row(3, 4, 4), ...row(3, 4, 5), ...row(3, 4, 6)],
@@ -41,7 +41,7 @@ export const PIXELS: Record<string, Cell[]> = {
   ],
 };
 
-/** 渲染为 inline SVG，颜色由父元素的 color 决定 */
+/** Render as inline SVG; the colour comes from the parent's `color` */
 export function pixelIconSvg(id: string): string {
   const rects = (PIXELS[id] ?? [])
     .map(([x, y]) => `<rect x="${x}" y="${y}" width="1" height="1"/>`)

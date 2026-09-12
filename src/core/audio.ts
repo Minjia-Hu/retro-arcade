@@ -1,9 +1,9 @@
 import type { ArcadeStorage } from './storage';
 
-// 名字保持游戏无关的通用语义（'action' 而非 'flap'），避免各游戏词汇泄漏进 core
+// Names stay game-agnostic ('action', not 'flap') so no game's vocabulary leaks into core
 export type SfxName = 'action' | 'score' | 'hit' | 'win' | 'over' | 'click';
 
-// 每个音效 = 一串 [频率Hz, 时长s] 音符，方波依次播放
+// Each effect is a sequence of [frequency Hz, duration s] notes, played as square waves in order
 export const SFX: Record<SfxName, [number, number][]> = {
   action: [[600, 0.05], [900, 0.05]],
   score: [[880, 0.06], [1320, 0.09]],
@@ -34,9 +34,9 @@ export class AudioFx {
   play(name: SfxName): void {
     if (this.muted) return;
     try {
-      // 首次调用（必然发生在用户交互后）才创建 AudioContext，符合自动播放策略
+      // Create the AudioContext on first use — always after a user gesture, so autoplay policy is satisfied
       this.ctx ??= new AudioContext();
-      // iOS Safari 等会在切后台后挂起 AudioContext，此处正值用户手势，允许 resume
+      // iOS Safari suspends the AudioContext after backgrounding; we are inside a user gesture here, so resume is allowed
       if (this.ctx.state === 'suspended') void this.ctx.resume();
       let t = this.ctx.currentTime;
       for (const [freq, dur] of SFX[name]) {
@@ -52,7 +52,7 @@ export class AudioFx {
         t += dur;
       }
     } catch {
-      // 环境不支持 Web Audio 时静默降级
+      // No Web Audio in this environment: degrade silently
     }
   }
 }

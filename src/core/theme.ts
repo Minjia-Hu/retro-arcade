@@ -1,17 +1,17 @@
 /**
- * 深色屏游戏的画布内配色（Sunset Arcade 暖霓虹）。
- * 浅色纸盘的四款各自在 index.ts 里持有自己的 PAPER 常量——它们的配色互不相同，
- * 硬凑成一张表只会得到一个谁都不合身的抽象。
+ * In-canvas palette for the dark-screen games (Sunset Arcade warm neon).
+ * The four paper-board games each keep their own PAPER constant in their index.ts — their
+ * palettes genuinely differ, and forcing them into one table gives an abstraction that fits none.
  */
 export const SCREEN = {
-  ground: '#1a1410', // 与 arcade.css 的 --screen-ground 对应，改一处要同步另一处
+  ground: '#1a1410', // mirrors --screen-ground in arcade.css; change both together
   teal: '#2ee6c8',
   gold: '#ffc93c',
   pink: '#ff5c9e',
   orange: '#ff8c42',
   white: '#fffaf0',
   mono: "'JetBrains Mono', ui-monospace, monospace",
-  /** 发光统一用同色 50% alpha（白色偏亮，用 80%） */
+  /** Glows are the same colour at 50% alpha (white reads brighter, so 80%) */
   glow: {
     teal: 'rgba(46, 230, 200, .5)',
     gold: 'rgba(255, 201, 60, .5)',

@@ -10,7 +10,7 @@ permissions:
   pages: write
   id-token: write
 
-# 同一时间只跑一个 Pages 部署，排队而不是互相取消
+# One Pages deployment at a time: queue rather than cancel each other
 concurrency:
   group: pages
   cancel-in-progress: false
@@ -29,7 +29,7 @@ jobs:
       - run: npm test
       - run: npx playwright install --with-deps chromium
       - run: npm run e2e
-      # base 只在这里传：本地开发与 e2e 都跑在 '/'，只有 Pages 挂在 /retro-arcade/ 子路径下
+      # The base path is passed only here: local dev and e2e run at '/', only Pages lives under /retro-arcade/
       - run: npx vite build --base=/retro-arcade/
       - uses: actions/upload-pages-artifact@v3
         with:

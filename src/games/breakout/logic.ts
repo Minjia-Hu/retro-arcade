@@ -1,15 +1,15 @@
-// 逻辑坐标系：320 × 480，渲染层负责缩放
+// Logic space: 320 × 480; the renderer scales
 export const W = 320;
 export const H = 480;
 export const PADDLE_W = 56;
 export const PADDLE_H = 8;
-export const PADDLE_Y = H - 24; // 挡板顶边
+export const PADDLE_Y = H - 24; // top edge of the paddle
 export const BALL_R = 5;
 
 const BASE_SPEED = 220; // px/s
-const LEVEL_SPEED = 30; // 每关增量
-const MAX_SPEED = 400; // 第 7 关起封顶：键盘挡板 300 px/s（index.ts 的 KEY_PADDLE_SPEED），球再快就追不上
-const MAX_BOUNCE_X = 0.8; // 挡板边缘反弹的最大水平分量（占速度模长比例）
+const LEVEL_SPEED = 30; // per-level increment
+const MAX_SPEED = 400; // capped from level 7: the keyboard paddle moves at 300 px/s (KEY_PADDLE_SPEED in index.ts) and can't keep up with a faster ball
+const MAX_BOUNCE_X = 0.8; // max horizontal component off the paddle's edge (fraction of speed)
 
 export type BreakoutStatus = 'ready' | 'playing' | 'over';
 
@@ -20,12 +20,12 @@ export interface Brick {
   h: number;
   points: number;
   alive: boolean;
-  /** 第几行（0 起）。渲染按行取色，避免从 y 反推 makeBricks 的私有布局常量 */
+  /** Row index (0-based). The renderer colours by row instead of reverse-engineering makeBricks' private layout from y */
   row: number;
 }
 
 export interface BreakoutState {
-  paddleX: number; // 挡板中心
+  paddleX: number; // paddle centre
   ballX: number;
   ballY: number;
   vx: number;
@@ -49,7 +49,7 @@ export function speedFor(level: number): number {
   return Math.min(MAX_SPEED, BASE_SPEED + (level - 1) * LEVEL_SPEED);
 }
 
-/** 三种布局循环：满阵 40 块 / 棋盘格 20 块 / 倒金字塔 20 块 */
+/** Three layouts in rotation: full grid 40 / checkerboard 20 / inverted pyramid 20 */
 export function makeBricks(level: number): Brick[] {
   const cols = 8;
   const rows = 5;
@@ -69,7 +69,7 @@ export function makeBricks(level: number): Brick[] {
         y: y0 + r * (bh + gap),
         w: bw,
         h: bh,
-        points: (rows - r) * 10, // 越靠上分越高
+        points: (rows - r) * 10, // higher rows score more
         alive: true,
         row: r,
       });
@@ -95,13 +95,13 @@ export function createState(): BreakoutState {
 
 export function movePaddle(s: BreakoutState, x: number): void {
   s.paddleX = Math.max(PADDLE_W / 2, Math.min(W - PADDLE_W / 2, x));
-  if (s.status === 'ready') s.ballX = s.paddleX; // 未发球时球贴板跟随
+  if (s.status === 'ready') s.ballX = s.paddleX; // before launch the ball rides the paddle
 }
 
 export function launch(s: BreakoutState): void {
   if (s.status !== 'ready') return;
   const sp = speedFor(s.level);
-  // 朝空间大的一侧发：挡板在左半场向右、右半场向左。不引入随机源
+  // Serve toward the side with more room: right from the left half, left from the right half. No randomness
   s.vx = sp * 0.35 * (s.paddleX <= W / 2 ? 1 : -1);
   s.vy = -sp * Math.sqrt(1 - 0.35 * 0.35);
   s.status = 'playing';
@@ -122,7 +122,7 @@ export function tick(s: BreakoutState, dt: number): TickEvents {
   s.ballX += s.vx * dt;
   s.ballY += s.vy * dt;
 
-  // 左右墙与顶墙
+  // Side walls and ceiling
   if (s.ballX < BALL_R) {
     s.ballX = BALL_R;
     s.vx = Math.abs(s.vx);
@@ -135,7 +135,7 @@ export function tick(s: BreakoutState, dt: number): TickEvents {
     s.vy = Math.abs(s.vy);
   }
 
-  // 挡板（仅下落时判定）：反弹角度由击中位置决定，速度模长保持
+  // Paddle (only while falling): bounce angle from the hit position, speed preserved
   const px = s.paddleX - PADDLE_W / 2;
   if (
     s.vy > 0
@@ -152,7 +152,7 @@ export function tick(s: BreakoutState, dt: number): TickEvents {
     ev.paddleHit = true;
   }
 
-  // 砖块：一帧至多碎一块，按穿透较浅的轴反弹
+  // Bricks: at most one per frame, bounce on the axis with the shallower overlap
   for (const b of s.bricks) {
     if (!b.alive) continue;
     if (
@@ -170,7 +170,7 @@ export function tick(s: BreakoutState, dt: number): TickEvents {
     }
   }
 
-  // 清关：换布局、球回板、等待再次发射
+  // Level clear: next layout, ball back on the paddle, wait for launch
   if (s.bricks.every((b) => !b.alive)) {
     s.level += 1;
     s.bricks = makeBricks(s.level);
@@ -179,7 +179,7 @@ export function tick(s: BreakoutState, dt: number): TickEvents {
     return ev;
   }
 
-  // 落底丢命（底边是唯一致死边界）
+  // Lose a life at the bottom (the only deadly edge)
   if (s.ballY - BALL_R > H) {
     s.lives -= 1;
     ev.lost = true;

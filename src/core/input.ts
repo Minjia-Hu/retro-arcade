@@ -6,13 +6,13 @@ export function swipeDirection(dx: number, dy: number, threshold = 24): SwipeDir
   return dy > 0 ? 'down' : 'up';
 }
 
-/** 游戏占用的键：拦掉浏览器默认行为，否则机柜高于视口时方向键/空格会把页面滚走 */
+/** Keys the games own: block the browser default, or arrows/Space scroll the page whenever the cabinet is taller than the viewport */
 const GAME_KEYS = /^(Arrow(Up|Down|Left|Right)|Space)$/;
 
 export class InputService {
   private disposers: (() => void)[] = [];
 
-  /** 各 on* 方法均返回单独的解绑函数；dispose() 仍可整体清理 */
+  /** Every on* method returns its own unsubscribe function; dispose() still clears everything */
   onKey(handler: (code: string) => void): () => void {
     const fn = (e: KeyboardEvent) => {
       if (GAME_KEYS.test(e.code)) e.preventDefault();
@@ -23,8 +23,9 @@ export class InputService {
   }
 
   /**
-   * 窗口失焦。按住方向键时 Cmd+Tab 切走，keyup 永远收不到——靠 held 标志驱动自建重复的
-   * 游戏（TETRIS / BREAKOUT）要在这里把标志全部复位，否则回来后方块自己往一边滑。
+   * Window blur. Cmd+Tab away while holding an arrow key and the keyup never arrives — games
+   * that drive their own key repeat from held flags (TETRIS / BREAKOUT) must reset them here,
+   * or the piece keeps sliding on its own after you come back.
    */
   onBlur(handler: () => void): () => void {
     const fn = () => handler();
@@ -46,10 +47,10 @@ export class InputService {
       tracking = true;
       sx = e.clientX;
       sy = e.clientY;
-      el.setPointerCapture?.(e.pointerId); // 手指滑出元素外也能收到 up
+      el.setPointerCapture?.(e.pointerId); // still receive the up when the finger leaves the element
     };
     const up = (e: PointerEvent) => {
-      if (!tracking) return; // 无配对 down 的 up 会用 sx=0,sy=0 算出伪滑动
+      if (!tracking) return; // an up without a matching down would compute a bogus swipe from sx=0,sy=0
       tracking = false;
       const dir = swipeDirection(e.clientX - sx, e.clientY - sy);
       if (dir) handler(dir);
@@ -68,9 +69,10 @@ export class InputService {
   }
 
   /**
-   * 原地按下并抬起才算点按（位移 < 10px，与滑动互斥；10–24px 为无操作缓冲带，
-   * 两个阈值不可改到重叠）。回调收到元素内相对坐标（CSS 像素）。
-   * 注意：不要与 onTap 共挂同一元素（onTap 在 pointerdown 即触发，会双触发）。
+   * A tap is a press and release in place (movement < 10px, mutually exclusive with a swipe;
+   * 10–24px is a dead band — the two thresholds must never overlap). The callback receives
+   * element-relative coordinates in CSS pixels.
+   * Do not attach together with onTap on the same element: onTap fires on pointerdown, so both would fire.
    */
   onTapAt(el: HTMLElement, handler: (x: number, y: number) => void): () => void {
     let sx = 0;
@@ -101,7 +103,7 @@ export class InputService {
     });
   }
 
-  /** 键盘抬起（与 onKey 配对，用于按住式控制） */
+  /** Key up (pairs with onKey for hold-to-move controls) */
   onKeyUp(handler: (code: string) => void): () => void {
     const fn = (e: KeyboardEvent) => handler(e.code);
     window.addEventListener('keyup', fn);
@@ -109,17 +111,18 @@ export class InputService {
   }
 
   /**
-   * 按住拖动：pointerdown 后每次移动回调相邻两次指针事件的水平位移 dx（CSS 像素）。
-   * 报告相对位移而非绝对坐标，点按不会令被控对象跳位；可与 onTapAt 共挂。
-   * 仅跟踪首个按下的指针（pointerId 过滤，多点触控不串扰）。
-   * 前置条件：消费方需在目标元素设置 touch-action: none，否则触屏拖动会滚动页面。
+   * Press-and-drag: after pointerdown, every move reports the horizontal delta dx (CSS px)
+   * between consecutive pointer events. Reporting deltas rather than absolute positions means
+   * a tap never makes the controlled object jump; can share an element with onTapAt.
+   * Tracks only the first pointer down (filtered by pointerId, so multi-touch doesn't interfere).
+   * Precondition: the consumer sets touch-action: none on the element, or touch drags scroll the page.
    */
   onDrag(el: HTMLElement, handler: (dx: number) => void): () => void {
     let lastX = 0;
     let dragging = false;
     let pid = -1;
     const down = (e: PointerEvent) => {
-      if (dragging) return; // 已有指针在拖动，忽略后来的手指
+      if (dragging) return; // a pointer is already dragging; ignore later fingers
       dragging = true;
       pid = e.pointerId;
       lastX = e.clientX;
@@ -146,13 +149,13 @@ export class InputService {
   }
 
   /**
-   * 组合按压手势（三合一）：
-   * - tap：原地（位移 < 10px）短按抬起时触发；
-   * - long：按住 450ms 未移动未抬起时触发，触发后本次手势不再报 tap；
-   * - right：桌面右键触发，并抑制系统上下文菜单。
-   * 坐标为元素内相对 CSS 像素。仅跟踪首个按下的指针。
-   * 注意：不要与 onTap/onTapAt 共挂同一元素（会双触发）。
-   * 前置条件：消费方需在目标元素设置 touch-action: none。
+   * Combined press gesture, three in one:
+   * - tap: fires on a short press released in place (movement < 10px);
+   * - long: fires after 450ms held without moving or releasing; that gesture then reports no tap;
+   * - right: fires on a desktop right-click and suppresses the system context menu.
+   * Coordinates are element-relative CSS pixels. Tracks only the first pointer down.
+   * Do not attach together with onTap/onTapAt on the same element (double firing).
+   * Precondition: the consumer sets touch-action: none on the element.
    */
   onPress(
     el: HTMLElement,
@@ -206,19 +209,19 @@ export class InputService {
       tracking = false;
       clear();
       if (!longFired && !moved) h.tap?.(...rel(e.clientX, e.clientY));
-      longFired = false; // 鼠标路径在此复位；触屏取消路径保持 true 以拦截随后的模拟 contextmenu
+      longFired = false; // mouse path resets here; the touch-cancel path keeps it true to block the synthetic contextmenu that follows
     };
     const cancel = (e: PointerEvent) => {
       if (e.pointerId !== pid) return;
       tracking = false;
       clear();
-      // 注意：不要在此复位 longFired——Android 长按序列是 down → cancel → contextmenu，
-      // longFired 需要活到 contextmenu 守卫处
+      // Do not reset longFired here: Android's long-press sequence is down → cancel → contextmenu,
+      // and longFired has to survive until the contextmenu guard
     };
     const ctxMenu = (e: MouseEvent) => {
       e.preventDefault();
-      // Android Chrome/Firefox 触屏长按会派发模拟 contextmenu，此时 450ms 定时器已报 long，
-      // 吞掉避免 long+right 双触发（插旗翻两次 = 净零）
+      // Android Chrome/Firefox dispatch a synthetic contextmenu on touch long-press; the 450ms timer
+      // has already reported long, so swallow it to avoid long+right double firing (two flag toggles = no-op)
       if (tracking || longFired) return;
       h.right?.(...rel(e.clientX, e.clientY));
     };

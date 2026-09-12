@@ -11,7 +11,7 @@ const storage = new ArcadeStorage();
 const audio = new AudioFx(storage);
 const frame = new GameFrame(audio, storage);
 
-let nav = 0; // 防止快速切换路由时旧的异步加载覆盖新页面
+let nav = 0; // stops a stale async load from overwriting the new page when routes change quickly
 
 startRouter(async (route) => {
   const token = ++nav;
@@ -27,10 +27,10 @@ startRouter(async (route) => {
   }
   try {
     const game = await entry.load();
-    if (token !== nav) return; // 期间用户已跳走
+    if (token !== nav) return; // the user navigated away in the meantime
     frame.open(app, game);
-    // 写在这里而不是 frame：frame 不知道 id 的来源。放在 load 之后——加载失败的游戏
-    // 不该出现在首页的 CONTINUE PLAYING 里
+    // Written here rather than in frame: frame doesn't know where the id came from. After load —
+    // a game that failed to load must not show up under CONTINUE PLAYING
     storage.set('lastPlayed', { id: entry.meta.id, at: Date.now() });
   } catch (err) {
     console.error('[arcade] failed to load game:', err);

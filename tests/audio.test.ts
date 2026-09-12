@@ -3,7 +3,7 @@ import { AudioFx, SFX } from '../src/core/audio';
 import { ArcadeStorage, memoryBackend } from '../src/core/storage';
 
 describe('AudioFx', () => {
-  it('SFX 音符数据合法（频率/时长为正）', () => {
+  it('SFX note data is valid (positive frequency and duration)', () => {
     for (const notes of Object.values(SFX)) {
       expect(notes.length).toBeGreaterThan(0);
       for (const [freq, dur] of notes) {
@@ -13,17 +13,17 @@ describe('AudioFx', () => {
     }
   });
 
-  it('无 AudioContext 环境下 play 静默不抛', () => {
+  it('play() is silent and does not throw without AudioContext', () => {
     const fx = new AudioFx(new ArcadeStorage(memoryBackend()));
     expect(() => fx.play('score')).not.toThrow();
   });
 
-  it('静音状态持久化到 storage', () => {
+  it('mute state persists to storage', () => {
     const storage = new ArcadeStorage(memoryBackend());
     const fx = new AudioFx(storage);
     expect(fx.isMuted()).toBe(false);
     expect(fx.toggleMuted()).toBe(true);
-    // 重新构造，读回持久化状态
+    // Rebuild and read the persisted state back
     expect(new AudioFx(storage).isMuted()).toBe(true);
   });
 });

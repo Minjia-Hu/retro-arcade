@@ -1,24 +1,24 @@
-// 4×4 棋盘，扁平数组行优先存储，0 表示空格
+// 4×4 board as a flat row-major array; 0 is empty
 export const SIZE = 4;
 
-export type Board = number[]; // 长度 16
+export type Board = number[]; // length 16
 export type Dir = 'up' | 'down' | 'left' | 'right';
-export type G2048Status = 'playing' | 'won' | 'over'; // won = 刚达成 2048、尚未选择继续
+export type G2048Status = 'playing' | 'won' | 'over'; // won = just reached 2048, hasn't chosen to continue yet
 
 export interface G2048State {
   board: Board;
   score: number;
   status: G2048Status;
-  keepPlaying: boolean; // 达成 2048 后选择继续
+  keepPlaying: boolean; // chose to keep going after 2048
   /**
-   * 新砖的随机源。撤销要连它一起恢复：否则撤销后重走同一方向会重掷新砖，
-   * 等于免费 reroll。同一局面走同一方向，得到的新砖永远相同。
+   * Random source for new tiles. Undo must restore it too: otherwise undo + the same move
+   * rerolls the tile, a free reroll. The same board and the same move always spawn the same tile.
    */
   seed: number;
-  prev: { board: Board; score: number; seed: number } | null; // 单层撤销
+  prev: { board: Board; score: number; seed: number } | null; // single-level undo
 }
 
-/** mulberry32：推进 s.seed 并返回 [0,1)。只在 move 没传 rand 时使用 */
+/** mulberry32: advance s.seed and return [0,1). Used only when move() gets no rand */
 function nextRand(s: G2048State): number {
   s.seed = (s.seed + 0x6d2b79f5) | 0;
   let t = s.seed;
@@ -43,12 +43,12 @@ export function createState(rand: () => number = Math.random): G2048State {
   let board = emptyBoard();
   board = spawnTile(board, rand);
   board = spawnTile(board, rand);
-  // 种子放在两次开局生砖之后取，单测注入的固定序列不受影响
+  // The seed is drawn after the two opening tiles, so injected test sequences are unaffected
   const seed = Math.floor(rand() * 4294967296) | 0;
   return { board, score: 0, status: 'playing', keepPlaying: false, seed, prev: null };
 }
 
-/** 单行向左压缩合并；每块砖一次移动至多参与一次合并 */
+/** Compress and merge one line to the left; a tile merges at most once per move */
 export function slideLine(line: number[]): { line: number[]; gained: number } {
   const tiles = line.filter((v) => v !== 0);
   const out: number[] = [];
@@ -57,7 +57,7 @@ export function slideLine(line: number[]): { line: number[]; gained: number } {
     if (i + 1 < tiles.length && tiles[i] === tiles[i + 1]) {
       out.push(tiles[i] * 2);
       gained += tiles[i] * 2;
-      i++; // 跳过被合并的砖
+      i++; // skip the tile that was merged in
     } else {
       out.push(tiles[i]);
     }
@@ -70,7 +70,7 @@ export function moveBoard(board: Board, dir: Dir): { board: Board; gained: numbe
   const next = board.slice();
   let gained = 0;
   for (let i = 0; i < SIZE; i++) {
-    // 第 i 条线的格子下标，按移动方向从"前"到"后"排列
+    // Cell indices of line i, ordered from the "front" to the "back" of the move
     const idx: number[] = [];
     for (let j = 0; j < SIZE; j++) {
       if (dir === 'left') idx.push(i * SIZE + j);
@@ -100,11 +100,12 @@ export function canMove(board: Board): boolean {
 }
 
 /**
- * 尝试一步移动；实际移动了才生新砖、记撤销点、判胜负。返回是否移动。
- * `rand` 只供单测注入；生产路径不传，走状态自带的种子（见 seed 的注释）。
+ * Try one move; only an actual move spawns a tile, records the undo point and checks the
+ * outcome. Returns whether anything moved. `rand` is for tests; production omits it and uses
+ * the state's own seed (see the seed comment).
  */
 export function move(s: G2048State, dir: Dir, rand?: () => number): boolean {
-  if (s.status !== 'playing') return false; // won 界面需先"继续"或撤销
+  if (s.status !== 'playing') return false; // the won screen needs "continue" or undo first
   const r = moveBoard(s.board, dir);
   if (!r.moved) return false;
   s.prev = { board: s.board, score: s.score, seed: s.seed };
@@ -124,7 +125,7 @@ export function continueAfterWin(s: G2048State): void {
   s.keepPlaying = true;
 }
 
-/** 撤销一步（可从 won/over 退回）；仅一层 */
+/** Undo one move (also out of won/over); single level */
 export function undo(s: G2048State): boolean {
   if (!s.prev) return false;
   s.board = s.prev.board;

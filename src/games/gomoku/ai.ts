@@ -7,27 +7,27 @@ export interface AiLevel {
 }
 
 export const AI_LEVELS: AiLevel[] = [
-  { id: 'easy', name: '简单', depth: 1 },
-  { id: 'medium', name: '中等', depth: 2 },
-  { id: 'hard', name: '困难', depth: 4 },
+  { id: 'easy', name: 'Easy', depth: 1 },
+  { id: 'medium', name: 'Medium', depth: 2 },
+  { id: 'hard', name: 'Hard', depth: 4 },
 ];
 
 const WIN_SCORE = 1e9;
-const TOP_K = 12; // 每层最多搜索的候选数（剪枝）
+const TOP_K = 12; // candidates searched per ply (pruning)
 
-/** 棋形分值：count = 同色连子数，open = 两端敞开数（0/1/2） */
+/** Shape score: count = stones in a row, open = open ends (0/1/2) */
 function shapeScore(count: number, open: number): number {
-  if (count >= 5) return 100000; // 五连
-  // 冲四要高于活三：冲四是必须立刻应的手，活三只是威胁。两者同分时 AI 会把
-  // 「放着对方冲四去做自己的活三」和「封冲四」看成一样好
-  if (count === 4) return open === 2 ? 10000 : open === 1 ? 3000 : 0; // 活四 / 冲四
-  if (count === 3) return open === 2 ? 1000 : open === 1 ? 100 : 0; // 活三 / 眠三
-  if (count === 2) return open === 2 ? 100 : open === 1 ? 10 : 0; // 活二 / 眠二
+  if (count >= 5) return 100000; // five
+  // A blocked four must outscore an open three: a four demands an immediate answer, a three is
+  // only a threat. Tied, the AI saw "ignore their four and build my own three" as just as good as blocking
+  if (count === 4) return open === 2 ? 10000 : open === 1 ? 3000 : 0; // open four / blocked four
+  if (count === 3) return open === 2 ? 1000 : open === 1 ? 100 : 0; // open three / blocked three
+  if (count === 2) return open === 2 ? 100 : open === 1 ? 10 : 0; // open two / blocked two
   if (count === 1) return open === 2 ? 10 : 0;
   return 0;
 }
 
-/** 在空格 idx 落 player 的进攻价值：四方向棋形分之和 */
+/** Attacking value of player placing at empty idx: sum of the shape scores in four directions */
 export function evaluatePoint(board: number[], idx: number, player: number): number {
   const x0 = idx % SIZE;
   const y0 = Math.floor(idx / SIZE);
@@ -47,7 +47,7 @@ export function evaluatePoint(board: number[], idx: number, player: number): num
   return total;
 }
 
-/** 全盘静态评估（从 me 视角）：己方棋形分 - 对方棋形分，按"连段起点"去重 */
+/** Static evaluation of the whole board from me's view: own shapes minus theirs, deduplicated by run start */
 export function evaluateBoard(board: number[], me: number): number {
   let score = 0;
   for (let i = 0; i < board.length; i++) {
@@ -56,7 +56,7 @@ export function evaluateBoard(board: number[], me: number): number {
     const x0 = i % SIZE;
     const y0 = Math.floor(i / SIZE);
     for (const [dx, dy] of DIRS) {
-      // 只从连段起点计（前一格非同色），避免重复计同一段
+      // Count only from the start of a run (previous cell not the same colour) so no run is counted twice
       const px = x0 - dx;
       const py = y0 - dy;
       if (inBounds(px, py) && board[py * SIZE + px] === p) continue;
@@ -73,7 +73,7 @@ export function evaluateBoard(board: number[], me: number): number {
   return score;
 }
 
-/** 邻近任一棋子（棋盘距离 ≤2）的空格；空盘返回 [天元] */
+/** Empty cells within distance 2 of any stone; an empty board returns [CENTER] */
 export function candidates(board: number[]): number[] {
   const seen = new Set<number>();
   const out: number[] = [];
@@ -97,7 +97,7 @@ export function candidates(board: number[]): number[] {
   return out;
 }
 
-/** 按"攻防合计价值"降序排列候选（稳定：同分按下标升序） */
+/** Candidates ordered by attack + defence value, descending (stable: ties by ascending index) */
 function orderedCandidates(board: number[], forPlayer: number): number[] {
   const opp = other(forPlayer);
   const cands = candidates(board);
@@ -107,12 +107,12 @@ function orderedCandidates(board: number[], forPlayer: number): number[] {
     .map((e) => e.idx);
 }
 
-/** minimax + α-β，返回从 me 视角的局面价值 */
+/** Minimax with α-β; returns the position's value from me's view */
 function minimaxValue(
   board: number[], toMove: number, me: number, depth: number, alpha: number, beta: number,
 ): number {
   const cands = orderedCandidates(board, toMove);
-  // 立即胜检测：toMove 有一手连五即定局
+  // Immediate win check: if toMove can make five, the position is decided
   for (const c of cands) {
     board[c] = toMove;
     const win = checkWin(board, c, toMove);
@@ -139,16 +139,16 @@ function minimaxValue(
 }
 
 /**
- * 为 player 求一手最佳落子（depth 越大越强）。
- * 传入 rand 时在"并列最优手"中随机取一个，避免 AI 逐盘复刻同一棋谱；
- * 省略 rand 则严格确定（取下标最小的最优手），供单测复现。
- * 战术必然手（能连五 / 唯一封堵）因最优手唯一，抖动不改变结果。
+ * Best move for player (deeper is stronger).
+ * With rand, one of the tied best moves is picked at random so the AI doesn't replay the same
+ * game every time; without it the result is deterministic (lowest index), for tests.
+ * Forced tactical moves (making five / the only block) have a unique best, so the jitter never changes them.
  */
 export function findBestMove(board: number[], player: number, depth: number, rand?: () => number): number {
   if (board.every((v) => v === EMPTY)) return CENTER;
   const cands = orderedCandidates(board, player);
-  if (cands.length === 0) return -1; // 满盘（不可达，防御性）
-  // 己方能连五则直接落
+  if (cands.length === 0) return -1; // full board (unreachable, defensive)
+  // Take an immediate five if there is one
   for (const c of cands) {
     board[c] = player;
     const win = checkWin(board, c, player);

@@ -5,7 +5,7 @@ import { DIFF_LABEL, padScore } from '../../core/format';
 import { difficultyMenu } from '../../shell/difficulty-menu';
 import * as L from './logic';
 
-/** 纸盘配色（设计稿 2e） */
+/** Paper palette (mockup 2e) */
 const PAPER = {
   hidden: '#fffaf0',
   revealed: '#efe5d3',
@@ -16,11 +16,11 @@ const PAPER = {
   mono: "'JetBrains Mono', ui-monospace, monospace",
 } as const;
 
-/** 数字 1–8：1–5 按设计稿，6–8 沿用第 5 色系 */
+/** Digits 1–8: 1–5 per the mockup, 6–8 reuse the fifth colour */
 const NUM_COLORS = ['', '#0b7285', '#5c940d', '#d6336c', '#7048e8', '#e8590c', '#e8590c', '#e8590c', '#e8590c'];
 
 export function createMinesweeper(): Game {
-  let state: L.MineState | null = null; // null = 难度菜单
+  let state: L.MineState | null = null; // null = difficulty menu
   let canvas: HTMLCanvasElement | null = null;
   let g: CanvasRenderingContext2D | null = null;
   let loop: GameLoop | null = null;
@@ -30,15 +30,15 @@ export function createMinesweeper(): Game {
   let viewH = 0;
 
   let head: { flags: HTMLElement; face: HTMLButtonElement; time: HTMLElement } | null = null;
-  let startedAt = 0; // 首次点击才起表，扫雷惯例
+  let startedAt = 0; // the clock starts on the first click, as in classic Minesweeper
   let stoppedAt = 0;
   let shownFlags = '';
   let shownTime = '';
   let shownFace = '';
 
-  /** 由 difficultyMenu 在 mount 里赋值；☰ 与首次挂载共用 */
-  // 默认值故意会抛：本轮踩过「赋值晚于调用」的坑，静默空桩只会变成
-  // 「菜单不弹」的现场调试，抛出来能在开发期就定位
+  /** Assigned by difficultyMenu in mount; shared by ☰ and the initial mount */
+  // The default throws on purpose: "assigned after it was called" bit us once, and a silent
+  // stub only turns into "the menu doesn't open" debugging; throwing pins it down in dev
   let showMenu: () => void = () => { throw new Error('showMenu called before mount'); };
 
   function frozen(): boolean {
@@ -54,9 +54,9 @@ export function createMinesweeper(): Game {
     head = { flags: q('flags'), face: q<HTMLButtonElement>('face'), time: q('time') };
     head.face.addEventListener('click', () => {
       head!.face.blur();
-      // 头栏在 .screen 之外，☰ 菜单开着时这个按钮照样点得到。不挡的话玩家以为
-      // 自己在选难度，实际上刚把进行中的盘面清了。结算浮层里的 ▶ NEW GAME
-      // 直接调 replay()，不经过这里，不受影响
+      // The head bar sits outside .screen, so this button is clickable while the ☰ menu is open.
+      // Unguarded, a player who thinks they're picking a difficulty has just wiped the board in
+      // progress. The overlay's ▶ NEW GAME calls replay() directly and is unaffected
       if (frozen()) return;
       replay();
     });
@@ -65,14 +65,14 @@ export function createMinesweeper(): Game {
     shownFace = '';
   }
 
-  /** 结算浮层期间 Space / 点画布 = ▶ NEW GAME（难度菜单不算）。返回是否已消费这次输入 */
+  /** While the result overlay is up, Space / a canvas tap = ▶ NEW GAME (not for the difficulty menu). Returns whether the input was consumed */
   function restartIfEnded(): boolean {
     if (!ctx?.overlayOpen() || !state || (state.status !== 'won' && state.status !== 'lost')) return false;
-    if (performance.now() - stoppedAt >= 400) replay(); // 踩雷瞬间常有连点
+    if (performance.now() - stoppedAt >= 400) replay(); // clicks pile up at the moment of the explosion
     return true;
   }
 
-  /** 🙂 是重开本局（同难度）；返回难度菜单走顶栏 ☰ —— 这两件事语义不同 */
+  /** 🙂 restarts at the same difficulty; the difficulty menu is the top-bar ☰ — two different things */
   function replay(): void {
     if (!state) return;
     startGame(state.diff);
@@ -83,7 +83,7 @@ export function createMinesweeper(): Game {
     return Math.floor(((stoppedAt || performance.now()) - startedAt) / 1000);
   }
 
-  /** 每帧同步；只在值变了才写 DOM（同 2048 的 shownScore/shownBest 做法） */
+  /** Synced every frame; writes the DOM only when a value changed (same as 2048's shownScore/shownBest) */
   function syncHead(): void {
     if (!head || !state) return;
     const flags = `⚑ ${padScore(Math.max(0, state.diff.mines - state.flags), 2)}`;
@@ -116,10 +116,10 @@ export function createMinesweeper(): Game {
     startedAt = 0;
     stoppedAt = 0;
     setCanvasSize(diff.cols * diff.cell, diff.rows * diff.cell);
-    // 顶栏药丸显示当前难度：HUD 里没有别处能看出来，与 SUDOKU 保持一致
+    // The top-bar pill shows the difficulty: nothing else in the HUD does, and it matches SUDOKU
     ctx?.setPill(DIFF_LABEL[diff.id]);
     ctx?.overlay(null);
-    // 不在这里发声：浮层按钮的 click 由 frame 统一负责，重复发声会响两下
+    // No sound here: frame plays the click for overlay buttons, a second one would double up
   }
 
   function reportEnd(): void {
@@ -135,14 +135,14 @@ export function createMinesweeper(): Game {
     });
   }
 
-  /** CSS 坐标 → 当前视图逻辑坐标 */
+  /** CSS coordinates → logic coordinates of the current view */
   function toLogical(cssX: number, cssY: number): [number, number] {
     if (!canvas) return [0, 0];
     const rect = canvas.getBoundingClientRect();
     return [(cssX / rect.width) * viewW, (cssY / rect.height) * viewH];
   }
 
-  /** 逻辑坐标 → 格子下标；不在棋盘内返回 -1 */
+  /** Logic coordinates → cell index; -1 when outside the board */
   function cellAt(x: number, y: number): number {
     if (!state) return -1;
     const { cols, rows, cell } = state.diff;
@@ -160,7 +160,7 @@ export function createMinesweeper(): Game {
     if (idx < 0) return;
     const wasReady = state.status === 'ready';
     const ev = L.reveal(state, idx);
-    // 首次成功翻格才起表——插旗不算「首次点击」，符合扫雷惯例
+    // The clock starts on the first successful reveal — flagging doesn't count, as in classic Minesweeper
     if (wasReady && ev.revealedSome && !startedAt) startedAt = performance.now();
     if (ev.exploded) {
       stoppedAt = performance.now();
@@ -217,7 +217,7 @@ export function createMinesweeper(): Game {
       } else {
         g.fillStyle = PAPER.hidden;
         g.fillRect(px, py, cell, cell);
-        // 未翻开格的凸起感：右下深描边 + 左上亮描边
+        // Raised look for hidden cells: dark stroke bottom-right, light stroke top-left
         g.strokeStyle = 'rgba(0, 0, 0, .10)';
         g.lineWidth = 2;
         g.beginPath();
@@ -249,7 +249,7 @@ export function createMinesweeper(): Game {
       }
     }
 
-    // 格线
+    // Grid lines
     g.strokeStyle = PAPER.line;
     g.lineWidth = 0.5;
     for (let c = 0; c <= cols; c++) {
@@ -279,7 +279,7 @@ export function createMinesweeper(): Game {
   return {
     meta: {
       id: 'minesweeper',
-      name: '扫雷',
+      name: 'Minesweeper',
       icon: '💣',
       displayName: 'MINES',
       hints: ['CLICK REVEAL', 'LONG-PRESS / RIGHT-CLICK FLAG'],
@@ -293,14 +293,14 @@ export function createMinesweeper(): Game {
       ctx = context;
       const first = L.DIFFICULTIES[0];
       ({ canvas, g } = createScreenCanvas(container, first.cols * first.cell, first.rows * first.cell));
-      canvas.style.setProperty('-webkit-touch-callout', 'none'); // iOS 长按放大镜/呼出菜单兜底
-      // createScreenCanvas 已按这个尺寸设过一次，这里只补记视图尺寸，不再重设 backing store
+      canvas.style.setProperty('-webkit-touch-callout', 'none'); // guards against iOS's long-press magnifier / callout
+      // createScreenCanvas already sized it; just record the view size, don't reset the backing store
       viewW = first.cols * first.cell;
       viewH = first.rows * first.cell;
 
       if (ctx.head) buildHead(ctx.head);
 
-      // 菜单必须先建：mount 末尾会立刻调它，晚赋值会调到空函数桩
+      // The menu must exist first: the end of mount calls it immediately, and a late assignment hits the stub
       showMenu = difficultyMenu({
         ctx,
         difficulties: L.DIFFICULTIES,
@@ -314,15 +314,15 @@ export function createMinesweeper(): Game {
         long: onFlagGesture,
         right: onFlagGesture,
       });
-      // 扫雷本身是纯指针游戏，键盘只承担结算态的重开
+      // Minesweeper is pointer-only; the keyboard only handles restarting from the result screen
       ctx.input.onKey((code) => {
         if (code === 'Space' || code === 'Enter') restartIfEnded();
       });
 
-      // 不存档：每次挂载都从难度菜单开始
+      // No save: every mount starts at the difficulty menu
       showMenu();
 
-      loop = new GameLoop(() => {}, render); // 无时间模拟，仅驱动渲染
+      loop = new GameLoop(() => {}, render); // no simulation, just drives rendering
       loop.start();
     },
 
@@ -343,7 +343,7 @@ export function createMinesweeper(): Game {
       canvas = null;
       g = null;
       head = null;
-      ctx = null; // 事件监听（含 onPress 的长按定时器）由 frame 的 InputService.dispose() 统一清理
+      ctx = null; // listeners (including onPress's long-press timer) are cleaned up by frame's InputService.dispose()
     },
   };
 }

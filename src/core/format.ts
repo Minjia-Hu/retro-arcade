@@ -1,9 +1,9 @@
-/** 分数补零。负数与小数先归一到非负整数，位数不够时保留原样、不截断 */
+/** Zero-pad a score. Negatives and fractions are normalised to a non-negative integer first; wider values are kept, never truncated */
 export function padScore(n: number, width: number): string {
   return String(Math.max(0, Math.floor(n))).padStart(width, '0');
 }
 
-/** 难度 id → 顶栏药丸用的英文标签。logic 里的 name 是中文，顶栏按设计稿用英文 */
+/** Difficulty id → label for the top-bar pill. The `name` in logic is Chinese; the top bar uses English per the mockups */
 export const DIFF_LABEL: Record<'easy' | 'medium' | 'hard', string> = {
   easy: 'EASY', medium: 'MEDIUM', hard: 'HARD',
 };

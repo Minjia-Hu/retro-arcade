@@ -13,9 +13,9 @@ export class GameFrame {
   private settleEl: HTMLElement | null = null;
   private cabinetEl: HTMLElement | null = null;
   private pauseBtn: HTMLButtonElement | null = null;
-  private baseHints: string[] = [];              // 游戏态的按键提示
+  private baseHints: string[] = [];              // key hints for the in-game state
   private isOverlayOpen = false;
-  private overlayHints: string[] = [];           // 开层时的快照：浮层自带的提示，或冻结当时屏幕上的
+  private overlayHints: string[] = [];           // snapshot taken when the overlay opens: its own hints, or whatever was on screen
 
   constructor(private audio: AudioFx, private storage: ArcadeStorage) {}
 
@@ -31,8 +31,8 @@ export class GameFrame {
     this.pauseBtn = root.querySelector<HTMLButtonElement>('[data-act="pause"]');
     this.baseHints = game.meta.hints ?? [];
 
-    // 点击后移除焦点，避免残留焦点让空格键误触按钮。
-    // 按钮可能不存在（FLAPPY 没有暂停键），缺席时静默跳过。
+    // Blur after click, or a lingering focus lets Space trigger the button again.
+    // The button may not exist (FLAPPY has no pause); skip silently when absent.
     const wire = (act: string, fn: (b: HTMLButtonElement) => void) => {
       const b = root.querySelector<HTMLButtonElement>(`[data-act="${act}"]`);
       if (!b) return;
@@ -48,7 +48,7 @@ export class GameFrame {
     });
     wire('mute', (b) => {
       const muted = this.audio.toggleMuted();
-      // class 只管样式；aria-pressed 才让屏幕阅读器知道当前是开还是关
+      // the class is only styling; aria-pressed is what tells a screen reader whether it's on or off
       b.classList.toggle('is-off', muted);
       b.setAttribute('aria-pressed', String(muted));
       this.audio.play('click');
@@ -70,7 +70,7 @@ export class GameFrame {
     this.observer.observe(body);
     this.input = new InputService();
     const pillEl = root.querySelector<HTMLElement>('.cab-pill');
-    const toolBound = new Set<string>(); // 防止同一 id 注册两次导致点一下触发两回
+    const toolBound = new Set<string>(); // stops the same id being registered twice and firing twice per click
 
     const ctx: GameContext = {
       audio: this.audio,
@@ -84,7 +84,7 @@ export class GameFrame {
       head: root.querySelector<HTMLElement>('.cab-head'),
       side: root.querySelector<HTMLElement>('.cab-side'),
       pad: root.querySelector<HTMLElement>('.cab-pad'),
-      // 只更新游戏态那一路；结算态在时由 applyHints 保证浮层提示不被冲掉
+      // only the in-game hints change; while an overlay is up, applyHints keeps its hints from being clobbered
       setHints: (hints) => {
         this.baseHints = hints;
         this.applyHints();
@@ -92,13 +92,13 @@ export class GameFrame {
       onTool: (id, handler) => {
         const b = root.querySelector<HTMLButtonElement>(`[data-act="tool:${id}"]`);
         if (!b) {
-          // wire 的「缺席就静默跳过」是为 FLAPPY 没有暂停键设计的；用在这里会让
-          // 拼错的 id 毫无反应且无从排查，所以显式报警
-          console.warn(`[arcade] onTool("${id}")：meta.tools 里没有这个 id`);
+          // wire()'s "skip silently when absent" exists for FLAPPY's missing pause button; here it
+          // would make a misspelled id do nothing with no trace, so warn explicitly
+          console.warn(`[arcade] onTool("${id}"): no such id in meta.tools`);
           return;
         }
         if (toolBound.has(id)) {
-          console.warn(`[arcade] onTool("${id}") 被注册了多次，后一次已忽略`);
+          console.warn(`[arcade] onTool("${id}") registered more than once; the later one is ignored`);
           return;
         }
         toolBound.add(id);
@@ -120,7 +120,7 @@ export class GameFrame {
       this.game = game;
     } catch (err) {
       console.error('[arcade] game crashed on mount:', err);
-      try { game.destroy(); } catch { /* 尽力清理半挂载游戏的自有资源（rAF/定时器） */ }
+      try { game.destroy(); } catch { /* best effort to free the half-mounted game's own resources (rAF/timers) */ }
       this.input?.dispose();
       this.input = null;
       this.observer?.disconnect();
@@ -136,9 +136,10 @@ export class GameFrame {
       console.error('[arcade] game crashed on destroy:', err);
     }
     this.game = null;
-    // 先收浮层与插槽再断引用：浮层按钮和 head/pad 里的按钮都持有已 destroy 游戏的闭包，
-    // 而路由切换到下一次 open() 之间隔着 await entry.load()，不收会在这个窗口里留下
-    // 可点的死按钮（side 没有按钮，但会残留上一局的数字）
+    // Clear the overlay and slots before dropping references: overlay buttons and head/pad
+    // buttons hold closures of the destroyed game, and the next open() is an `await entry.load()`
+    // away — without this, dead but clickable buttons survive in that window (side has no
+    // buttons, but would keep showing the previous game's numbers)
     this.clearSettle();
     this.cabinetEl?.querySelectorAll<HTMLElement>('.cab-head, .cab-side, .cab-pad')
       .forEach((slot) => { slot.innerHTML = ''; });
@@ -164,18 +165,19 @@ export class GameFrame {
   }
 
   /**
-   * 结算态优先。把「当前该显示哪条提示」写成显式规则，而不是靠调用顺序——
-   * 否则浮层展示期间游戏若调 setHints，会把 SPACE / TAP TO RETRY 冲掉而浮层还开着。
+   * Overlay state wins. "Which hints show now" is an explicit rule rather than call order —
+   * otherwise a setHints from the game while the overlay is up would clobber
+   * SPACE / TAP TO RETRY with the overlay still open.
    */
   /**
-   * 浮层冻结提示条：开着时显示开层那一刻的快照，游戏此时调 setHints 只更新
-   * baseHints、不改写屏幕，收起后才生效。
+   * The overlay freezes the hint bar: while open it shows the snapshot taken at open time; a
+   * setHints from the game only updates baseHints and takes effect once the overlay closes.
    */
   private applyHints(): void {
     this.renderHints(this.isOverlayOpen ? this.overlayHints : this.baseHints);
   }
 
-  /** 替换底部按键提示条；结算态与游戏态的文案不同（设计稿 artboard 1a vs 1b） */
+  /** Replace the bottom key-hint bar; overlay and in-game copy differ (mockup artboards 1a vs 1b) */
   private renderHints(hints: string[]): void {
     const html = hintsBarHtml(hints);
     const bar = this.cabinetEl?.querySelector('.cab-hints');
@@ -184,8 +186,9 @@ export class GameFrame {
   }
 
   /**
-   * 渲染或收起结算浮层。不自动聚焦主按钮——游戏的 Space 处理器仍在监听，
-   * 自动聚焦会让一次 Space 同时触发按钮点击和游戏自身的重开逻辑。
+   * Render or dismiss the overlay. The primary button is not auto-focused: the game's Space
+   * handler is still listening, and a focused button would make one Space both click the button
+   * and trigger the game's own restart.
    */
   private showOverlay(view: OverlayView | null): void {
     const el = this.settleEl;
@@ -202,12 +205,12 @@ export class GameFrame {
     this.screenEl?.classList.add('is-settled');
     this.overlayHints = view.hints ?? this.baseHints;
     this.isOverlayOpen = true;
-    // 浮层期间暂停没有意义，而且游戏的 retry() 共用 paused 卫语句——
-    // 「死亡 → 点暂停 → 点 RETRY」会得到一颗没反应的死按钮。禁掉比补状态机简单。
+    // Pausing makes no sense under an overlay, and games' retry() shares the paused guard —
+    // "die → pause → RETRY" would give a dead button. Disabling it beats patching the state machine.
     if (this.pauseBtn) this.pauseBtn.disabled = true;
     this.applyHints();
 
-    // 点完就 blur：与顶栏 wire() 同一约定，避免残留焦点让空格键既触发按钮又触发游戏逻辑
+    // Blur after click — same convention as the top-bar wire(), so a lingering focus can't make Space hit both the button and the game
     view.actions.forEach((a, i) => {
       const b = el.querySelector<HTMLButtonElement>(`[data-act="overlay:${i}"]`);
       b?.addEventListener('click', () => {
@@ -224,7 +227,7 @@ export class GameFrame {
   }
 
   private showError(root: HTMLElement): void {
-    // 用 cab-btn 而非旧的 .btn —— 机柜样式落地后 .btn 规则将不复存在
+    // cab-btn rather than the old .btn — the .btn rule no longer exists since the cabinet styles landed
     root.innerHTML = `
       <div class="frame-error">
         <p>💥 GAME ERROR · something went wrong</p>

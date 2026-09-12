@@ -1,25 +1,26 @@
-// 9×9 数独，扁平 81 长数组，0 表示空。生成保证唯一解。
+// 9×9 Sudoku as a flat 81-array; 0 is empty. Generated puzzles have a unique solution.
 export interface Difficulty {
   id: 'easy' | 'medium' | 'hard';
   name: string;
-  clues: number; // 目标给定格数（挖洞下限）
+  clues: number; // target number of givens (the floor for digging)
 }
 
-// 44/36/30 时 easy 与 medium 全是纯 singles 题、hard 八成也是，三档分不开（实测 90 局）。
-// 26 是随机挖洞的实用下限：平均 12ms、最长 30ms；24 会掉到 35ms/最长 185ms 且常挖不到目标
+// At 44/36/30, easy and medium were all solvable by singles alone and hard mostly too — the tiers
+// didn't differ (measured over 90 puzzles). 26 is the practical floor for random digging: 12ms
+// average, 30ms worst; 24 drops to 35ms / 185ms worst and often can't reach the target
 export const DIFFICULTIES: Difficulty[] = [
-  { id: 'easy', name: '初级', clues: 40 },
-  { id: 'medium', name: '中级', clues: 32 },
-  { id: 'hard', name: '高级', clues: 26 },
+  { id: 'easy', name: 'Easy', clues: 40 },
+  { id: 'medium', name: 'Medium', clues: 32 },
+  { id: 'hard', name: 'Hard', clues: 26 },
 ];
 
 export type SudokuStatus = 'playing' | 'won';
 
 export interface SudokuState {
-  puzzle: number[]; // 给定盘（0 空），给定格判定依据
-  solution: number[]; // 唯一解
-  values: number[]; // 玩家当前盘（含给定）
-  notes: number[][]; // 每格铅笔标记（升序）
+  puzzle: number[]; // the givens (0 empty); decides which cells are fixed
+  solution: number[]; // the unique solution
+  values: number[]; // the player's current board (including givens)
+  notes: number[][]; // pencil marks per cell (ascending)
   status: SudokuStatus;
   diff: Difficulty;
 }
@@ -28,7 +29,7 @@ export interface SudokuSave {
   p: number[]; s: number[]; v: number[]; n: number[][]; d: string; st: string;
 }
 
-/** 某格在当前盘下的合法候选值（1-9 去掉同行/列/宫已占用） */
+/** Legal candidates for a cell on the current board (1–9 minus what its row/column/box already use) */
 export function candidates(board: number[], idx: number): number[] {
   const used = new Set<number>();
   const r = Math.floor(idx / 9);
@@ -45,7 +46,7 @@ export function candidates(board: number[], idx: number): number[] {
   return out;
 }
 
-/** 数解数目，最多数到 limit（MRV 加速，用于唯一性校验时传 2） */
+/** Count solutions up to `limit` (MRV-accelerated; pass 2 for a uniqueness check) */
 export function solutionCount(board: number[], limit: number): number {
   const work = board.slice();
   let count = 0;
@@ -55,15 +56,15 @@ export function solutionCount(board: number[], limit: number): number {
     for (let i = 0; i < 81; i++) {
       if (work[i] !== 0) continue;
       const c = candidates(work, i);
-      if (c.length === 0) return; // 死路
+      if (c.length === 0) return; // dead end
       if (best === -1 || c.length < bestCands.length) {
         best = i;
         bestCands = c;
-        if (c.length === 1) break; // 无法更优
+        if (c.length === 1) break; // can't do better
       }
     }
     if (best === -1) {
-      count += 1; // 无空格 = 一个完整解
+      count += 1; // no empty cell = one complete solution
       return;
     }
     for (const v of bestCands) {
@@ -85,7 +86,7 @@ function shuffle<T>(arr: T[], rand: () => number): T[] {
   return arr;
 }
 
-/** 随机 MRV 回溯填出一个完整合法盘 */
+/** Fill a complete valid board by randomised MRV backtracking */
 export function generateSolved(rand: () => number = Math.random): number[] {
   const board = new Array<number>(81).fill(0);
   const fill = (): boolean => {
@@ -111,7 +112,7 @@ export function generateSolved(rand: () => number = Math.random): number[] {
   return board;
 }
 
-/** 挖洞：随机顺序尝试移除，仅当唯一解仍保持时保留移除，直到 givens 降到 clues 或无处可挖 */
+/** Dig holes: try removals in random order, keeping each only while the solution stays unique, until givens reach `clues` or nothing is left to dig */
 export function makePuzzle(clues: number, rand: () => number = Math.random): { puzzle: number[]; solution: number[] } {
   const solution = generateSolved(rand);
   const puzzle = solution.slice();
@@ -122,7 +123,7 @@ export function makePuzzle(clues: number, rand: () => number = Math.random): { p
     const saved = puzzle[pos];
     if (saved === 0) continue;
     puzzle[pos] = 0;
-    if (solutionCount(puzzle, 2) !== 1) puzzle[pos] = saved; // 破坏唯一性，还原
+    if (solutionCount(puzzle, 2) !== 1) puzzle[pos] = saved; // uniqueness broken, put it back
     else givens -= 1;
   }
   return { puzzle, solution };
@@ -175,7 +176,7 @@ export function toggleNote(s: SudokuState, idx: number, v: number): boolean {
   return true;
 }
 
-/** 违反行/列/宫唯一性的格子下标集合（用于错误高亮） */
+/** Indices of cells that break row/column/box uniqueness (for error highlighting) */
 export function conflicts(values: number[]): Set<number> {
   const bad = new Set<number>();
   const groups: number[][] = [];
@@ -215,7 +216,7 @@ export function deserialize(save: unknown): SudokuState | null {
   const diff = DIFFICULTIES.find((d) => d.id === o.d);
   if (!diff || !Array.isArray(o.p) || o.p.length !== 81 || !Array.isArray(o.v) || o.v.length !== 81
     || !Array.isArray(o.s) || o.s.length !== 81 || !Array.isArray(o.n) || o.n.length !== 81
-    || !o.n.every((x) => Array.isArray(x))) return null; // notes 逐元素须为数组，否则渲染 for..of 会每帧抛异常
+    || !o.n.every((x) => Array.isArray(x))) return null; // every notes entry must be an array, or the renderer's for..of throws every frame
   return {
     puzzle: o.p,
     solution: o.s,

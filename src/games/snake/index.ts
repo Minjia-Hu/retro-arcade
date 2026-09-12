@@ -5,7 +5,7 @@ import * as L from './logic';
 import { padScore } from '../../core/format';
 import { createScreenCanvas } from '../../core/screen';
 
-const CELL = 16; // COLS×16 = 320，ROWS×16 = 480，与逻辑网格一一对应
+const CELL = 16; // COLS×16 = 320, ROWS×16 = 480, one-to-one with the logic grid
 const W = L.COLS * CELL;
 const H = L.ROWS * CELL;
 
@@ -26,7 +26,7 @@ export function createSnake(): Game {
   let deadHandled = false;
   let paused = false;
   let diedAt = 0;
-  let bestAtStart = 0; // 本局开始前的最高分，用来判断是否刷新纪录
+  let bestAtStart = 0; // best before this game started, to detect a new record
 
   function handleDir(dir: L.Dir): void {
     if (paused || state.status === 'dead') return;
@@ -35,8 +35,9 @@ export function createSnake(): Game {
 
 
   /**
-   * 浮层 RETRY 按钮的入口。与键盘/点按路径共用 paused 卫语句，但**不**走 tapAction
-   * 的 400ms 防连点去抖——那是给画布误触准备的，一次明确的按钮点击不该被吞掉。
+   * Entry point for the overlay's RETRY button. Shares the paused guard with the keyboard/tap
+   * paths but does NOT go through tapAction's 400ms debounce — that exists for accidental
+   * canvas taps, and a deliberate button click must not be swallowed.
    */
   function retry(): void {
     if (paused) return;
@@ -53,12 +54,12 @@ export function createSnake(): Game {
   function tapAction(): void {
     if (paused) return;
     if (state.status === 'dead') {
-      if (performance.now() - diedAt < 400) return; // 死亡瞬间常有连点
+      if (performance.now() - diedAt < 400) return; // taps often pile up at the moment of death
       restart();
       return;
     }
     if (state.status === 'ready') {
-      L.setDirection(state, state.dir); // 点按沿当前方向开局
+      L.setDirection(state, state.dir); // a tap starts the game in the current direction
     }
   }
 
@@ -91,12 +92,12 @@ export function createSnake(): Game {
     g.fillStyle = SCREEN.ground;
     g.fillRect(0, 0, W, H);
 
-    // 边界墙：撞上即死，必须肉眼可见（画布背景与屏幕井同色，无此描边则边界隐形）
+    // Boundary wall: hitting it kills, so it must be visible (the canvas matches the well colour; without this stroke the edge is invisible)
     g.strokeStyle = SCREEN.teal;
     g.lineWidth = 2;
     g.strokeRect(1, 1, W - 2, H - 2);
 
-    // 食物：暖霓虹粉，圆角 3
+    // Food: warm neon pink, radius 3
     g.fillStyle = SCREEN.pink;
     g.shadowColor = SCREEN.glow.pink;
     g.shadowBlur = 10;
@@ -104,7 +105,7 @@ export function createSnake(): Game {
     g.roundRect(state.food.x * CELL + 2, state.food.y * CELL + 2, CELL - 4, CELL - 4, 3);
     g.fill();
 
-    // 蛇身：teal，蛇头：gold
+    // Body: teal, head: gold
     g.shadowBlur = 8;
     for (let i = state.snake.length - 1; i >= 0; i--) {
       const c = state.snake[i];
@@ -114,7 +115,7 @@ export function createSnake(): Game {
       g.fillRect(c.x * CELL + 1, c.y * CELL + 1, CELL - 2, CELL - 2);
     }
 
-    // 分数：设计稿补零到 4 位
+    // Score: zero-padded to 4 digits per the mockups
     g.fillStyle = SCREEN.gold;
     g.shadowColor = SCREEN.glow.gold;
     g.shadowBlur = 10;
@@ -123,14 +124,14 @@ export function createSnake(): Game {
     g.fillText(padScore(state.score, 4), W / 2, 40);
     g.shadowBlur = 0;
 
-    // GAME OVER 与开局提示不再画在画布里：前者走 ctx.settle 的 DOM 浮层，
-    // 后者放在机柜底部的按键提示条
+    // GAME OVER and the start hint are no longer drawn on the canvas: the former is the DOM
+    // overlay, the latter lives in the cabinet's bottom hint bar
   }
 
   return {
     meta: {
       id: 'snake',
-      name: '贪吃蛇',
+      name: 'Snake',
       icon: '🐍',
       displayName: 'SNAKE',
       hints: ['↑↓←→ / WASD MOVE', 'SPACE START'],
@@ -171,7 +172,7 @@ export function createSnake(): Game {
       canvas?.remove();
       canvas = null;
       g = null;
-      ctx = null; // 事件监听由 frame 的 InputService.dispose() 统一清理
+      ctx = null; // listeners are cleaned up by frame's InputService.dispose()
     },
   };
 }

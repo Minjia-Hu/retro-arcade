@@ -1,11 +1,11 @@
-// 15×15 五子棋，扁平 225 长数组。自由风格：五连及以上即胜，无禁手。
+// 15×15 Gomoku as a flat 225-array. Freestyle: five or more in a row wins, no forbidden moves.
 export const SIZE = 15;
 export const EMPTY = 0;
 export const BLACK = 1;
 export const WHITE = 2;
-export const CENTER = 7 * SIZE + 7; // 112，天元
+export const CENTER = 7 * SIZE + 7; // 112, the centre point
 
-// 四条方向：水平、垂直、主对角、反对角
+// Four directions: horizontal, vertical, main diagonal, anti-diagonal
 export const DIRS: [number, number][] = [[1, 0], [0, 1], [1, 1], [1, -1]];
 
 export function createBoard(): number[] {
@@ -20,7 +20,7 @@ export function other(player: number): number {
   return player === BLACK ? WHITE : BLACK;
 }
 
-/** 经 idx 的四方向是否有 ≥5 连（idx 处假定为 player） */
+/** Whether any of the four lines through idx has ≥5 in a row (idx assumed to be player's) */
 export function checkWin(board: number[], idx: number, player: number): boolean {
   const x0 = idx % SIZE;
   const y0 = Math.floor(idx / SIZE);
@@ -41,10 +41,10 @@ export type GomokuStatus = 'playing' | 'won' | 'draw';
 
 export interface GomokuState {
   board: number[];
-  turn: number; // 当前该谁落子
+  turn: number; // whose move it is
   status: GomokuStatus;
-  winner: number; // 0 = 无
-  last: number; // 最近一手 idx，-1 = 无
+  winner: number; // 0 = none
+  last: number; // index of the last move, -1 = none
   moves: number;
 }
 
@@ -52,7 +52,7 @@ export function createGame(): GomokuState {
   return { board: createBoard(), turn: BLACK, status: 'playing', winner: 0, last: -1, moves: 0 };
 }
 
-/** 在 idx 落下当前手方；成功则判胜负/和棋并翻手。返回是否落子成功。 */
+/** Place the current player's stone at idx; on success check win/draw and switch turns. Returns whether the move was made. */
 export function playMove(s: GomokuState, idx: number): boolean {
   if (s.status !== 'playing') return false;
   if (idx < 0 || idx >= SIZE * SIZE || s.board[idx] !== EMPTY) return false;

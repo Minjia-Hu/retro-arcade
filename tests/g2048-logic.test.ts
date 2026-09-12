@@ -4,14 +4,14 @@ import {
   move, continueAfterWin, undo, SIZE,
 } from '../src/games/g2048/logic';
 
-// 依序返回给定值的 rand（用完循环）
+// A rand that returns the given values in order (cycling when exhausted)
 const seq = (...vals: number[]) => {
   let i = 0;
   return () => vals[i++ % vals.length];
 };
 
 describe('2048 logic', () => {
-  it('初始状态：两个初始砖、零分、playing、无撤销', () => {
+  it('initial state: two tiles, zero score, playing, no undo', () => {
     const s = createState(seq(0, 0, 0, 0));
     expect(s.board.filter((v) => v !== 0)).toHaveLength(2);
     expect(s.score).toBe(0);
@@ -19,36 +19,36 @@ describe('2048 logic', () => {
     expect(s.prev).toBeNull();
   });
 
-  it('slideLine 压缩合并：[0,2,0,2] → [4,0,0,0] 得 4 分', () => {
+  it('slideLine compresses and merges: [0,2,0,2] → [4,0,0,0] scores 4', () => {
     expect(slideLine([0, 2, 0, 2])).toEqual({ line: [4, 0, 0, 0], gained: 4 });
   });
 
-  it('slideLine 两对同时合并：[2,2,2,2] → [4,4,0,0] 得 8 分', () => {
+  it('slideLine merges two pairs: [2,2,2,2] → [4,4,0,0] scores 8', () => {
     expect(slideLine([2, 2, 2, 2])).toEqual({ line: [4, 4, 0, 0], gained: 8 });
   });
 
-  it('slideLine 单次合并不连锁：[4,2,2,0] → [4,4,0,0] 得 4 分', () => {
+  it('slideLine does not chain merges: [4,2,2,0] → [4,4,0,0] scores 4', () => {
     expect(slideLine([4, 2, 2, 0])).toEqual({ line: [4, 4, 0, 0], gained: 4 });
   });
 
-  it('moveBoard 向右', () => {
+  it('moveBoard right', () => {
     const b = emptyBoard();
-    b[0] = 2; b[3] = 2; // 第一行 [2,0,0,2]
+    b[0] = 2; b[3] = 2; // first row [2,0,0,2]
     const r = moveBoard(b, 'right');
     expect(r.board.slice(0, 4)).toEqual([0, 0, 0, 4]);
     expect(r.gained).toBe(4);
     expect(r.moved).toBe(true);
   });
 
-  it('moveBoard 向上', () => {
+  it('moveBoard up', () => {
     const b = emptyBoard();
-    b[0] = 2; b[8] = 2; // 第一列 [2,0,2,0]
+    b[0] = 2; b[8] = 2; // first column [2,0,2,0]
     const r = moveBoard(b, 'up');
     expect(r.board[0]).toBe(4);
     expect(r.board[8]).toBe(0);
   });
 
-  it('moveBoard 向下', () => {
+  it('moveBoard down', () => {
     const b = emptyBoard();
     b[0] = 2; b[8] = 2;
     const r = moveBoard(b, 'down');
@@ -56,24 +56,24 @@ describe('2048 logic', () => {
     expect(r.board[0]).toBe(0);
   });
 
-  it('无效方向的 move 返回 false 且不生砖不记撤销', () => {
-    const s = createState(seq(0, 0, 0, 0)); // 砖在 0、1 号格
+  it('a move that changes nothing returns false, spawns nothing and records no undo', () => {
+    const s = createState(seq(0, 0, 0, 0)); // tiles at cells 0 and 1
     const before = s.board.slice();
-    expect(move(s, 'up', seq(0, 0))).toBe(false); // 已在顶行，向上无变化
+    expect(move(s, 'up', seq(0, 0))).toBe(false); // already on the top row; up changes nothing
     expect(s.board).toEqual(before);
     expect(s.prev).toBeNull();
   });
 
-  it('有效 move：合并计分、恰好生一块新砖、记录撤销点', () => {
+  it('a real move: merges score, exactly one new tile, undo point recorded', () => {
     const s = createState(seq(0, 0, 0, 0)); // [2,2,0,...]
     expect(move(s, 'left', seq(0, 0))).toBe(true);
     expect(s.board[0]).toBe(4);
     expect(s.score).toBe(4);
-    expect(s.board.filter((v) => v !== 0)).toHaveLength(2); // 合并后 1 块 + 新生 1 块
+    expect(s.board.filter((v) => v !== 0)).toHaveLength(2); // 1 merged + 1 spawned
     expect(s.prev).not.toBeNull();
   });
 
-  it('undo 恢复棋盘与分数，仅一层', () => {
+  it('undo restores board and score, one level only', () => {
     const s = createState(seq(0, 0, 0, 0));
     const before = s.board.slice();
     move(s, 'left', seq(0, 0));
@@ -83,20 +83,20 @@ describe('2048 logic', () => {
     expect(undo(s)).toBe(false);
   });
 
-  it('spawnTile：rand 值 ≥0.9 生成 4', () => {
+  it('spawnTile: rand ≥0.9 spawns a 4', () => {
     const b = spawnTile(emptyBoard(), seq(0, 0.95));
     expect(b[0]).toBe(4);
   });
 
-  it('canMove：满盘无可合并为 false，有相邻同值为 true', () => {
+  it('canMove: a full board with no merges is false, adjacent equals is true', () => {
     const dead = [2, 4, 2, 4, 4, 2, 4, 2, 2, 4, 2, 4, 4, 2, 4, 2];
     expect(canMove(dead)).toBe(false);
     const alive = dead.slice();
-    alive[15] = 4; // 与左邻 4 相邻同值
+    alive[15] = 4; // equal to its left neighbour 4
     expect(canMove(alive)).toBe(true);
   });
 
-  it('合出 2048 置为 won', () => {
+  it('making 2048 sets won', () => {
     const s = createState(seq(0, 0, 0, 0));
     s.board = emptyBoard();
     s.board[0] = 1024; s.board[1] = 1024;
@@ -104,7 +104,7 @@ describe('2048 logic', () => {
     expect(s.status).toBe('won');
   });
 
-  it('continueAfterWin 后继续游戏，再合 2048 不再触发 won', () => {
+  it('after continueAfterWin the game goes on; another 2048 does not trigger won', () => {
     const s = createState(seq(0, 0, 0, 0));
     s.board = emptyBoard();
     s.board[0] = 1024; s.board[1] = 1024;
@@ -118,7 +118,7 @@ describe('2048 logic', () => {
     expect(s.status).toBe('playing');
   });
 
-  it('生砖后无路可走置为 over', () => {
+  it('no moves left after a spawn sets over', () => {
     const s = createState(seq(0, 0, 0, 0));
     s.board = [
       2, 4, 2, 4,
@@ -126,7 +126,7 @@ describe('2048 logic', () => {
       2, 4, 2, 4,
       0, 4, 2, 4,
     ];
-    // 向左：末行 [0,4,2,4] → [4,2,4,0]，唯一空格生 2 → 棋盘成完整棋盘格
+    // Left: last row [0,4,2,4] → [4,2,4,0], the only empty cell gets a 2 → a full checkerboard
     move(s, 'left', seq(0, 0));
     expect(s.board).toEqual([
       2, 4, 2, 4,
@@ -137,18 +137,18 @@ describe('2048 logic', () => {
     expect(s.status).toBe('over');
   });
 
-  it('撤销后重走同一方向，新砖与上次相同——撤销不能当 reroll 用', () => {
+  it('undo then the same move spawns the same tile — undo is not a reroll', () => {
     const s = createState(seq(0, 0, 0, 0));
     s.board = emptyBoard();
     s.board[0] = 2; s.board[5] = 4; s.board[10] = 8; s.board[15] = 16;
-    expect(move(s, 'left')).toBe(true); // 不传 rand：走状态自带的种子
+    expect(move(s, 'left')).toBe(true); // no rand: uses the state's own seed
     const first = s.board.slice();
     expect(undo(s)).toBe(true);
     expect(move(s, 'left')).toBe(true);
     expect(s.board).toEqual(first);
   });
 
-  it('不传 rand 时连续两步的新砖不是同一个随机数（种子在推进）', () => {
+  it('without rand, consecutive moves draw different randoms (the seed advances)', () => {
     const s = createState(seq(0, 0, 0, 0));
     s.board = emptyBoard();
     s.board[3] = 2;
@@ -158,20 +158,20 @@ describe('2048 logic', () => {
     t.board = emptyBoard();
     t.board[3] = 2;
     move(t, 'down');
-    expect(t.board).toEqual(a); // 同种子同局面 → 同结果（确定性）
+    expect(t.board).toEqual(a); // same seed, same board → same result (deterministic)
     const seedAfterFirst = t.seed;
     const sumBefore = t.board.reduce((n, v) => n + v, 0);
-    // 两块砖总有一个方向能动；新砖落在哪、会不会合并取决于种子，所以看总和不看块数
+    // Two tiles can always move in some direction; where the new tile lands and whether it merges depends on the seed, so check the sum, not the count
     expect((['up', 'left', 'right', 'down'] as const).some((d) => move(t, d))).toBe(true);
-    expect(t.board.reduce((n, v) => n + v, 0)).toBeGreaterThan(sumBefore); // 第二步又生了一块
-    expect(t.seed).not.toBe(seedAfterFirst); // 种子在推进
+    expect(t.board.reduce((n, v) => n + v, 0)).toBeGreaterThan(sumBefore); // the second move spawned again
+    expect(t.seed).not.toBe(seedAfterFirst); // the seed advanced
   });
 
-  it('SIZE 恒为 4（渲染层依赖）', () => {
+  it('SIZE is always 4 (the renderer depends on it)', () => {
     expect(SIZE).toBe(4);
   });
 
-  it('undo 可从 won 退回 playing，重新合出 2048 会再次胜利', () => {
+  it('undo returns from won to playing; making 2048 again wins again', () => {
     const s = createState(seq(0, 0, 0, 0));
     s.board = emptyBoard();
     s.board[0] = 1024; s.board[1] = 1024;
@@ -180,10 +180,10 @@ describe('2048 logic', () => {
     expect(undo(s)).toBe(true);
     expect(s.status).toBe('playing');
     move(s, 'left', seq(0, 0));
-    expect(s.status).toBe('won'); // 未曾选择继续，再次达成应再次提示
+    expect(s.status).toBe('won'); // never chose to continue, so reaching it again prompts again
   });
 
-  it('非 playing 状态下 move 被拒绝', () => {
+  it('move is rejected outside playing', () => {
     const s = createState(seq(0, 0, 0, 0));
     s.board = emptyBoard();
     s.board[0] = 1024; s.board[1] = 1024;

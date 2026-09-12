@@ -3,14 +3,14 @@ import { describe, it, expect } from 'vitest';
 import { swipeDirection, InputService } from '../src/core/input';
 
 describe('swipeDirection', () => {
-  it('位移小于阈值返回 null', () => {
+  it('movement below the threshold returns null', () => {
     expect(swipeDirection(10, 10)).toBeNull();
   });
-  it('水平位移大则判左右', () => {
+  it('larger horizontal movement means left/right', () => {
     expect(swipeDirection(80, 20)).toBe('right');
     expect(swipeDirection(-80, 20)).toBe('left');
   });
-  it('垂直位移大则判上下', () => {
+  it('larger vertical movement means up/down', () => {
     expect(swipeDirection(20, 80)).toBe('down');
     expect(swipeDirection(20, -80)).toBe('up');
   });
@@ -23,7 +23,7 @@ function keydown(code: string): KeyboardEvent {
 }
 
 describe('onKey', () => {
-  it('方向键与空格阻止默认行为（否则机柜高于视口时页面会跟着滚）', () => {
+  it('arrows and Space prevent the default (or the page scrolls when the cabinet is taller than the viewport)', () => {
     const input = new InputService();
     input.onKey(() => {});
     expect(keydown('ArrowDown').defaultPrevented).toBe(true);
@@ -31,7 +31,7 @@ describe('onKey', () => {
     input.dispose();
   });
 
-  it('字母键不阻止默认行为（Cmd+R 之类的浏览器快捷键要放行）', () => {
+  it('letter keys keep the default (browser shortcuts like Cmd+R must pass)', () => {
     const input = new InputService();
     input.onKey(() => {});
     expect(keydown('KeyR').defaultPrevented).toBe(false);
@@ -40,7 +40,7 @@ describe('onKey', () => {
 });
 
 describe('onBlur', () => {
-  it('窗口失焦时触发，dispose 后不再触发', () => {
+  it('fires on window blur, not after dispose', () => {
     const input = new InputService();
     let hit = 0;
     input.onBlur(() => { hit += 1; });

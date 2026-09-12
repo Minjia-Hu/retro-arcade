@@ -18,7 +18,7 @@ function defaultBackend(): KVBackend {
     ls.removeItem('arcade.__probe');
     return ls;
   } catch {
-    // 隐私模式等场景下 localStorage 不可用，降级为内存存储
+    // localStorage is unavailable in private mode and similar; fall back to memory
     return memoryBackend();
   }
 }
@@ -39,7 +39,7 @@ export class ArcadeStorage {
     try {
       this.backend.setItem(`arcade.${key}`, JSON.stringify(value));
     } catch {
-      // 写入失败不影响游戏
+      // a failed write must not affect the game
     }
   }
 }

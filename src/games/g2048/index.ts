@@ -9,7 +9,7 @@ const CELL = 71;
 const W = L.SIZE * CELL + (L.SIZE + 1) * PAD; // 4*71 + 5*8 = 324
 const H = W;
 
-/** 纸盘配色（设计稿 2d 的 T 对象） */
+/** Paper palette (the T object in mockup 2d) */
 const WELL = '#efe5d3';
 const EMPTY_LINE = '#ddd1bc';
 const INK = '#2b2118';
@@ -49,7 +49,7 @@ export function createG2048(): Game {
   let shownBest = '';
   let shownUndoOff: boolean | null = null;
 
-  /** 浮层盖住棋盘时，输入整体冻结（照 SUDOKU 的 frozen() 写法） */
+  /** All input freezes while an overlay covers the board (same frozen() as SUDOKU) */
   function frozen(): boolean {
     return paused || Boolean(ctx?.overlayOpen());
   }
@@ -70,26 +70,28 @@ export function createG2048(): Game {
     shownUndoOff = null;
   }
 
-  /** 每帧同步；只在值变了才写 DOM */
+  /** Synced every frame; writes the DOM only when a value changed */
   function syncHead(): void {
     if (!head) return;
     const s = padScore(state.score, 6);
     if (s !== shownScore) { shownScore = s; head.score.textContent = s; }
     const b = padScore(best, 6);
     if (b !== shownBest) { shownBest = b; head.best.textContent = b; }
-    // 浮层开着时 doUndo 会被 frozen 挡下，按钮却仍显示可用——头栏在 .screen 之外点得到，
-    // 点了没反应也没反馈。禁用态一并反映 frozen，顺便补上这个函数里唯一漏掉的缓存
+    // With an overlay open, doUndo is blocked by frozen() but the button still looked enabled — the
+    // head bar sits outside .screen and is clickable, so clicks did nothing with no feedback.
+    // The disabled state now reflects frozen() too, and this was the one uncached value here
     const off = !state.prev || frozen();
     if (off !== shownUndoOff) { shownUndoOff = off; head.undo.disabled = off; }
   }
 
   /**
-   * 结算浮层期间 Space / 点画布 = ▶ NEW GAME。只认 over：2048! 浮层是 KEEP GOING /
-   * NEW GAME 二选一，不该由空格替玩家决定。返回是否已消费这次输入。
+   * While the result overlay is up, Space / a canvas tap = ▶ NEW GAME. Only for `over`: the
+   * 2048! overlay is a KEEP GOING / NEW GAME choice that Space must not make for the player.
+   * Returns whether the input was consumed.
    */
   function restartIfEnded(): boolean {
     if (!ctx?.overlayOpen() || state.status !== 'over') return false;
-    if (performance.now() - endedAt >= 400) newGame(); // 结束瞬间常有连点
+    if (performance.now() - endedAt >= 400) newGame(); // inputs pile up at the moment the game ends
     return true;
   }
 
@@ -110,8 +112,8 @@ export function createG2048(): Game {
           {
             label: '▶ KEEP GOING',
             onPress: () => {
-              // logic.ts 的 move() 在 status !== 'playing' 时直接拒绝移动，
-              // 光收浮层不够——必须显式把状态切回 playing，否则棋盘会卡死。
+              // logic.ts' move() refuses to move unless status is 'playing'; dismissing the
+              // overlay isn't enough — the status must be switched back or the board is stuck.
               L.continueAfterWin(state);
               ctx?.overlay(null);
             },
@@ -170,7 +172,7 @@ export function createG2048(): Game {
     g.beginPath();
     g.roundRect(px, py, CELL, CELL, 8);
     g.fill();
-    // ≤4 用软描边，≥8 用墨色描边（设计稿 2d）
+    // ≤4 gets a soft stroke, ≥8 an ink stroke (mockup 2d)
     g.strokeStyle = v <= 4 ? EMPTY_LINE : INK;
     g.lineWidth = 2;
     g.beginPath();
@@ -217,7 +219,7 @@ export function createG2048(): Game {
       ctx.onTool('new', newGame);
 
       ctx.input.onSwipe(canvas, doMove);
-      ctx.input.onTapAt(canvas, () => { restartIfEnded(); }); // 与 onSwipe 互斥：<10px 才算点按
+      ctx.input.onTapAt(canvas, () => { restartIfEnded(); }); // exclusive with onSwipe: a tap is <10px of movement
       ctx.input.onKey((code) => {
         if ((code === 'Space' || code === 'Enter') && restartIfEnded()) return;
         if (frozen()) return;
@@ -226,7 +228,7 @@ export function createG2048(): Game {
         else if (code === 'KeyZ') doUndo();
       });
 
-      loop = new GameLoop(() => {}, render); // 无时间模拟，仅驱动渲染
+      loop = new GameLoop(() => {}, render); // no simulation, just drives rendering
       loop.start();
     },
 
@@ -247,7 +249,7 @@ export function createG2048(): Game {
       canvas = null;
       g = null;
       head = null;
-      ctx = null; // 事件监听由 frame 的 InputService.dispose() 统一清理
+      ctx = null; // listeners are cleaned up by frame's InputService.dispose()
     },
   };
 }

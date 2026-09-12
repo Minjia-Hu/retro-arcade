@@ -4,7 +4,7 @@ export class GameLoop {
   private running = false;
   private paused = false;
   private last = 0;
-  private hasBase = false; // 是否已建立时间基准（不能用 last===0 当哨兵：真实时间戳可能恰为 0）
+  private hasBase = false; // whether a time base exists (last===0 can't be the sentinel: a real timestamp can be exactly 0)
 
   constructor(
     private update: (dt: number) => void,
@@ -13,7 +13,7 @@ export class GameLoop {
   ) {}
 
   start(): void {
-    if (this.running) return; // 防重入：避免叠加并行 rAF 链
+    if (this.running) return; // re-entrancy guard: never stack parallel rAF chains
     this.running = true;
     this.paused = false;
     this.hasBase = false;
@@ -30,7 +30,7 @@ export class GameLoop {
 
   resume(): void {
     this.paused = false;
-    this.hasBase = false; // 重建时间基准，避免暂停时长被算进 dt
+    this.hasBase = false; // rebuild the time base so the paused span isn't counted in dt
   }
 
   private frame = (t: number): void => {

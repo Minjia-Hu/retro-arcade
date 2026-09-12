@@ -1,10 +1,10 @@
-// 网格坐标系：20 × 30 格，渲染层负责像素化（320×480 / 16px 格）
+// Grid space: 20 × 30 cells; the renderer maps to pixels (320×480 / 16px cells)
 export const COLS = 20;
 export const ROWS = 30;
 
-const BASE_INTERVAL = 0.16; // 秒/步
+const BASE_INTERVAL = 0.16; // seconds per step
 const MIN_INTERVAL = 0.07;
-const SPEEDUP = 0.002; // 每分缩短的秒数；45 分到封顶（0.004 时 23 分就到，休闲玩家还没死就已是极限速）
+const SPEEDUP = 0.002; // seconds shaved per apple; hits the floor at 45 (at 0.004 it hit at 23 — top speed before a casual game even ends)
 
 export type Dir = 'up' | 'down' | 'left' | 'right';
 export type SnakeStatus = 'ready' | 'playing' | 'dead';
@@ -15,9 +15,9 @@ export interface Cell {
 }
 
 export interface SnakeState {
-  snake: Cell[]; // [0] 为蛇头
-  dir: Dir; // 当前实际方向（本步生效）
-  nextDir: Dir; // 玩家最新输入（下一步生效）
+  snake: Cell[]; // [0] is the head
+  dir: Dir; // actual direction this step
+  nextDir: Dir; // latest player input, applied next step
   food: Cell;
   score: number;
   status: SnakeStatus;
@@ -43,7 +43,7 @@ export function stepInterval(score: number): number {
 }
 
 export function spawnFood(snake: Cell[], rand: () => number): Cell {
-  // 收集全部空闲格再随机取，保证永不落在蛇身上
+  // Collect every free cell first, then pick: food never lands on the snake
   const occupied = new Set(snake.map((c) => `${c.x},${c.y}`));
   const free: Cell[] = [];
   for (let y = 0; y < ROWS; y++) {
@@ -51,7 +51,7 @@ export function spawnFood(snake: Cell[], rand: () => number): Cell {
       if (!occupied.has(`${x},${y}`)) free.push({ x, y });
     }
   }
-  return free[Math.floor(rand() * free.length)] ?? { x: 0, y: 0 }; // 兜底：蛇占满全场需 597 分、实际不可达，不做胜利终局（有意取舍）
+  return free[Math.floor(rand() * free.length)] ?? { x: 0, y: 0 }; // fallback: filling the board takes 597 apples and never happens in practice, so no win state (deliberate)
 }
 
 export function createState(rand: () => number = Math.random): SnakeState {
@@ -69,12 +69,12 @@ export function createState(rand: () => number = Math.random): SnakeState {
 
 export function setDirection(s: SnakeState, dir: Dir): void {
   if (s.status === 'dead') return;
-  if (dir === OPPOSITE[s.dir]) return; // 禁止 180° 掉头
+  if (dir === OPPOSITE[s.dir]) return; // no 180° turns
   s.nextDir = dir;
   if (s.status === 'ready') s.status = 'playing';
 }
 
-/** 推进 dt 秒；按固定步进间隔移动，与渲染帧率解耦 */
+/** Advance dt seconds; moves on a fixed step interval, decoupled from the render frame rate */
 export function tick(s: SnakeState, dt: number, rand: () => number = Math.random): StepEvents {
   const ev: StepEvents = { ate: false, died: false };
   if (s.status !== 'playing') return ev;
@@ -102,7 +102,7 @@ function step(s: SnakeState, rand: () => number): StepEvents {
   }
 
   const willEat = nx === s.food.x && ny === s.food.y;
-  // 不吃时尾巴本步会移开，走进尾巴格合法；吃则全身保留
+  // When not eating, the tail moves away this step, so entering its cell is legal; when eating, the whole body stays
   const blocking = willEat ? s.snake : s.snake.slice(0, -1);
   if (blocking.some((c) => c.x === nx && c.y === ny)) {
     s.status = 'dead';

@@ -2,20 +2,21 @@ import { describe, it, expect } from 'vitest';
 import { GAMES } from '../src/games/registry';
 
 /**
- * registry 的 meta 与游戏模块内的 meta 是两份手写副本（懒加载需要）。
- * 首页卡片读 registry 那份，机柜顶栏读模块那份——不一致会静默分叉。
+ * The registry's meta and each game module's meta are two hand-written copies (lazy loading
+ * needs it). The hub card reads the registry's, the cabinet top bar reads the module's — a
+ * mismatch forks silently.
  */
-describe('registry 与游戏模块的 meta 一致', () => {
-  it('每个游戏加载后，id / name / icon / displayName 都对得上', async () => {
+describe('registry meta matches the game modules', () => {
+  it('after loading, id / name / icon / displayName all match', async () => {
     for (const entry of GAMES) {
       if (!entry.load) continue;
       const game = await entry.load();
       const from = entry.meta;
       const to = game.meta;
-      expect(to.id, `${from.id} 的 id`).toBe(from.id);
-      expect(to.name, `${from.id} 的 name`).toBe(from.name);
-      expect(to.icon, `${from.id} 的 icon`).toBe(from.icon);
-      expect(to.displayName, `${from.id} 的 displayName`).toBe(from.displayName);
+      expect(to.id, `id of ${from.id}`).toBe(from.id);
+      expect(to.name, `name of ${from.id}`).toBe(from.name);
+      expect(to.icon, `icon of ${from.id}`).toBe(from.icon);
+      expect(to.displayName, `displayName of ${from.id}`).toBe(from.displayName);
     }
   });
 });

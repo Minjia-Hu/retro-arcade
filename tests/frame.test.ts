@@ -14,7 +14,7 @@ globalThis.ResizeObserver = class {
 function fakeGame(meta: Partial<GameMeta> = {}): { game: Game; ctx: () => GameContext } {
   let captured: GameContext | null = null;
   const game: Game = {
-    meta: { id: 'snake', name: '贪吃蛇', icon: '🐍', hints: ['PLAY HINT'], ...meta },
+    meta: { id: 'snake', name: 'Snake', icon: '🐍', hints: ['PLAY HINT'], ...meta },
     mount(_host, context) { captured = context; },
     pause() {},
     resume() {},
@@ -39,17 +39,17 @@ function mount(meta?: Partial<GameMeta>) {
 const hints = (root: HTMLElement) => root.querySelector('.cab-hints')?.textContent ?? '';
 
 beforeEach(() => { document.body.innerHTML = ''; });
-// 必须真的 close：InputService.onKey 绑的是 window，只清 body 不解绑。
-// 今天的假游戏不监听输入所以无害，但第一个监听键盘的用例会开始跨用例叠加。
+// Must really close: InputService.onKey binds to window, and clearing body doesn't unbind.
+// Today's fake game listens to nothing, but the first keyboard-listening case would start leaking across cases.
 afterEach(() => { opened.splice(0).forEach((f) => f.close()); });
 
-describe('提示条', () => {
-  it('挂载时用 meta.hints', () => {
+describe('hint bar', () => {
+  it('uses meta.hints on mount', () => {
     const { root } = mount();
     expect(hints(root)).toContain('PLAY HINT');
   });
 
-  it('setHints 覆写，浮层收起后还原成它而非 meta.hints', () => {
+  it('setHints overrides; after the overlay closes it is restored, not meta.hints', () => {
     const { root, ctx } = mount();
     ctx.setHints(['LIVE 42']);
     expect(hints(root)).toContain('LIVE 42');
@@ -61,7 +61,7 @@ describe('提示条', () => {
     expect(hints(root)).toContain('LIVE 42');
   });
 
-  it('结算态优先：浮层展示期间 setHints 不冲掉浮层提示', () => {
+  it('overlay state wins: setHints while the overlay is up does not clobber its hints', () => {
     const { root, ctx } = mount();
     ctx.overlay({ title: 'X', tone: 'lose', lines: [], actions: [{ label: 'A', onPress: () => {} }], hints: ['OVER HINT'] });
     ctx.setHints(['LIVE 42']);
@@ -71,8 +71,8 @@ describe('提示条', () => {
   });
 });
 
-describe('浮层', () => {
-  it('多个动作各自绑定，点击调用对应回调', () => {
+describe('overlay', () => {
+  it('multiple actions bind separately; a click calls its own callback', () => {
     const { root, ctx } = mount();
     const hit: string[] = [];
     ctx.overlay({
@@ -83,7 +83,7 @@ describe('浮层', () => {
     expect(hit).toEqual(['B']);
   });
 
-  it('close 收起浮层', () => {
+  it('close dismisses the overlay', () => {
     const { root, frame, ctx } = mount();
     ctx.overlay({ title: 'X', tone: 'lose', lines: [], actions: [{ label: 'A', onPress: () => {} }] });
     expect(root.querySelector('.settle-card')).not.toBeNull();
@@ -92,14 +92,14 @@ describe('浮层', () => {
   });
 });
 
-describe('顶栏', () => {
-  it('pausable 为 false 时没有暂停按钮', () => {
+describe('top bar', () => {
+  it('pausable: false has no pause button', () => {
     const { root } = mount({ pausable: false });
     expect(root.querySelector('[data-act="pause"]')).toBeNull();
     expect(root.querySelector('[data-act="mute"]')).not.toBeNull();
   });
 
-  it('浮层开着时 overlayOpen 为真，收起后为假', () => {
+  it('overlayOpen is true while open, false after dismiss', () => {
     const { ctx } = mount();
     expect(ctx.overlayOpen()).toBe(false);
     ctx.overlay({ title: 'X', tone: 'win', lines: [], actions: [{ label: 'A', onPress: () => {} }] });
@@ -108,10 +108,10 @@ describe('顶栏', () => {
     expect(ctx.overlayOpen()).toBe(false);
   });
 
-  it('浮层不带 hints 时，游戏调 setHints 也不改写屏幕', () => {
+  it('with an overlay that has no hints, setHints from the game still does not touch the screen', () => {
     const { root, ctx } = mount();
     ctx.setHints(['LIVE 1']);
-    // 这个浮层没有 hints —— 早先用 settleHints===null 判优先级时，这里会被冲掉
+    // This overlay has no hints — back when priority was judged by settleHints===null, this got clobbered
     ctx.overlay({ title: 'X', tone: 'win', lines: [], actions: [{ label: 'A', onPress: () => {} }] });
     ctx.setHints(['LIVE 2']);
     expect(hints(root)).toContain('LIVE 1');
@@ -119,18 +119,18 @@ describe('顶栏', () => {
     expect(hints(root)).toContain('LIVE 2');
   });
 
-  it('onTool 绑定声明过的工具按钮', () => {
-    const { root, ctx } = mount({ tools: [{ id: 'menu', label: '☰', aria: '菜单' }] });
+  it('onTool binds a declared tool button', () => {
+    const { root, ctx } = mount({ tools: [{ id: 'menu', label: '☰', aria: 'Menu' }] });
     let hit = 0;
     ctx.onTool('menu', () => { hit += 1; });
     root.querySelector<HTMLButtonElement>('[data-act="tool:menu"]')!.click();
     expect(hit).toBe(1);
   });
 
-  it('setPill 改写药丸并控制显隐', () => {
+  it('setPill writes the pill and toggles its visibility', () => {
     const { root, ctx } = mount();
     const pill = root.querySelector<HTMLElement>('.cab-pill')!;
-    expect(pill.hidden).toBe(true); // 起手隐藏，内容只能来自 setPill
+    expect(pill.hidden).toBe(true); // hidden at first; content only comes from setPill
     ctx.setPill('EASY');
     expect(pill.textContent).toBe('EASY');
     ctx.setPill('HARD');
@@ -140,22 +140,22 @@ describe('顶栏', () => {
   });
 });
 
-describe('插槽', () => {
-  it('按 meta 提供 side / pad，否则为 null', () => {
+describe('slots', () => {
+  it('provides side / pad per meta, otherwise null', () => {
     expect(mount().ctx.side).toBeNull();
     expect(mount().ctx.pad).toBeNull();
     expect(mount({ side: true }).ctx.side).not.toBeNull();
     expect(mount({ pad: true }).ctx.pad).not.toBeNull();
   });
 
-  it('按 meta 提供 head，否则为 null', () => {
+  it('provides head per meta, otherwise null', () => {
     expect(mount().ctx.head).toBeNull();
     expect(mount({ head: true }).ctx.head).not.toBeNull();
   });
 });
 
-describe('浮层与暂停', () => {
-  it('浮层开着时暂停按钮禁用，收起后恢复', () => {
+describe('overlay and pause', () => {
+  it('the pause button is disabled while an overlay is open, restored after', () => {
     const { root, ctx } = mount();
     const pause = root.querySelector<HTMLButtonElement>('[data-act="pause"]')!;
     expect(pause.disabled).toBe(false);
@@ -165,15 +165,15 @@ describe('浮层与暂停', () => {
     expect(pause.disabled).toBe(false);
   });
 
-  it('浮层空白区不拦截指针，卡片本身拦截', () => {
-    // 深色屏四款的「TAP TO RETRY」靠画布自己的 onTap；.settle 若吃掉指针事件，手机上就点不着
+  it('the overlay backdrop passes pointer events, the card catches them', () => {
+    // The dark-screen games' TAP TO RETRY relies on the canvas's own onTap; if .settle swallowed pointer events, phones couldn't tap it
     expect(css).toMatch(/\.settle\s*\{[^}]*pointer-events:\s*none/);
     expect(css).toMatch(/\.settle-card\s*\{[^}]*pointer-events:\s*auto/);
   });
 });
 
 describe('close', () => {
-  it('清空 head / side / pad，不给下一次 open 之前留下死按钮', () => {
+  it('empties head / side / pad so no dead buttons linger before the next open', () => {
     const { root, frame, ctx } = mount({ head: true, side: true, pad: true });
     ctx.head!.innerHTML = '<button>H</button>';
     ctx.side!.innerHTML = '<span>S</span>';

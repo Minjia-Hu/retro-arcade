@@ -5,7 +5,7 @@ import {
 } from '../src/games/breakout/logic';
 
 describe('breakout logic', () => {
-  it('初始状态：ready、3 命、第 1 关、40 块砖、球贴板', () => {
+  it('initial state: ready, 3 lives, level 1, 40 bricks, ball on the paddle', () => {
     const s = createState();
     expect(s.status).toBe('ready');
     expect(s.lives).toBe(3);
@@ -15,7 +15,7 @@ describe('breakout logic', () => {
     expect(s.ballX).toBe(s.paddleX);
   });
 
-  it('movePaddle 两侧钳制', () => {
+  it('movePaddle clamps at both edges', () => {
     const s = createState();
     movePaddle(s, -100);
     expect(s.paddleX).toBe(PADDLE_W / 2);
@@ -23,13 +23,13 @@ describe('breakout logic', () => {
     expect(s.paddleX).toBe(W - PADDLE_W / 2);
   });
 
-  it('ready 状态下移板带着球走', () => {
+  it('moving the paddle while ready carries the ball', () => {
     const s = createState();
     movePaddle(s, 100);
     expect(s.ballX).toBe(100);
   });
 
-  it('launch 后 playing、球向上、速度模长为 speedFor(level)', () => {
+  it('after launch: playing, ball going up, speed equals speedFor(level)', () => {
     const s = createState();
     launch(s);
     expect(s.status).toBe('playing');
@@ -37,13 +37,13 @@ describe('breakout logic', () => {
     expect(Math.hypot(s.vx, s.vy)).toBeCloseTo(speedFor(1), 5);
   });
 
-  it('球速在第 7 关封顶：键盘挡板 300px/s，再快就物理上追不上', () => {
+  it('ball speed caps at level 7: the keyboard paddle moves at 300px/s and cannot keep up beyond that', () => {
     expect(speedFor(6)).toBeLessThan(speedFor(7));
     expect(speedFor(7)).toBe(speedFor(20));
-    expect(speedFor(7) * 0.8).toBeLessThanOrEqual(320); // 最大水平分量与挡板速度相当
+    expect(speedFor(7) * 0.8).toBeLessThanOrEqual(320); // max horizontal component comparable to the paddle speed
   });
 
-  it('发球朝空间大的一侧：挡板在左半场向右发，在右半场向左发', () => {
+  it('serves toward the open side: right from the left half, left from the right half', () => {
     const l = createState();
     movePaddle(l, 100);
     launch(l);
@@ -55,14 +55,14 @@ describe('breakout logic', () => {
     expect(Math.hypot(r.vx, r.vy)).toBeCloseTo(speedFor(1), 5);
   });
 
-  it('ready 状态下 tick 球不动', () => {
+  it('tick while ready does not move the ball', () => {
     const s = createState();
     tick(s, 1);
     expect(s.ballX).toBe(s.paddleX);
     expect(s.ballY).toBe(PADDLE_Y - BALL_R);
   });
 
-  it('左墙反弹', () => {
+  it('bounces off the left wall', () => {
     const s = createState();
     launch(s);
     s.ballX = BALL_R + 1;
@@ -73,7 +73,7 @@ describe('breakout logic', () => {
     expect(s.vx).toBeGreaterThan(0);
   });
 
-  it('顶墙反弹', () => {
+  it('bounces off the ceiling', () => {
     const s = createState();
     launch(s);
     s.ballX = 200;
@@ -84,7 +84,7 @@ describe('breakout logic', () => {
     expect(s.vy).toBeGreaterThan(0);
   });
 
-  it('挡板反弹角度随击中位置：左半出左、右半出右，且速度模长不变', () => {
+  it('paddle bounce angle follows the hit position: left half goes left, right half goes right, speed unchanged', () => {
     const left = createState();
     launch(left);
     left.ballX = left.paddleX - PADDLE_W / 4;
@@ -106,7 +106,7 @@ describe('breakout logic', () => {
     expect(right.vx).toBeGreaterThan(0);
   });
 
-  it('碎砖：计分、砖失效、反弹、报事件', () => {
+  it('breaking a brick: scores, kills the brick, bounces, reports the event', () => {
     const s = createState();
     launch(s);
     const b = s.bricks[0];
@@ -120,7 +120,7 @@ describe('breakout logic', () => {
     expect(s.score).toBe(b.points);
   });
 
-  it('落底丢命：命-1、回 ready、球重新贴板', () => {
+  it('falling out: lives-1, back to ready, ball back on the paddle', () => {
     const s = createState();
     launch(s);
     s.ballY = H + 10;
@@ -132,7 +132,7 @@ describe('breakout logic', () => {
     expect(s.ballX).toBe(s.paddleX);
   });
 
-  it('最后一命落底判负', () => {
+  it('losing the last life is game over', () => {
     const s = createState();
     launch(s);
     s.lives = 1;
@@ -143,7 +143,7 @@ describe('breakout logic', () => {
     expect(s.status).toBe('over');
   });
 
-  it('清关：进入下一关、棋盘格布局 20 块、回 ready', () => {
+  it('level clear: next level, checkerboard of 20 bricks, back to ready', () => {
     const s = createState();
     launch(s);
     for (const b of s.bricks) b.alive = false;
@@ -161,11 +161,11 @@ describe('breakout logic', () => {
     expect(s.status).toBe('ready');
   });
 
-  it('球速随关卡递增；三种布局循环', () => {
+  it('speed rises with level; three layouts cycle', () => {
     expect(speedFor(2)).toBeGreaterThan(speedFor(1));
-    expect(makeBricks(1)).toHaveLength(40); // 满阵
-    expect(makeBricks(2)).toHaveLength(20); // 棋盘格
-    expect(makeBricks(3)).toHaveLength(20); // 倒金字塔
-    expect(makeBricks(4)).toHaveLength(40); // 循环回满阵
+    expect(makeBricks(1)).toHaveLength(40); // full grid
+    expect(makeBricks(2)).toHaveLength(20); // checkerboard
+    expect(makeBricks(3)).toHaveLength(20); // inverted pyramid
+    expect(makeBricks(4)).toHaveLength(40); // back to the full grid
   });
 });
