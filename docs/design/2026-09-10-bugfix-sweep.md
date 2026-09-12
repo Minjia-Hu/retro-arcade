@@ -69,4 +69,4 @@
 重复代码（`padScore` 两份、`frozen()` 四份、GAME OVER 浮层四份、gomoku 菜单与
 `difficulty-menu.ts` 重复）、纸盘四款 60fps 驱动静态盘面、每帧分配、DPR 变化不重设画布、
 CI / 部署 / lint、依赖大版本落后、`index.html` 缺 favicon 等。清单见
-`docs/superpowers/plans/2026-09-10-bugfix-sweep.md` 末尾。
+本文「后续」一节。

@@ -121,7 +121,7 @@ src/
 2. Register it in `src/games/registry.ts` — the hub card, the accent color and the route appear on their own.
 3. Add an 8×8 pixel icon in `src/shell/pixel-icons.ts` and a `tests/<id>-logic.test.ts`.
 
-Conventions, the design docs and the testing rules are in [CONTRIBUTING.md](CONTRIBUTING.md).
+Conventions and the testing rules are in [CONTRIBUTING.md](CONTRIBUTING.md). The per-feature design docs in `docs/design/` are written in Chinese.
 
 ## License
 

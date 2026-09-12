@@ -3,5 +3,5 @@ dist/
 test-results/
 playwright-report/
 .DS_Store
-# 设计参考资料，不属于仓库
-design_handoff_*/
+# implementation plans are local scaffolding; the design decisions live in docs/design/
+docs/plans/

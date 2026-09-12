@@ -4,7 +4,8 @@
 
 ## 工作流
 
-改动前先写 spec 再写 plan，放进 `docs/superpowers/{specs,plans}/`，命名 `YYYY-MM-DD-<主题>.md`。
+改动前先写 spec 再写 plan，命名 `YYYY-MM-DD-<主题>.md`。spec 进仓库：`docs/design/`；
+plan 是施工脚手架（大段代码转录），**只放本地** `docs/plans/`（已 gitignore），不提交。
 范围决策、刻意的取舍、与设计稿的偏离都记在 spec 里——不记的话下一个人（或下一个会话）
 会把它们当 bug「修」回去。
 
@@ -87,6 +88,7 @@ npx tsc --noEmit # 类型检查
 npm run build    # tsc + vite build
 ```
 
-## 未跟踪的目录
+## 本地目录（已 gitignore，不进仓库）
 
-`design_handoff_*/` 是设计参考资料，**不要提交**。用 `git add` 时避开它们，别用 `git add -A`。
+- `design_handoff_*/` — 设计参考资料（artboard 与 handoff 说明），硬约定 4 引用的就是它。
+- `docs/plans/` — 实现计划，施工脚手架。

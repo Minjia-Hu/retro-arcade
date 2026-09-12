@@ -7,9 +7,9 @@ was learned the hard way. The same rules, with more war stories, live in `CLAUDE
 
 Every round of work in this repo starts with a short design note, then a plan, then code:
 
-- `docs/superpowers/specs/YYYY-MM-DD-<topic>.md` — what to build, scope decisions, deliberate
+- `docs/design/YYYY-MM-DD-<topic>.md` — what to build, scope decisions, deliberate
   trade-offs, and where the result departs from the mockups and why.
-- `docs/superpowers/plans/YYYY-MM-DD-<topic>.md` — the implementation broken into independently
+- `docs/plans/YYYY-MM-DD-<topic>.md` (local only, gitignored) — the implementation broken into independently
   verifiable tasks.
 
 Scope decisions and "why we didn't do the obvious thing" go in the spec. Otherwise the next person
