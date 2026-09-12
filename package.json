@@ -10,7 +10,7 @@
   },
   "homepage": "https://minjia-hu.github.io/retro-arcade/",
   "engines": {
-    "node": ">=18"
+    "node": "^20.19.0 || >=22.12.0"
   },
   "type": "module",
   "scripts": {
@@ -22,10 +22,10 @@
     "demos": "node scripts/record-games.mjs"
   },
   "devDependencies": {
-    "@playwright/test": "^1.46.0",
-    "jsdom": "^29.1.1",
+    "@playwright/test": "^1.63.0",
+    "jsdom": "^30.0.1",
     "typescript": "^5.5.0",
-    "vite": "^5.4.0",
-    "vitest": "^2.0.0"
+    "vite": "^8.3.0",
+    "vitest": "^5.0.0"
   }
 }

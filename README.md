@@ -63,7 +63,7 @@
 
 ## Run it locally
 
-Node 18+. Modern browsers only (Chrome 99+, Safari 16+, Firefox 112+).
+Node 20.19+ (or 22.12+). Modern browsers only (Chrome 99+, Safari 16+, Firefox 112+).
 
 ```bash
 git clone https://github.com/Minjia-Hu/retro-arcade.git
