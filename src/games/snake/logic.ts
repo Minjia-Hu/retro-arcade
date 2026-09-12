@@ -4,7 +4,7 @@ export const ROWS = 30;
 
 const BASE_INTERVAL = 0.16; // 秒/步
 const MIN_INTERVAL = 0.07;
-const SPEEDUP = 0.004; // 每分缩短的秒数
+const SPEEDUP = 0.002; // 每分缩短的秒数；45 分到封顶（0.004 时 23 分就到，休闲玩家还没死就已是极限速）
 
 export type Dir = 'up' | 'down' | 'left' | 'right';
 export type SnakeStatus = 'ready' | 'playing' | 'dead';

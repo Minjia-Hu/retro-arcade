@@ -8,6 +8,7 @@ export const BALL_R = 5;
 
 const BASE_SPEED = 220; // px/s
 const LEVEL_SPEED = 30; // 每关增量
+const MAX_SPEED = 400; // 第 7 关起封顶：键盘挡板 300 px/s（index.ts 的 KEY_PADDLE_SPEED），球再快就追不上
 const MAX_BOUNCE_X = 0.8; // 挡板边缘反弹的最大水平分量（占速度模长比例）
 
 export type BreakoutStatus = 'ready' | 'playing' | 'over';
@@ -45,7 +46,7 @@ export interface TickEvents {
 }
 
 export function speedFor(level: number): number {
-  return BASE_SPEED + (level - 1) * LEVEL_SPEED;
+  return Math.min(MAX_SPEED, BASE_SPEED + (level - 1) * LEVEL_SPEED);
 }
 
 /** 三种布局循环：满阵 40 块 / 棋盘格 20 块 / 倒金字塔 20 块 */
@@ -100,7 +101,8 @@ export function movePaddle(s: BreakoutState, x: number): void {
 export function launch(s: BreakoutState): void {
   if (s.status !== 'ready') return;
   const sp = speedFor(s.level);
-  s.vx = sp * 0.35;
+  // 朝空间大的一侧发：挡板在左半场向右、右半场向左。不引入随机源
+  s.vx = sp * 0.35 * (s.paddleX <= W / 2 ? 1 : -1);
   s.vy = -sp * Math.sqrt(1 - 0.35 * 0.35);
   s.status = 'playing';
 }

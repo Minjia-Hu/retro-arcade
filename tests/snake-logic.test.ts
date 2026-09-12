@@ -108,6 +108,9 @@ describe('snake logic', () => {
   it('步进间隔随分数缩短且有下限', () => {
     expect(stepInterval(0)).toBeGreaterThan(stepInterval(10));
     expect(stepInterval(500)).toBe(stepInterval(1000));
+    // 封顶不能来得太早：休闲玩家多在 10–30 分死，30 分时还得有余量；45 分才到极限速
+    expect(stepInterval(30)).toBeGreaterThan(stepInterval(1000));
+    expect(stepInterval(45)).toBe(stepInterval(1000));
   });
 
   it('spawnFood 只落在空闲格', () => {
