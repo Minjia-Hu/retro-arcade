@@ -1,25 +1,30 @@
-# Retro Arcade
+# 🕹️ Retro Arcade
+
+**8 classic games in one browser cabinet. No framework, 35 KB gzipped, fully tested.**
 
 [English](README.md) · [中文](README.zh-CN.md)
 
+[![Play](https://img.shields.io/badge/▶_Play-minjia--hu.github.io%2Fretro--arcade-e8590c?style=for-the-badge)](https://minjia-hu.github.io/retro-arcade/)
+
 [![CI](https://github.com/Minjia-Hu/retro-arcade/actions/workflows/ci.yml/badge.svg)](https://github.com/Minjia-Hu/retro-arcade/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-
-A mini arcade that runs in the browser: 8 classic games, one shared cabinet shell, no framework.
-
-- **Play it** — https://minjia-hu.github.io/retro-arcade/
-- **Stack** — Vite 5 + TypeScript 5, plain DOM + Canvas 2D. No React/Vue, no runtime dependencies.
-- **Tests** — Vitest for game logic and pure functions, Playwright for end-to-end.
-- **Privacy** — no backend, no tracking. Scores live in `localStorage`; the only external request is Google Fonts.
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6)
+![No dependencies](https://img.shields.io/badge/runtime_deps-0-2ee6c8)
 
 <p align="center">
-  <img src="docs/screenshots/hub.png" alt="Home: the Sunset Arcade hub — continue playing, daily challenge and hall of fame on top, 8 cabinet cards below" width="900">
+  <img src="docs/screenshots/hub.png" alt="The Sunset Arcade hub: continue playing, daily challenge and hall of fame on top, eight cabinet cards below" width="900">
 </p>
 
-## Games
+## Highlights
 
-All 8 games share the same cabinet shell — top bar, screen well, result overlay and key hints come from
-`src/shell/frame.ts`. A game only draws itself into the screen and fills the slots it asks for.
+- **Tiny.** The whole arcade — eight games, the Gomoku AI, the UI — ships as **35 KB gzipped**. Smaller than most single screenshots.
+- **Zero runtime dependencies.** Vite + TypeScript at build time; in the browser it's plain DOM and Canvas 2D. No React, no game engine.
+- **Every rule is a pure function.** Each game's logic has no DOM or Canvas calls, so it is tested without a browser: **265 unit tests** on the rules, **27 Playwright tests** on the UI, all in CI.
+- **Keyboard and touch, everywhere.** Swipe to steer the snake, long-press to flag a mine, tap a real button to enter a digit. Controls that need to be accessible are DOM, not pixels.
+- **A Gomoku opponent that thinks off the main thread.** Minimax with α-β pruning in a Web Worker, three strengths.
+- **No backend, no tracking.** Scores live in `localStorage`. The only network request is Google Fonts.
+
+## Games
 
 <table>
 <tr>
@@ -27,111 +32,57 @@ All 8 games share the same cabinet shell — top bar, screen well, result overla
   <td width="50%"><img src="docs/screenshots/tetris.gif" alt="Tetris" width="100%"></td>
 </tr>
 <tr>
-  <td align="center"><b>SNAKE</b></td>
-  <td align="center"><b>TETRIS</b><br><sub>side panel and touch pad are DOM, not drawn on the canvas</sub></td>
+  <td align="center"><b>SNAKE</b><br><sub>speeds up as you eat · arrows / WASD / swipe</sub></td>
+  <td align="center"><b>TETRIS</b><br><sub>7-bag, hold, hard drop · ← → ↑ ↓ Space C, or the on-screen pad</sub></td>
 </tr>
 <tr>
   <td><img src="docs/screenshots/breakout.gif" alt="Breakout" width="100%"></td>
   <td><img src="docs/screenshots/flappy.gif" alt="Flappy Bird" width="100%"></td>
 </tr>
 <tr>
-  <td align="center"><b>BREAKOUT</b></td>
-  <td align="center"><b>FLAPPY</b> · hint bar shows the live high score</td>
+  <td align="center"><b>BREAKOUT</b><br><sub>three brick layouts, ball speeds up per level · ← → / drag, Space to launch</sub></td>
+  <td align="center"><b>FLAPPY</b><br><sub>live high score in the hint bar · Space / ↑ / tap</sub></td>
 </tr>
 <tr>
   <td><img src="docs/screenshots/2048.gif" alt="2048" width="100%"></td>
   <td><img src="docs/screenshots/mines.gif" alt="Minesweeper" width="100%"></td>
 </tr>
 <tr>
-  <td align="center"><b>2048</b> · score cards and undo in the head bar</td>
-  <td align="center"><b>MINES</b></td>
+  <td align="center"><b>2048</b><br><sub>one-step undo that can't be used to reroll · arrows / swipe, Z to undo</sub></td>
+  <td align="center"><b>MINES</b><br><sub>three sizes, first click is always safe · click, long-press or right-click to flag</sub></td>
 </tr>
 <tr>
   <td><img src="docs/screenshots/sudoku.gif" alt="Sudoku" width="100%"></td>
   <td><img src="docs/screenshots/gomoku.gif" alt="Gomoku" width="100%"></td>
 </tr>
 <tr>
-  <td align="center"><b>SUDOKU</b> · the digit pad is real buttons: focusable, tabbable</td>
-  <td align="center"><b>GOMOKU</b> · five in a row, with an AI opponent</td>
+  <td align="center"><b>SUDOKU</b><br><sub>unique-solution puzzles generated on the spot, pencil notes, auto-save · tap a cell, then 1–9; N for notes</sub></td>
+  <td align="center"><b>GOMOKU</b><br><sub>two players or AI easy / medium / hard · click to place</sub></td>
 </tr>
 </table>
 
-The Gomoku AI runs in a Web Worker so it never blocks the main thread. Every game supports keyboard and
-touch. Scores persist in `localStorage` and fall back to in-memory storage in private mode.
+## Run it locally
 
-### Dark screens and paper boards
-
-The 8 games fall into two visual families:
-
-- **Dark screens** (SNAKE / TETRIS / BREAKOUT / FLAPPY) — glowing warm neon on a dark canvas, sharing
-  `SCREEN` from `src/core/theme.ts`; the screen well has an inner stroke and vignette.
-- **Paper boards** (SUDOKU / 2048 / MINES / GOMOKU) — cream paper, ink strokes. Each game keeps its own
-  `PAPER` constant in its `index.ts` (the four palettes really are different; merging them would give
-  an abstraction that fits none).
-
-Boards are always drawn on canvas. Peripheral controls — digit pad, difficulty menu, score cards,
-turn chips — are always **DOM**: tabbable, with focus rings and good touch targets, which a canvas can't give you.
-
-## Getting started
-
-Requires Node 18+. Modern browsers only (uses `roundRect`, Pointer Events, Web Workers — Chrome 99+,
-Safari 16+, Firefox 112+).
+Node 18+. Modern browsers only (Chrome 99+, Safari 16+, Firefox 112+).
 
 ```bash
+git clone https://github.com/Minjia-Hu/retro-arcade.git
+cd retro-arcade
 npm install
-npm run dev      # dev server
-npm test         # unit tests
-npm run e2e      # end-to-end tests (run `npx playwright install` once first)
-npm run build    # type-check + production build
-npm run preview  # preview the build
+npm run dev        # http://localhost:5173
 ```
-
-## Code layout
-
-```
-src/
-  core/          infrastructure with no knowledge of any specific game
-    loop.ts        variable-step game loop, dt capped at 50ms (pause/resume)
-    input.ts       keyboard, tap, swipe, drag and long-press gestures
-    audio.ts       WebAudio sound synthesis (no audio files)
-    storage.ts     localStorage wrapper, falls back to memory when unavailable
-    screen.ts      canvas creation and DPR-aware sizing
-    theme.ts       palette constants for the dark screens
-    game.ts        Game / GameMeta / GameContext interfaces
-    format.ts      score padding, difficulty labels
-  shell/         page shell
-    router.ts      hash router (#/ is the hub, #/<id> is a game)
-    hub/           home page: model (pure) / view (HTML string) / index (DOM and events)
-    frame.ts       the cabinet: top bar, screen well, result overlay, key hints
-    cabinet-view.ts  pure render functions for the cabinet
-    difficulty-menu.ts  shared difficulty overlay (Sudoku, Minesweeper)
-    pad.ts         renders a row of touch-pad buttons
-    accent.ts      accent color rotation
-    pixel-icons.ts 8×8 pixel icons → inline SVG
-    escape.ts      HTML escaping (views build HTML as strings)
-  games/<id>/
-    logic.ts       pure logic: state and rules, no DOM/Canvas, fully unit-testable
-    index.ts       rendering and input: draws logic state onto the canvas
-```
-
-### One rule that runs through everything: logic and rendering are separate
-
-Every game is split into `logic.ts` and `index.ts`. **`logic.ts` has no DOM or Canvas calls** — state
-transitions are pure functions, so it can be tested without a browser; that's where `tests/*-logic.test.ts`
-comes from. `index.ts` only draws state and translates input into logic calls.
-
-The payoff: a whole visual redesign can touch only `index.ts`, with `logic.ts` and its tests unchanged.
-"Did we accidentally change gameplay?" becomes a runnable check:
 
 ```bash
-git diff --stat <base> -- 'src/games/*/logic.ts' 'tests/*-logic.test.ts'   # should be empty
+npm test           # unit tests (Vitest)
+npm run e2e        # end-to-end (Playwright; run `npx playwright install` once)
+npm run build      # type-check + production build
 ```
 
-### How a game plugs into the cabinet
+## How it's built
 
-A game implements the `Game` interface (`src/core/game.ts`) and is mounted by `frame.ts`. The cabinet
-hands the game a `GameContext` with audio, storage, input, the result overlay and optional slots
-(head bar, side panel, touch pad):
+**One cabinet, eight games.** The shell (`src/shell/frame.ts`) owns the top bar, the screen well, the
+result overlay and the hint bar. A game implements one interface and gets a `GameContext` back:
+audio, storage, input gestures, the overlay, and optional DOM slots (head bar, side panel, touch pad).
 
 ```ts
 ctx.overlay({
@@ -141,33 +92,36 @@ ctx.overlay({
   actions: [{ label: '▶ RETRY', onPress: retry }],
   hints: ['SPACE / TAP TO RETRY'],
 });
-ctx.overlay(null);              // dismiss
-ctx.setHints(['BEST 000042']);  // replace the bottom hint bar
 ```
 
-`GameMeta` fields (`head` / `side` / `pad` / `pausable` / `hints` / `screen` / `tools`) decide what the
-cabinet renders for a game. To add a game, register it in `src/games/registry.ts` — the hub picks it up.
+**Logic and rendering never mix.** Every game is `logic.ts` + `index.ts`. `logic.ts` is state and
+rules only — no DOM, no Canvas, random sources injectable — so the whole rule set is unit-tested
+without a browser. `index.ts` draws the state and turns input into logic calls. A full visual redesign
+of this project touched only `index.ts` files; the rules and their tests didn't change by a line.
 
-## Design docs
+**Boards on canvas, controls in the DOM.** Grids and sprites are drawn; anything a person has to hit —
+digit pad, difficulty menu, undo button — is a real `<button>` with focus rings and proper touch targets.
 
-`docs/superpowers/` holds the design notes and implementation plans for every round of work:
+**Two visual families.** Dark screens (Snake, Tetris, Breakout, Flappy) glow in warm neon; paper boards
+(2048, Mines, Sudoku, Gomoku) are ink on cream. The theme is called *Sunset Arcade*: hard drop shadows,
+four rotating accent colors, 8×8 pixel icons rendered as inline SVG.
 
-- `specs/` — what to build, scope decisions, deliberate trade-offs and departures from the mockups
-- `plans/` — implementation plans broken into independently verifiable tasks
+```
+src/
+  core/      game loop, input gestures, WebAudio synth, storage, canvas sizing
+  shell/     hash router, hub page, the cabinet frame
+  games/<id>/
+    logic.ts   pure rules, fully unit-tested
+    index.ts   rendering + input
+```
 
-Writing the spec before the plan, and the plan before the code, is how this repo has always worked.
-Scope decisions and "why we didn't follow the mockup here" live in the spec; in code, comments pin the
-things that would otherwise get "fixed" back by the next person.
+## Add a game
 
-## Visual theme
+1. Create `src/games/<id>/logic.ts` (pure state + rules) and `index.ts` (implements `Game` from `src/core/game.ts`).
+2. Register it in `src/games/registry.ts` — the hub card, the accent color and the route appear on their own.
+3. Add an 8×8 pixel icon in `src/shell/pixel-icons.ts` and a `tests/<id>-logic.test.ts`.
 
-The theme is **Sunset Arcade**: cream paper, ink strokes with hard drop shadows, four warm accent colors
-in rotation, and CSS-drawn pixel icons (one 8×8 grid per game, rendered as inline SVG).
-
-**The single source of truth for the page palette is `:root` in `src/styles/arcade.css`**; TypeScript
-holds only the values JavaScript has to inline. Canvas colors are a separate matter — see "Dark screens
-and paper boards" above. Values that exist on both sides (the four accents, `--screen-ground`) carry
-cross-reference comments in both places.
+Conventions, the design docs and the testing rules are in [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## License
 

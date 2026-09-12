@@ -1,25 +1,30 @@
-# Retro Arcade · 复古街机
+# 🕹️ Retro Arcade · 复古街机
+
+**8 个经典小游戏装进一台浏览器机柜。无框架，打包后 35 KB，全量测试。**
 
 [English](README.md) · [中文](README.zh-CN.md)
 
+[![Play](https://img.shields.io/badge/▶_在线试玩-minjia--hu.github.io%2Fretro--arcade-e8590c?style=for-the-badge)](https://minjia-hu.github.io/retro-arcade/)
+
 [![CI](https://github.com/Minjia-Hu/retro-arcade/actions/workflows/ci.yml/badge.svg)](https://github.com/Minjia-Hu/retro-arcade/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-
-一个跑在浏览器里的迷你街机厅：8 个原生实现的小游戏，一个统一的机柜外壳，无前端框架。
-
-- **在线试玩** — https://minjia-hu.github.io/retro-arcade/
-- **技术栈** — Vite 5 + TypeScript 5，DOM 直出 + Canvas 2D，无 React/Vue 等框架，无运行时依赖
-- **测试** — Vitest 单测（游戏逻辑与纯函数）+ Playwright 端到端
-- **隐私** — 无后端、无追踪。成绩只存在 `localStorage`，唯一的外部请求是 Google Fonts
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178c6)
+![No dependencies](https://img.shields.io/badge/runtime_deps-0-2ee6c8)
 
 <p align="center">
-  <img src="docs/screenshots/hub.png" alt="首页：Sunset Arcade 主题的游戏大厅，上方是继续游玩、每日挑战与名人堂，下方是 8 个机柜卡片" width="900">
+  <img src="docs/screenshots/hub.png" alt="Sunset Arcade 首页：上方是继续游玩、每日挑战与名人堂，下方是 8 个机柜卡片" width="900">
 </p>
 
-## 游戏
+## 亮点
 
-8 个游戏共用同一个机柜外壳——顶栏、屏幕井、结算浮层、按键提示条都由 `src/shell/frame.ts`
-统一提供，游戏只管把自己画进屏幕里、把控件填进插槽里。
+- **小。** 整个街机厅——8 个游戏、五子棋 AI、全部界面——打包后 **gzip 35 KB**，比一张普通截图还小。
+- **零运行时依赖。** 构建期用 Vite + TypeScript；浏览器里只有原生 DOM 和 Canvas 2D。没有 React，没有游戏引擎。
+- **每条规则都是纯函数。** 每个游戏的逻辑不碰 DOM 和 Canvas，可以脱离浏览器测试：规则层 **265 条单测**，界面层 **27 条 Playwright 端到端**，全部跑在 CI 里。
+- **键盘和触屏都行。** 滑动控制蛇、长按插旗、点真按钮输入数字——需要无障碍的控件是 DOM，不是画上去的像素。
+- **五子棋 AI 在主线程之外思考。** Web Worker 里跑 α-β 剪枝的极小极大搜索，三档强度。
+- **无后端、无追踪。** 成绩只存在 `localStorage`，唯一的网络请求是 Google Fonts。
+
+## 游戏
 
 <table>
 <tr>
@@ -27,109 +32,56 @@
   <td width="50%"><img src="docs/screenshots/tetris.gif" alt="俄罗斯方块" width="100%"></td>
 </tr>
 <tr>
-  <td align="center"><b>SNAKE</b> · 贪吃蛇</td>
-  <td align="center"><b>TETRIS</b> · 俄罗斯方块<br><sub>侧栏与触屏键盘是 DOM，不是画在画布里</sub></td>
+  <td align="center"><b>SNAKE</b> · 贪吃蛇<br><sub>越吃越快 · 方向键 / WASD / 滑动</sub></td>
+  <td align="center"><b>TETRIS</b> · 俄罗斯方块<br><sub>7-bag、暂存、硬降 · ← → ↑ ↓ 空格 C，或屏幕上的按键垫</sub></td>
 </tr>
 <tr>
   <td><img src="docs/screenshots/breakout.gif" alt="打砖块" width="100%"></td>
   <td><img src="docs/screenshots/flappy.gif" alt="Flappy Bird" width="100%"></td>
 </tr>
 <tr>
-  <td align="center"><b>BREAKOUT</b> · 打砖块</td>
-  <td align="center"><b>FLAPPY</b> · 提示条显示实时最高分</td>
+  <td align="center"><b>BREAKOUT</b> · 打砖块<br><sub>三种砖块布局，逐关加速 · ← → / 拖动，空格发球</sub></td>
+  <td align="center"><b>FLAPPY</b><br><sub>提示条实时显示最高分 · 空格 / ↑ / 点按</sub></td>
 </tr>
 <tr>
   <td><img src="docs/screenshots/2048.gif" alt="2048" width="100%"></td>
   <td><img src="docs/screenshots/mines.gif" alt="扫雷" width="100%"></td>
 </tr>
 <tr>
-  <td align="center"><b>2048</b> · 分数卡与撤销在上方栏</td>
-  <td align="center"><b>MINES</b> · 扫雷</td>
+  <td align="center"><b>2048</b><br><sub>单步撤销，且不能拿来刷新砖 · 方向键 / 滑动，Z 撤销</sub></td>
+  <td align="center"><b>MINES</b> · 扫雷<br><sub>三档尺寸，首点必安全 · 点击翻开，长按或右键插旗</sub></td>
 </tr>
 <tr>
   <td><img src="docs/screenshots/sudoku.gif" alt="数独" width="100%"></td>
   <td><img src="docs/screenshots/gomoku.gif" alt="五子棋" width="100%"></td>
 </tr>
 <tr>
-  <td align="center"><b>SUDOKU</b> · 数字盘是真按钮，可 Tab 可聚焦</td>
-  <td align="center"><b>GOMOKU</b> · 五子棋，带 AI 对手</td>
+  <td align="center"><b>SUDOKU</b> · 数独<br><sub>现场生成唯一解题面，笔记，自动存档 · 点格子再按 1–9，N 切笔记</sub></td>
+  <td align="center"><b>GOMOKU</b> · 五子棋<br><sub>双人或 AI 简单 / 中等 / 困难 · 点击落子</sub></td>
 </tr>
 </table>
 
-五子棋的 AI 跑在 Web Worker 里，不阻塞主线程。所有游戏都支持键盘与触屏，成绩存在
-`localStorage`，隐私模式下自动降级为内存存储。
+## 本地运行
 
-### 深色屏与浅色纸盘
-
-8 个游戏分成两类，配色语言不同：
-
-- **深色屏**（SNAKE / TETRIS / BREAKOUT / FLAPPY）——画布是发光的暖霓虹，共用
-  `src/core/theme.ts` 的 `SCREEN`；屏幕井有内描边与暗角。
-- **浅色纸盘**（SUDOKU / 2048 / MINES / GOMOKU）——奶油底、墨色描边，每个游戏在自己的
-  `index.ts` 里持有 `PAPER` 常量（四者配色确实不同，合并只会得到谁都不合身的抽象）。
-
-棋盘一律画在 canvas 里；数字键盘、难度菜单、计分卡、回合筹这些**周边控件一律是 DOM**——
-可 Tab、有焦点环、触屏命中率高，这是画在画布里做不到的。
-
-## 快速开始
-
-需要 Node 18+。只支持现代浏览器（用了 `roundRect`、Pointer Events、Web Worker：
-Chrome 99+、Safari 16+、Firefox 112+）。
+需要 Node 18+。只支持现代浏览器（Chrome 99+、Safari 16+、Firefox 112+）。
 
 ```bash
+git clone https://github.com/Minjia-Hu/retro-arcade.git
+cd retro-arcade
 npm install
-npm run dev      # 开发服务器
-npm test         # 单元测试
-npm run e2e      # 端到端测试（需先 npx playwright install）
-npm run build    # 类型检查 + 生产构建
-npm run preview  # 预览构建产物
+npm run dev        # http://localhost:5173
 ```
-
-## 代码结构
-
-```
-src/
-  core/          与具体游戏无关的基础设施
-    loop.ts        变步长游戏循环，dt 上限 50ms（支持暂停/恢复）
-    input.ts       键盘、点按、滑动、拖动、长按手势
-    audio.ts       WebAudio 音效合成（无音频文件）
-    storage.ts     localStorage 封装，不可用时降级到内存
-    screen.ts      画布创建与 DPR 尺寸处理
-    theme.ts       深色屏的调色板常量
-    game.ts        Game / GameMeta / GameContext 接口
-    format.ts      分数补零、难度标签
-  shell/         页面外壳
-    router.ts      hash 路由（#/ 为首页，#/<id> 为游戏）
-    hub/           首页：model（纯函数）/ view（HTML 字符串）/ index（DOM 与事件）
-    frame.ts       游戏机柜：顶栏、屏幕井、结算浮层、按键提示条
-    cabinet-view.ts  机柜的纯渲染函数
-    difficulty-menu.ts  共用的难度菜单浮层（数独、扫雷）
-    pad.ts         渲染一排触屏按钮
-    accent.ts      配色轮转
-    pixel-icons.ts 8×8 像素图标 → 内联 SVG
-    escape.ts      HTML 转义（view 层都用字符串拼 HTML）
-  games/<id>/
-    logic.ts       纯逻辑：状态与规则，不碰 DOM/Canvas，可完整单测
-    index.ts       渲染与输入：把 logic 的状态画到 canvas 上
-```
-
-### 一条贯穿全局的约定：逻辑与渲染分离
-
-每个游戏都拆成 `logic.ts` 与 `index.ts`。**`logic.ts` 里没有任何 DOM 或 Canvas 调用**，
-状态转移是纯函数，所以能脱离浏览器完整单测——`tests/*-logic.test.ts` 就是这么来的。
-`index.ts` 只负责把状态画出来、把输入翻译成逻辑调用。
-
-这条约定的直接好处：整轮视觉改版可以只动 `index.ts`，`logic.ts` 与其单测一行不改，
-「有没有不小心改到玩法」因此变成一条可执行的检查：
 
 ```bash
-git diff --stat <基线> -- 'src/games/*/logic.ts' 'tests/*-logic.test.ts'   # 应为空
+npm test           # 单元测试（Vitest）
+npm run e2e        # 端到端（Playwright，需先 npx playwright install 一次）
+npm run build      # 类型检查 + 生产构建
 ```
 
-### 游戏怎么接进机柜
+## 它是怎么搭的
 
-游戏实现 `Game` 接口（`src/core/game.ts`），由 `frame.ts` 挂载。机柜通过 `GameContext`
-向游戏提供音效、存储、输入、结算浮层与可选的插槽（上方栏、侧栏、控制垫）：
+**一台机柜，八个游戏。** 外壳（`src/shell/frame.ts`）负责顶栏、屏幕井、结算浮层和提示条。游戏实现一个接口，
+拿到一个 `GameContext`：音效、存储、输入手势、浮层，以及可选的 DOM 插槽（上方栏、侧栏、触屏垫）。
 
 ```ts
 ctx.overlay({
@@ -139,31 +91,34 @@ ctx.overlay({
   actions: [{ label: '▶ RETRY', onPress: retry }],
   hints: ['SPACE / TAP TO RETRY'],
 });
-ctx.overlay(null);              // 收起浮层
-ctx.setHints(['BEST 000042']);  // 替换底部提示条
 ```
 
-`GameMeta` 上的 `head` / `side` / `pad` / `pausable` / `hints` / `screen` / `tools` 决定机柜为
-这个游戏渲染成什么样。新增游戏时在 `src/games/registry.ts` 登记即可，首页会自动出现对应卡片。
+**逻辑与渲染永不混写。** 每个游戏都是 `logic.ts` + `index.ts`。`logic.ts` 只有状态和规则——没有 DOM、
+没有 Canvas、随机源可注入——所以整套规则能脱离浏览器做单测。`index.ts` 负责把状态画出来、把输入翻译成
+逻辑调用。这个项目做过一整轮视觉改版，只动了 `index.ts`，规则和它们的测试一行没改。
 
-## 设计文档
+**棋盘画在 canvas 上，控件放在 DOM 里。** 网格和精灵是画的；凡是人要去按的——数字盘、难度菜单、撤销键——
+都是真的 `<button>`，有焦点环，有像样的触屏命中区。
 
-`docs/superpowers/` 记录了每一轮改动的设计与计划：
+**两种视觉语言。** 深色屏（贪吃蛇、俄罗斯方块、打砖块、Flappy）是暖色霓虹；纸盘（2048、扫雷、数独、五子棋）
+是奶油底上的墨线。主题叫 *Sunset Arcade*：硬投影、四色轮转的 accent、渲染成内联 SVG 的 8×8 像素图标。
 
-- `specs/` — 设计文档：要做什么、范围决策、刻意的取舍与偏离
-- `plans/` — 实现计划：拆成可独立验收的任务，每步含完整代码与验证命令
+```
+src/
+  core/      游戏循环、输入手势、WebAudio 合成音效、存储、画布尺寸
+  shell/     hash 路由、首页、机柜外壳
+  games/<id>/
+    logic.ts   纯规则，完整单测
+    index.ts   渲染 + 输入
+```
 
-动手前先写 spec 再写 plan，是这个仓库一直以来的做法。范围决策和「为什么没照设计稿做」
-都记在 spec 里，代码里则用注释钉住那些不写就会被后人「修正」回去的地方。
+## 加一个游戏
 
-## 视觉
+1. 新建 `src/games/<id>/logic.ts`（纯状态 + 规则）和 `index.ts`（实现 `src/core/game.ts` 的 `Game`）。
+2. 在 `src/games/registry.ts` 登记——首页卡片、配色和路由自动出现。
+3. 在 `src/shell/pixel-icons.ts` 加一个 8×8 像素图标，写一份 `tests/<id>-logic.test.ts`。
 
-主题叫 **Sunset Arcade**：奶油纸底、墨色描边配硬投影、四色轮转的暖色 accent、
-CSS 绘制的像素图标（每个游戏一个 8×8 网格，渲染成内联 SVG）。
-
-**页面色板的唯一真相源是 `src/styles/arcade.css` 的 `:root`**；TypeScript 侧只持有必须由
-JS 内联的那部分。画布内配色是另一回事，见上面「深色屏与浅色纸盘」。两边都有的值
-（accent 四色、`--screen-ground`）在两处都写了交叉引用注释。
+约定、设计文档和测试规则见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## License
 
