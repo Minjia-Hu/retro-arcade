@@ -4,7 +4,7 @@ import { padScore, relativeTime, dateKey, hashDate } from '../src/shell/hub/mode
 import { ArcadeStorage, memoryBackend } from '../src/core/storage';
 import { buildHall } from '../src/shell/hub/model';
 import { buildDaily, CHALLENGES } from '../src/shell/hub/model';
-import { buildFeatured, buildCards, buildHubModel } from '../src/shell/hub/model';
+import { buildFeatured, buildCards, buildHubModel, REPO_URL } from '../src/shell/hub/model';
 
 describe('registry displayName', () => {
   it('八个游戏都有英文大写展示名', () => {
@@ -226,11 +226,13 @@ describe('buildCards', () => {
 });
 
 describe('buildHubModel', () => {
-  it('footer 反映游戏数量与静音状态', () => {
+  it('footer 反映游戏数量与静音状态，并带仓库地址', () => {
     const on = buildHubModel(freshStorage(), new Date(2026, 8, 5));
-    expect(on.footer).toBe('8 GAMES LOADED · SOUND ON · © 2026 SUNSET ARCADE');
+    expect(on.footer.games).toBe('8 GAMES LOADED');
+    expect(on.footer.muted).toBe(false);
+    expect(on.footer.repoUrl).toBe(REPO_URL);
     const off = buildHubModel(freshStorage({ muted: true }), new Date(2026, 8, 5));
-    expect(off.footer).toBe('8 GAMES LOADED · SOUND OFF · © 2026 SUNSET ARCADE');
+    expect(off.footer.muted).toBe(true);
   });
 
   it('聚合四个区块', () => {

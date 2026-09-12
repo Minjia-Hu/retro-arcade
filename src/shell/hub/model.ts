@@ -141,12 +141,26 @@ export interface CardModel {
   hasRecord: boolean;
 }
 
+export const REPO_URL = 'https://github.com/Minjia-Hu/retro-arcade';
+
+/**
+ * footer 三段各司其职：games 是装饰、muted 是开关（首页也能关声音，不必进游戏找 SND）、
+ * repoUrl 是出口（从分享链接进来的人没有别的路知道代码在哪）。
+ * 不用带星数的第三方小组件：会加载外部脚本，且 0 星时是减分。
+ */
+export interface FooterModel {
+  games: string;
+  muted: boolean;
+  copyright: string;
+  repoUrl: string;
+}
+
 export interface HubModel {
   featured: FeaturedModel;
   daily: DailyModel;
   hall: HallRow[];
   cards: CardModel[];
-  footer: string;
+  footer: FooterModel;
 }
 
 interface LastPlayed { id: string; at: number }
@@ -211,6 +225,11 @@ export function buildHubModel(storage: ArcadeStorage, now: Date): HubModel {
     daily: buildDaily(now),
     hall: buildHall(storage),
     cards: buildCards(storage),
-    footer: `${GAMES.length} GAMES LOADED · SOUND ${muted ? 'OFF' : 'ON'} · © 2026 SUNSET ARCADE`,
+    footer: {
+      games: `${GAMES.length} GAMES LOADED`,
+      muted,
+      copyright: '© 2026 SUNSET ARCADE',
+      repoUrl: REPO_URL,
+    },
   };
 }

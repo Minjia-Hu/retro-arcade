@@ -17,7 +17,7 @@ startRouter(async (route) => {
   const token = ++nav;
   frame.close();
   if (route.name === 'hub') {
-    renderHub(app, storage);
+    renderHub(app, storage, audio);
     return;
   }
   const entry = GAMES.find((g) => g.meta.id === route.id);

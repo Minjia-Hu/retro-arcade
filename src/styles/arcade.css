@@ -160,16 +160,27 @@ button { font-family: inherit; cursor: pointer; }
 .px-xs { width: 20px; height: 20px; }
 
 .hub-footer {
-  text-align: center; font-size: 12px; color: var(--dim);
+  display: flex; justify-content: center; flex-wrap: wrap; gap: 10px;
+  font-size: 12px; color: var(--dim);
   letter-spacing: 3px; font-weight: 500; margin-top: 24px;
 }
+/* footer 里的开关与链接：外观与旁边的文字一致，靠下划线表明可点 */
+.hub-toggle, .hub-link {
+  font: inherit; letter-spacing: inherit; color: inherit;
+  background: none; border: none; padding: 0; cursor: pointer;
+  border-bottom: 2px solid transparent; text-decoration: none;
+  transition: border-color .1s;
+}
+.hub-toggle:hover, .hub-link:hover { border-bottom-color: currentColor; }
+.hub-toggle:focus-visible, .hub-link:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: 3px; }
+.hub-link { color: var(--orange); }
 
 @media (max-width: 900px) {
   .hub { padding: 24px 20px 28px; }
   .hero { grid-template-columns: 1fr; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .btn-start, .btn-accept, .card, .cab-btn, .settle-action, .pad-btn, .head-btn { transition: none; }
+  .btn-start, .btn-accept, .card, .cab-btn, .settle-action, .pad-btn, .head-btn, .hub-toggle, .hub-link { transition: none; }
 }
 
 /* ---- 游戏机柜 ---- */

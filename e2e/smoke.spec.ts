@@ -381,3 +381,22 @@ test('2048 结束后按 Space 开新局', async ({ page }) => {
   await expect(settle).toBeHidden();
   await expect(page.locator('[data-ref="score"]')).toHaveText('000000');
 });
+
+test('首页 footer 的 SOUND 开关与游戏顶栏的 SND 共用一份状态', async ({ page }) => {
+  await page.goto('/');
+  const sound = page.locator('[data-act="sound"]');
+  await expect(sound).toHaveText('SOUND ON');
+  await sound.click();
+  await expect(sound).toHaveText('SOUND OFF');
+  await expect(sound).toHaveAttribute('aria-pressed', 'true');
+
+  await page.click('[data-id="snake"]');
+  await expect(page.locator('[data-act="mute"]')).toHaveClass(/is-off/);
+  await page.click('[data-act="back"]');
+  await expect(page.locator('[data-act="sound"]')).toHaveText('SOUND OFF');
+
+  // 出口链接：指向仓库、新标签、不泄露 opener
+  const link = page.locator('.hub-link');
+  await expect(link).toHaveAttribute('href', /github\.com\/Minjia-Hu\/retro-arcade/);
+  await expect(link).toHaveAttribute('rel', 'noopener');
+});

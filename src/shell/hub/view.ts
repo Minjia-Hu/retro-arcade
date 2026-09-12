@@ -58,6 +58,11 @@ export function hubHtml(m: HubModel): string {
 
       <h2 class="grid-heading">◆ SELECT YOUR CABINET ◆</h2>
       <div class="hub-grid">${cards}</div>
-      <p class="hub-footer">${esc(m.footer)}</p>
+      <p class="hub-footer">
+        <span>${esc(m.footer.games)}</span><span class="cab-dot">·</span>
+        <button class="hub-toggle" data-act="sound" aria-pressed="${m.footer.muted}">SOUND ${m.footer.muted ? 'OFF' : 'ON'}</button><span class="cab-dot">·</span>
+        <span>${esc(m.footer.copyright)}</span><span class="cab-dot">·</span>
+        <a class="hub-link" href="${esc(m.footer.repoUrl)}" target="_blank" rel="noopener">SOURCE ON GITHUB ↗</a>
+      </p>
     </div>`;
 }

@@ -19,7 +19,7 @@ function model(patch: Partial<HubModel> = {}): HubModel {
       { id: 'snake', name: 'SNAKE', accent: 'teal', pill: 'BEST 003840', hasRecord: true },
       { id: 'tetris', name: 'TETRIS', accent: 'magenta', pill: 'NO RECORD', hasRecord: false },
     ],
-    footer: '8 GAMES LOADED · SOUND ON · © 2026 SUNSET ARCADE',
+    footer: { games: '8 GAMES LOADED', muted: false, copyright: '© 2026 SUNSET ARCADE', repoUrl: 'https://example.com/repo' },
     ...patch,
   };
 }
@@ -69,9 +69,30 @@ describe('accent 以色调 class 下发，视图里没有 hex', () => {
   });
 });
 
+describe('footer', () => {
+  it('SOUND 是开关按钮，文案与 aria-pressed 随 muted 变', () => {
+    const on = hubHtml(model());
+    expect(on).toMatch(/<button class="hub-toggle" data-act="sound" aria-pressed="false">SOUND ON<\/button>/);
+    const off = hubHtml(model({ footer: { games: '', muted: true, copyright: '', repoUrl: '' } }));
+    expect(off).toMatch(/aria-pressed="true">SOUND OFF<\/button>/);
+  });
+
+  it('有指向仓库的链接，新标签打开且不泄露 opener', () => {
+    const html = hubHtml(model());
+    expect(html).toMatch(/<a class="hub-link" href="https:\/\/example\.com\/repo" target="_blank" rel="noopener">SOURCE ON GITHUB/);
+  });
+
+  it('开关与链接的样式在 arcade.css 里', () => {
+    expect(css).toMatch(/\.hub-toggle[^{]*\{/);
+    expect(css).toMatch(/\.hub-link\s*\{[^}]*color:\s*var\(--orange\)/);
+  });
+});
+
 describe('转义', () => {
   it('文案里的 HTML 元字符被转义，不会破坏结构', () => {
-    const html = hubHtml(model({ footer: '<script>alert("x")</script> & co' }));
+    const html = hubHtml(model({
+      footer: { games: '<script>alert("x")</script> & co', muted: false, copyright: '', repoUrl: '' },
+    }));
     expect(html).not.toContain('<script>');
     expect(html).toContain('&lt;script&gt;alert(&quot;x&quot;)&lt;/script&gt; &amp; co');
   });
