@@ -13,7 +13,7 @@
 - **隐私** — 无后端、无追踪。成绩只存在 `localStorage`，唯一的外部请求是 Google Fonts
 
 <p align="center">
-  <img src="docs/screenshots/hub.png" alt="首页：Sunset Arcade 主题的游戏大厅，上方是继续游玩、每日挑战与名人堂，下方是 8 个机柜卡片" width="900">
+  <img src="docs/screenshots/tour.gif" alt="巡游：首页，进 Tetris、2048、五子棋各玩几秒，再回首页" width="800">
 </p>
 
 ## 游戏

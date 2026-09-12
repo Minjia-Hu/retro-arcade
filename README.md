@@ -13,7 +13,7 @@ A mini arcade that runs in the browser: 8 classic games, one shared cabinet shel
 - **Privacy** — no backend, no tracking. Scores live in `localStorage`; the only external request is Google Fonts.
 
 <p align="center">
-  <img src="docs/screenshots/hub.png" alt="Home: the Sunset Arcade hub — continue playing, daily challenge and hall of fame on top, 8 cabinet cards below" width="900">
+  <img src="docs/screenshots/tour.gif" alt="Tour: the hub, then Tetris, 2048 and Gomoku, and back to the hub" width="800">
 </p>
 
 ## Games
