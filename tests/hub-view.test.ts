@@ -116,6 +116,15 @@ describe('daily challenge copy', () => {
   it('the game name is wrapped in <b> for highlighting', () => {
     expect(hubHtml(model())).toContain('CLEAR <b>MINES</b> IN UNDER 60 SECONDS');
   });
+
+  // The daily card only picks a game and jumps to it: nothing checks whether the target was
+  // met and nothing writes to the Hall of Fame (see docs/design/2026-09-13-daily-hint-copy.md).
+  // The handoff copy promised a hall entry; the hint must describe what actually happens.
+  it('the hint does not promise a hall entry', () => {
+    const html = hubHtml(model());
+    expect(html).toContain('<span class="daily-hint">NEW CABINET EVERY DAY → BRAGGING RIGHTS ONLY</span>');
+    expect(html).not.toMatch(/JOINS THE HALL/);
+  });
 });
 
 describe('tone names map to the stylesheet', () => {
