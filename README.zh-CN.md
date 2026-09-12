@@ -13,7 +13,7 @@
 - **隐私** — 无后端、无追踪。成绩只存在 `localStorage`，唯一的外部请求是 Google Fonts
 
 <p align="center">
-  <img src="docs/screenshots/tour.gif" alt="巡游：首页，进 Tetris、2048、五子棋各玩几秒，再回首页" width="800">
+  <img src="docs/screenshots/hub.png" alt="首页：Sunset Arcade 主题的游戏大厅，上方是继续游玩、每日挑战与名人堂，下方是 8 个机柜卡片" width="900">
 </p>
 
 ## 游戏
@@ -23,32 +23,32 @@
 
 <table>
 <tr>
-  <td width="50%"><img src="docs/screenshots/snake.png" alt="贪吃蛇" width="100%"></td>
-  <td width="50%"><img src="docs/screenshots/tetris.png" alt="俄罗斯方块" width="100%"></td>
+  <td width="50%"><img src="docs/screenshots/snake.gif" alt="贪吃蛇" width="100%"></td>
+  <td width="50%"><img src="docs/screenshots/tetris.gif" alt="俄罗斯方块" width="100%"></td>
 </tr>
 <tr>
   <td align="center"><b>SNAKE</b> · 贪吃蛇</td>
   <td align="center"><b>TETRIS</b> · 俄罗斯方块<br><sub>侧栏与触屏键盘是 DOM，不是画在画布里</sub></td>
 </tr>
 <tr>
-  <td><img src="docs/screenshots/breakout.png" alt="打砖块" width="100%"></td>
-  <td><img src="docs/screenshots/flappy.png" alt="Flappy Bird" width="100%"></td>
+  <td><img src="docs/screenshots/breakout.gif" alt="打砖块" width="100%"></td>
+  <td><img src="docs/screenshots/flappy.gif" alt="Flappy Bird" width="100%"></td>
 </tr>
 <tr>
   <td align="center"><b>BREAKOUT</b> · 打砖块</td>
   <td align="center"><b>FLAPPY</b> · 提示条显示实时最高分</td>
 </tr>
 <tr>
-  <td><img src="docs/screenshots/2048.png" alt="2048" width="100%"></td>
-  <td><img src="docs/screenshots/mines.png" alt="扫雷" width="100%"></td>
+  <td><img src="docs/screenshots/2048.gif" alt="2048" width="100%"></td>
+  <td><img src="docs/screenshots/mines.gif" alt="扫雷" width="100%"></td>
 </tr>
 <tr>
   <td align="center"><b>2048</b> · 分数卡与撤销在上方栏</td>
   <td align="center"><b>MINES</b> · 扫雷</td>
 </tr>
 <tr>
-  <td><img src="docs/screenshots/sudoku.png" alt="数独" width="100%"></td>
-  <td><img src="docs/screenshots/gomoku.png" alt="五子棋" width="100%"></td>
+  <td><img src="docs/screenshots/sudoku.gif" alt="数独" width="100%"></td>
+  <td><img src="docs/screenshots/gomoku.gif" alt="五子棋" width="100%"></td>
 </tr>
 <tr>
   <td align="center"><b>SUDOKU</b> · 数字盘是真按钮，可 Tab 可聚焦</td>

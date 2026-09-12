@@ -19,7 +19,7 @@
     "preview": "vite preview",
     "test": "vitest run",
     "e2e": "playwright test",
-    "tour": "node scripts/record-tour.mjs"
+    "demos": "node scripts/record-games.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.46.0",

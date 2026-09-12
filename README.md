@@ -13,7 +13,7 @@ A mini arcade that runs in the browser: 8 classic games, one shared cabinet shel
 - **Privacy** — no backend, no tracking. Scores live in `localStorage`; the only external request is Google Fonts.
 
 <p align="center">
-  <img src="docs/screenshots/tour.gif" alt="Tour: the hub, then Tetris, 2048 and Gomoku, and back to the hub" width="800">
+  <img src="docs/screenshots/hub.png" alt="Home: the Sunset Arcade hub — continue playing, daily challenge and hall of fame on top, 8 cabinet cards below" width="900">
 </p>
 
 ## Games
@@ -23,32 +23,32 @@ All 8 games share the same cabinet shell — top bar, screen well, result overla
 
 <table>
 <tr>
-  <td width="50%"><img src="docs/screenshots/snake.png" alt="Snake" width="100%"></td>
-  <td width="50%"><img src="docs/screenshots/tetris.png" alt="Tetris" width="100%"></td>
+  <td width="50%"><img src="docs/screenshots/snake.gif" alt="Snake" width="100%"></td>
+  <td width="50%"><img src="docs/screenshots/tetris.gif" alt="Tetris" width="100%"></td>
 </tr>
 <tr>
   <td align="center"><b>SNAKE</b></td>
   <td align="center"><b>TETRIS</b><br><sub>side panel and touch pad are DOM, not drawn on the canvas</sub></td>
 </tr>
 <tr>
-  <td><img src="docs/screenshots/breakout.png" alt="Breakout" width="100%"></td>
-  <td><img src="docs/screenshots/flappy.png" alt="Flappy Bird" width="100%"></td>
+  <td><img src="docs/screenshots/breakout.gif" alt="Breakout" width="100%"></td>
+  <td><img src="docs/screenshots/flappy.gif" alt="Flappy Bird" width="100%"></td>
 </tr>
 <tr>
   <td align="center"><b>BREAKOUT</b></td>
   <td align="center"><b>FLAPPY</b> · hint bar shows the live high score</td>
 </tr>
 <tr>
-  <td><img src="docs/screenshots/2048.png" alt="2048" width="100%"></td>
-  <td><img src="docs/screenshots/mines.png" alt="Minesweeper" width="100%"></td>
+  <td><img src="docs/screenshots/2048.gif" alt="2048" width="100%"></td>
+  <td><img src="docs/screenshots/mines.gif" alt="Minesweeper" width="100%"></td>
 </tr>
 <tr>
   <td align="center"><b>2048</b> · score cards and undo in the head bar</td>
   <td align="center"><b>MINES</b></td>
 </tr>
 <tr>
-  <td><img src="docs/screenshots/sudoku.png" alt="Sudoku" width="100%"></td>
-  <td><img src="docs/screenshots/gomoku.png" alt="Gomoku" width="100%"></td>
+  <td><img src="docs/screenshots/sudoku.gif" alt="Sudoku" width="100%"></td>
+  <td><img src="docs/screenshots/gomoku.gif" alt="Gomoku" width="100%"></td>
 </tr>
 <tr>
   <td align="center"><b>SUDOKU</b> · the digit pad is real buttons: focusable, tabbable</td>
