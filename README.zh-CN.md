@@ -63,7 +63,7 @@
 
 ## 本地运行
 
-需要 Node 18+。只支持现代浏览器（Chrome 99+、Safari 16+、Firefox 112+）。
+需要 Node 20.19+（或 22.12+）。只支持现代浏览器（Chrome 99+、Safari 16+、Firefox 112+）。
 
 ```bash
 git clone https://github.com/Minjia-Hu/retro-arcade.git
