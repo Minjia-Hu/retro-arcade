@@ -37,6 +37,19 @@ describe('gomoku ai', () => {
     expect(three).toBeGreaterThan(two);
   });
 
+  it('evaluatePoint：冲四 > 活三——冲四必须立刻应，活三只是威胁', () => {
+    const blocked = createBoard(); // ○●●●_ ：补上就是一端被封的四
+    blocked[at(3, 7)] = WHITE;
+    blocked[at(4, 7)] = BLACK; blocked[at(5, 7)] = BLACK; blocked[at(6, 7)] = BLACK;
+    const four = evaluatePoint(blocked, at(7, 7), BLACK);
+
+    const open = createBoard(); // _●●_ ：补上是两端空的三
+    open[at(5, 7)] = BLACK; open[at(6, 7)] = BLACK;
+    const three = evaluatePoint(open, at(7, 7), BLACK);
+
+    expect(four).toBeGreaterThan(three);
+  });
+
   it('candidates：空盘只有天元；有子时取邻近空格且不含已占', () => {
     expect(candidates(createBoard())).toEqual([CENTER]);
     const b = createBoard();

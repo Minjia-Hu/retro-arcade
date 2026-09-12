@@ -137,6 +137,36 @@ describe('2048 logic', () => {
     expect(s.status).toBe('over');
   });
 
+  it('撤销后重走同一方向，新砖与上次相同——撤销不能当 reroll 用', () => {
+    const s = createState(seq(0, 0, 0, 0));
+    s.board = emptyBoard();
+    s.board[0] = 2; s.board[5] = 4; s.board[10] = 8; s.board[15] = 16;
+    expect(move(s, 'left')).toBe(true); // 不传 rand：走状态自带的种子
+    const first = s.board.slice();
+    expect(undo(s)).toBe(true);
+    expect(move(s, 'left')).toBe(true);
+    expect(s.board).toEqual(first);
+  });
+
+  it('不传 rand 时连续两步的新砖不是同一个随机数（种子在推进）', () => {
+    const s = createState(seq(0, 0, 0, 0));
+    s.board = emptyBoard();
+    s.board[3] = 2;
+    move(s, 'down');
+    const a = s.board.slice();
+    const t = createState(seq(0, 0, 0, 0));
+    t.board = emptyBoard();
+    t.board[3] = 2;
+    move(t, 'down');
+    expect(t.board).toEqual(a); // 同种子同局面 → 同结果（确定性）
+    const seedAfterFirst = t.seed;
+    const sumBefore = t.board.reduce((n, v) => n + v, 0);
+    // 两块砖总有一个方向能动；新砖落在哪、会不会合并取决于种子，所以看总和不看块数
+    expect((['up', 'left', 'right', 'down'] as const).some((d) => move(t, d))).toBe(true);
+    expect(t.board.reduce((n, v) => n + v, 0)).toBeGreaterThan(sumBefore); // 第二步又生了一块
+    expect(t.seed).not.toBe(seedAfterFirst); // 种子在推进
+  });
+
   it('SIZE 恒为 4（渲染层依赖）', () => {
     expect(SIZE).toBe(4);
   });

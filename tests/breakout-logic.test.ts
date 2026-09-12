@@ -37,6 +37,24 @@ describe('breakout logic', () => {
     expect(Math.hypot(s.vx, s.vy)).toBeCloseTo(speedFor(1), 5);
   });
 
+  it('球速在第 7 关封顶：键盘挡板 300px/s，再快就物理上追不上', () => {
+    expect(speedFor(6)).toBeLessThan(speedFor(7));
+    expect(speedFor(7)).toBe(speedFor(20));
+    expect(speedFor(7) * 0.8).toBeLessThanOrEqual(320); // 最大水平分量与挡板速度相当
+  });
+
+  it('发球朝空间大的一侧：挡板在左半场向右发，在右半场向左发', () => {
+    const l = createState();
+    movePaddle(l, 100);
+    launch(l);
+    expect(l.vx).toBeGreaterThan(0);
+    const r = createState();
+    movePaddle(r, 220);
+    launch(r);
+    expect(r.vx).toBeLessThan(0);
+    expect(Math.hypot(r.vx, r.vy)).toBeCloseTo(speedFor(1), 5);
+  });
+
   it('ready 状态下 tick 球不动', () => {
     const s = createState();
     tick(s, 1);

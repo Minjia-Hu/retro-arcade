@@ -5,10 +5,12 @@ export interface Difficulty {
   clues: number; // 目标给定格数（挖洞下限）
 }
 
+// 44/36/30 时 easy 与 medium 全是纯 singles 题、hard 八成也是，三档分不开（实测 90 局）。
+// 26 是随机挖洞的实用下限：平均 12ms、最长 30ms；24 会掉到 35ms/最长 185ms 且常挖不到目标
 export const DIFFICULTIES: Difficulty[] = [
-  { id: 'easy', name: '初级', clues: 44 },
-  { id: 'medium', name: '中级', clues: 36 },
-  { id: 'hard', name: '高级', clues: 30 },
+  { id: 'easy', name: '初级', clues: 40 },
+  { id: 'medium', name: '中级', clues: 32 },
+  { id: 'hard', name: '高级', clues: 26 },
 ];
 
 export type SudokuStatus = 'playing' | 'won';

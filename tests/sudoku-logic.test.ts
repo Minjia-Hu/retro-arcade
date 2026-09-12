@@ -34,6 +34,16 @@ function isFullValid(b: number[]): boolean {
 const EASY = DIFFICULTIES[0];
 
 describe('sudoku logic', () => {
+  it('三档给定数 40/32/26：44/36/30 时 easy 与 medium 都是纯 singles 题，分不出档', () => {
+    expect(DIFFICULTIES.map((d) => d.clues)).toEqual([40, 32, 26]);
+  });
+
+  it('hard 档能挖到 28 以下且保持唯一解', () => {
+    const { puzzle } = makePuzzle(DIFFICULTIES[2].clues, mulberry32(7));
+    expect(puzzle.filter((v) => v !== 0).length).toBeLessThanOrEqual(28);
+    expect(solutionCount(puzzle, 2)).toBe(1);
+  });
+
   it('三档难度参数：clues 递减', () => {
     expect(DIFFICULTIES.map((d) => d.id)).toEqual(['easy', 'medium', 'hard']);
     expect(DIFFICULTIES[0].clues).toBeGreaterThan(DIFFICULTIES[1].clues);

@@ -18,7 +18,9 @@ const TOP_K = 12; // 每层最多搜索的候选数（剪枝）
 /** 棋形分值：count = 同色连子数，open = 两端敞开数（0/1/2） */
 function shapeScore(count: number, open: number): number {
   if (count >= 5) return 100000; // 五连
-  if (count === 4) return open === 2 ? 10000 : open === 1 ? 1000 : 0; // 活四 / 冲四
+  // 冲四要高于活三：冲四是必须立刻应的手，活三只是威胁。两者同分时 AI 会把
+  // 「放着对方冲四去做自己的活三」和「封冲四」看成一样好
+  if (count === 4) return open === 2 ? 10000 : open === 1 ? 3000 : 0; // 活四 / 冲四
   if (count === 3) return open === 2 ? 1000 : open === 1 ? 100 : 0; // 活三 / 眠三
   if (count === 2) return open === 2 ? 100 : open === 1 ? 10 : 0; // 活二 / 眠二
   if (count === 1) return open === 2 ? 10 : 0;
