@@ -64,8 +64,8 @@ export function createGomoku(): Game {
 
   function buildHead(host: HTMLElement): void {
     host.innerHTML = `
-      <div class="chip" data-ref="black" aria-label="黑方">● BLACK</div>
-      <div class="chip" data-ref="white" aria-label="白方">○ WHITE</div>`;
+      <div class="chip" data-ref="black" aria-label="Black">● BLACK</div>
+      <div class="chip" data-ref="white" aria-label="White">○ WHITE</div>`;
     const q = (r: string) => host.querySelector<HTMLElement>(`[data-ref="${r}"]`)!;
     head = { black: q('black'), white: q('white') };
     shownAi = false; // 与上面写死的 BLACK/WHITE 默认文案对应
@@ -324,7 +324,7 @@ export function createGomoku(): Game {
       // ☰（同 MINES/SUDOKU）而非 "↺ NEW"：这颗按钮开的是模式菜单，不是直接重开一局；
       // 实测 "↺ NEW" + 长名 GOMOKU + 模式药丸三者会挤到顶栏换行（NEW 折成两行、
       // GOMOKU 被省略号截断），换回单字符按钮后腾出的空间正好够用。
-      tools: [{ id: 'menu', label: '☰', aria: '模式菜单' }],
+      tools: [{ id: 'menu', label: '☰', aria: 'Mode menu' }],
     },
 
     mount(container: HTMLElement, context: GameContext): void {

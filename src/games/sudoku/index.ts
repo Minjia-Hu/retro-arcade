@@ -93,9 +93,9 @@ export function createSudoku(): Game {
     );
 
     padButtons(row('fns'), [
-      { id: 'erase', label: '⌫ ERASE', aria: '清除', variant: 'pad-btn-wide' },
-      { id: 'notes', label: '✎ NOTES', aria: '笔记模式', variant: 'pad-btn-wide' },
-      { id: 'check', label: '⚑ CHECK', aria: '检查冲突', variant: 'pad-btn-wide' },
+      { id: 'erase', label: '⌫ ERASE', aria: 'Erase', variant: 'pad-btn-wide' },
+      { id: 'notes', label: '✎ NOTES', aria: 'Notes mode', variant: 'pad-btn-wide' },
+      { id: 'check', label: '⚑ CHECK', aria: 'Highlight conflicts', variant: 'pad-btn-wide' },
     ], (id) => {
       // eraseSelected 自己有 frozen 守卫；这里再挡一次是为了 notes/check 两个开关
       if (frozen()) return;
@@ -253,7 +253,7 @@ export function createSudoku(): Game {
       screen: 'paper',
       pad: true,
       pausable: false, // 回合制，暂停无意义
-      tools: [{ id: 'menu', label: '☰', aria: '难度菜单' }],
+      tools: [{ id: 'menu', label: '☰', aria: 'Difficulty menu' }],
     },
 
     mount(container: HTMLElement, context: GameContext): void {

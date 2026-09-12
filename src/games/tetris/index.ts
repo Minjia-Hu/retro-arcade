@@ -19,12 +19,12 @@ const pieceGlow = (type: number): string => SCREEN.glow[PIECE_TONES[type % PIECE
 type PadId = 'left' | 'right' | 'rotate' | 'soft' | 'hard' | 'hold';
 
 const PAD: { id: PadId; label: string; aria: string }[] = [
-  { id: 'left', label: '◀', aria: '左移' },
-  { id: 'right', label: '▶', aria: '右移' },
-  { id: 'rotate', label: '⟳', aria: '旋转' },
-  { id: 'soft', label: '▼', aria: '软降' },
-  { id: 'hard', label: '⤓', aria: '硬降' },
-  { id: 'hold', label: '⇄', aria: '暂存' },
+  { id: 'left', label: '◀', aria: 'Move left' },
+  { id: 'right', label: '▶', aria: 'Move right' },
+  { id: 'rotate', label: '⟳', aria: 'Rotate' },
+  { id: 'soft', label: '▼', aria: 'Soft drop' },
+  { id: 'hard', label: '⤓', aria: 'Hard drop' },
+  { id: 'hold', label: '⇄', aria: 'Hold' },
 ];
 
 

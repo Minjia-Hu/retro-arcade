@@ -227,8 +227,8 @@ export class GameFrame {
     // 用 cab-btn 而非旧的 .btn —— 机柜样式落地后 .btn 规则将不复存在
     root.innerHTML = `
       <div class="frame-error">
-        <p>💥 GAME ERROR · 游戏出错了</p>
-        <button class="cab-btn" data-act="home">返回首页</button>
+        <p>💥 GAME ERROR · something went wrong</p>
+        <button class="cab-btn" data-act="home">BACK TO HUB</button>
       </div>`;
     root.querySelector('[data-act="home"]')!.addEventListener('click', () => {
       location.hash = '#/';

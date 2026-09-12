@@ -25,7 +25,7 @@ export function cabinetHtml(meta: GameMeta, muted: boolean): string {
   const hintsHtml = hintsBarHtml(meta.hints ?? []);
   const pauseHtml = meta.pausable === false
     ? ''
-    : '<button class="cab-btn" data-act="pause" aria-label="暂停">❚❚</button>';
+    : '<button class="cab-btn" data-act="pause" aria-label="Pause">❚❚</button>';
   const sideHtml = meta.side ? '<div class="cab-side"></div>' : '';
   const headHtml = meta.head ? '<div class="cab-head"></div>' : '';
   const padHtml = meta.pad ? '<div class="cab-pad"></div>' : '';
@@ -33,7 +33,7 @@ export function cabinetHtml(meta: GameMeta, muted: boolean): string {
     .map((t) => `<button class="cab-btn" data-act="tool:${esc(t.id)}" aria-label="${esc(t.aria)}">${esc(t.label)}</button>`)
     .join('');
   // 药丸始终渲染、起手隐藏，靠 ctx.setPill 填内容——这样它不必凭空插入节点
-  const pillHtml = '<span class="cab-pill" aria-label="当前难度" hidden></span>';
+  const pillHtml = '<span class="cab-pill" aria-label="Current difficulty" hidden></span>';
 
   return `
     <div class="cabinet accent-${accentOf(meta.id)}">
@@ -48,7 +48,7 @@ export function cabinetHtml(meta: GameMeta, muted: boolean): string {
         <span class="cab-tools">
           ${pauseHtml}
           ${toolsHtml}
-          <button class="cab-btn${muted ? ' is-off' : ''}" data-act="mute" aria-pressed="${muted}" aria-label="音效">SND</button>
+          <button class="cab-btn${muted ? ' is-off' : ''}" data-act="mute" aria-pressed="${muted}" aria-label="Sound">SND</button>
         </span>
       </div>
       <div class="cab-screen">

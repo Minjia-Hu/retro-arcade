@@ -47,9 +47,9 @@ export function createMinesweeper(): Game {
 
   function buildHead(host: HTMLElement): void {
     host.innerHTML = `
-      <div class="head-card" data-ref="flags" aria-label="剩余雷数">⚑ 00</div>
-      <button class="head-btn head-btn-accent" data-ref="face" aria-label="重开本局">🙂</button>
-      <div class="head-card" data-ref="time" aria-label="用时">00:00</div>`;
+      <div class="head-card" data-ref="flags" aria-label="Mines left">⚑ 00</div>
+      <button class="head-btn head-btn-accent" data-ref="face" aria-label="Restart this board">🙂</button>
+      <div class="head-card" data-ref="time" aria-label="Time">00:00</div>`;
     const q = <T extends HTMLElement>(r: string) => host.querySelector<T>(`[data-ref="${r}"]`)!;
     head = { flags: q('flags'), face: q<HTMLButtonElement>('face'), time: q('time') };
     head.face.addEventListener('click', () => {
@@ -286,7 +286,7 @@ export function createMinesweeper(): Game {
       screen: 'paper',
       head: true,
       pausable: false,
-      tools: [{ id: 'menu', label: '☰', aria: '难度菜单' }],
+      tools: [{ id: 'menu', label: '☰', aria: 'Difficulty menu' }],
     },
 
     mount(container: HTMLElement, context: GameContext): void {

@@ -58,7 +58,7 @@ export function createG2048(): Game {
     host.innerHTML = `
       <div class="head-card"><span class="head-label">SCORE</span><span data-ref="score">000000</span></div>
       <div class="head-card"><span class="head-label">BEST</span><span data-ref="best">000000</span></div>
-      <button class="head-btn" data-ref="undo" aria-label="撤销">↩ UNDO</button>`;
+      <button class="head-btn" data-ref="undo" aria-label="Undo">↩ UNDO</button>`;
     const q = <T extends HTMLElement>(r: string) => host.querySelector<T>(`[data-ref="${r}"]`)!;
     head = { score: q('score'), best: q('best'), undo: q<HTMLButtonElement>('undo') };
     head.undo.addEventListener('click', () => {
@@ -205,7 +205,7 @@ export function createG2048(): Game {
       screen: 'paper',
       head: true,
       pausable: false,
-      tools: [{ id: 'new', label: '↺ NEW', aria: '新局' }],
+      tools: [{ id: 'new', label: '↺ NEW', aria: 'New game' }],
     },
 
     mount(container: HTMLElement, context: GameContext): void {
