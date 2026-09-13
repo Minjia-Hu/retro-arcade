@@ -8,25 +8,29 @@
 // on a page styled after the hub (Bungee title, ink borders, hard shadows) and screenshots
 // that at 2× — so the card stays in step with the site's fonts and colours.
 
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, renameSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { createRequire } from 'node:module';
-import { BASE, GAMES, seedScores, wait } from './game-drivers.mjs';
+import { BASE, GAMES, GOLD, findColor, seedScores, wait } from './game-drivers.mjs';
 
 const require = createRequire(import.meta.url);
 const { chromium } = require('@playwright/test');
 
 const OUT = new URL('../docs/screenshots/social.png', import.meta.url).pathname;
 const VIEW = { width: 540, height: 1000 };
+const VIEW_CANVAS_H = 480; // Snake's and Flappy's canvas height in CSS px at this viewport
+const anchorY = {}; // per-game vertical crop anchor in %, filled while shooting
 
 // The dark-screen games are shot mid-run, before a game-over overlay can appear; the paper
 // boards after their driver finishes (nothing ends them). Gomoku stops short of the win.
-const SNAP_AT = { breakout: 3000, flappy: 4000, tetris: 3500, gomoku: 3200 };
+const SNAP_AT = { breakout: 3000, tetris: 3500, gomoku: 3200 };
 
-// Snake's greedy driver sometimes crashes early: keep re-shooting while it is alive and stop
-// once the settle overlay (a DOM layer over the canvas, `.settle[hidden]` while playing) shows.
-const SNAKE_DEAD = () => !document.querySelector('.settle').hidden;
+// Snake and Flappy can die early under their scripted players: keep re-shooting while alive
+// and stop once the settle overlay (a DOM layer over the canvas, `.settle[hidden]` while
+// playing) shows, so the last shot is the last living frame.
+const KEEP_LAST_ALIVE = new Set(['snake', 'flappy']);
+const DEAD = () => !document.querySelector('.settle').hidden;
 
 // Layout: 4×2 tiles. Dark screens are portrait and get cropped (`cover`), anchored where the
 // action is; paper boards are square and shown whole (`contain`) on their own paper tone.
@@ -63,15 +67,43 @@ for (const { id } of TILES) {
   await page.evaluate(() => document.fonts.ready);
   await wait(page, 400);
 
-  const shot = () => page.locator('canvas').first().screenshot({ path: join(dir, `${id}.png`) });
-  if (id === 'snake') {
+  const final = join(dir, `${id}.png`);
+  const shot = (path = final) => page.locator('canvas').first().screenshot({ path });
+  if (KEEP_LAST_ALIVE.has(id)) {
+    // A frame is only promoted to the final shot once the *next* poll still finds the game
+    // alive: the overlay can appear between a poll and the screenshot that follows it.
+    const pending = join(dir, `${id}.pending.png`);
+    let pendingAnchor = null;
+    const promote = () => {
+      if (!existsSync(pending)) return;
+      renameSync(pending, final);
+      if (pendingAnchor != null) anchorY[id] = pendingAnchor;
+    };
     const run = GAMES[id](page).catch(() => {});
     for (let t = 0; t < 8000; t += 400) {
       await wait(page, 400);
-      if (await page.evaluate(SNAKE_DEAD)) break;
-      await shot();
+      if (await page.evaluate(DEAD)) break;
+      promote();
+      // Both are portrait and get cropped in the card: note where the gold sprite (Flappy's
+      // bird, Snake's head) is in this frame so the crop can be anchored on it, not the centre.
+      // No sprite means the death frame: the game wipes it before the overlay appears.
+      const sprite = await findColor(page, GOLD, id === 'snake' ? 10 : 4);
+      if (!sprite) break;
+      pendingAnchor = Math.round((sprite.y / VIEW_CANVAS_H) * 100);
+      await shot(pending);
     }
+    if (!(await page.evaluate(DEAD))) promote();
     await run;
+  } else if (id === 'minesweeper') {
+    // The scripted clicks can hit a mine (BOOM overlay); reload and try again.
+    for (let attempt = 0; attempt < 6; attempt++) {
+      await GAMES[id](page);
+      if (!(await page.evaluate(DEAD))) break;
+      await page.reload({ waitUntil: 'networkidle' });
+      await page.waitForSelector('.cabinet canvas');
+      await wait(page, 400);
+    }
+    await shot();
   } else if (SNAP_AT[id]) {
     const run = GAMES[id](page).catch(() => {});
     await wait(page, SNAP_AT[id]);
@@ -88,7 +120,7 @@ for (const { id } of TILES) {
 const tile = (t) => `
     <div class="cell">
       <div class="tile${t.paper ? ' fit' : ''}${t.anchor ? ' ' + t.anchor : ''}"${t.paper ? ` style="background:${t.paper}"` : ''}>
-        <img src="${t.id}.png">
+        <img src="${t.id}.png"${anchorY[t.id] != null ? ` style="object-position:center ${anchorY[t.id]}%"` : ''}>
       </div>
       <div class="cap ${t.tone}">${t.label}</div>
     </div>`;

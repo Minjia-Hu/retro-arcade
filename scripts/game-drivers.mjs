@@ -35,7 +35,7 @@ async function tapCanvas(page, fx, fy) {
  * (food pink, head gold, ball white) with a glow around them; the glow is blended, so an
  * exact match only ever hits the sprite itself. Lets the demos actually play.
  */
-async function findColor(page, rgb, block = 0) {
+export async function findColor(page, rgb, block = 0) {
   return page.evaluate(([r, g, b, block]) => {
     const c = document.querySelector('canvas');
     const w = c.width;
@@ -59,7 +59,7 @@ async function findColor(page, rgb, block = 0) {
   }, [...rgb, block]);
 }
 const PINK = [255, 92, 158];
-const GOLD = [255, 201, 60];
+export const GOLD = [255, 201, 60];
 const WHITE = [255, 250, 240];
 
 export const GAMES = {
