@@ -19,7 +19,8 @@
     "preview": "vite preview",
     "test": "vitest run",
     "e2e": "playwright test",
-    "demos": "node scripts/record-games.mjs"
+    "demos": "node scripts/record-games.mjs",
+    "social": "node scripts/social-preview.mjs"
   },
   "devDependencies": {
     "@playwright/test": "^1.63.0",
