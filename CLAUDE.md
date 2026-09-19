@@ -92,3 +92,5 @@ npm run build    # tsc + vite build
 
 - `design_handoff_*/` — 设计参考资料（artboard 与 handoff 说明），硬约定 4 引用的就是它。
 - `docs/plans/` — 实现计划，施工脚手架。
+- `docs/posts/` — 发到各社区的推广稿与封面图，`docs/posts/README.md` 是索引（平台、日期、线上链接）。
+  线上为准；稿子里的平台特有写法（例如 V2EX 版的「俄方块」）是有意为之，别当错字改。

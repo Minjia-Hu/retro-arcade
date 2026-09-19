@@ -5,3 +5,5 @@ playwright-report/
 .DS_Store
 # implementation plans are local scaffolding; the design decisions live in docs/design/
 docs/plans/
+# community posts (V2EX, Juejin, dev.to) and their cover assets; the live copies are canonical
+docs/posts/
