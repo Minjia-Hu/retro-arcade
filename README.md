@@ -1,6 +1,6 @@
 # 🕹️ Retro Arcade
 
-**8 classic games in one browser cabinet. No framework, 34 KB gzipped, fully tested.**
+**8 classic games in one browser cabinet. No framework, 35 KB gzipped, fully tested.**
 
 [English](README.md) · [中文](README.zh-CN.md)
 
@@ -17,9 +17,9 @@
 
 ## Highlights
 
-- **Tiny.** The whole arcade — eight games, the Gomoku AI, the UI — ships as **34 KB gzipped**. Smaller than most single screenshots.
+- **Tiny.** The whole arcade — eight games, the Gomoku AI, the UI — ships as **35 KB gzipped**. Smaller than most single screenshots.
 - **Zero runtime dependencies.** Vite + TypeScript at build time; in the browser it's plain DOM and Canvas 2D. No React, no game engine.
-- **Every rule is a pure function.** Each game's logic has no DOM or Canvas calls, so it is tested without a browser: **269 unit tests** across the game rules, shared modules and UI logic, plus **28 Playwright tests** in a real browser, all in CI.
+- **Rules never touch the DOM.** Each game's logic has no DOM or Canvas calls and takes its random source as a parameter, so it is tested without a browser: **269 unit tests** across the game rules, shared modules and UI logic, plus **28 Playwright tests** in a real browser, all in CI.
 - **Keyboard and touch, everywhere.** Swipe to steer the snake, long-press to flag a mine, tap a real button to enter a digit. Controls that need to be accessible are DOM, not pixels.
 - **A Gomoku opponent that thinks off the main thread.** Minimax with α-β pruning in a Web Worker, three strengths.
 - **No backend, no tracking.** Scores live in `localStorage`. The only network request is Google Fonts.
@@ -97,7 +97,8 @@ ctx.overlay({
 **Logic and rendering never mix.** Every game is `logic.ts` + `index.ts`. `logic.ts` is state and
 rules only — no DOM, no Canvas, random sources injectable — so the whole rule set is unit-tested
 without a browser. `index.ts` draws the state and turns input into logic calls. A full visual redesign
-of this project touched only `index.ts` files; the rules and their tests didn't change by a line.
+of this project touched the rendering code, the shared shell and the stylesheet; the eight `logic.ts`
+files and their tests didn't change by a line.
 
 **Boards on canvas, controls in the DOM.** Grids and sprites are drawn; anything a person has to hit —
 digit pad, difficulty menu, undo button — is a real `<button>` with focus rings and proper touch targets.
