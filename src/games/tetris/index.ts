@@ -283,7 +283,7 @@ export function createTetris(): Game {
       name: 'Tetris',
       icon: '🧱',
       displayName: 'TETRIS',
-      hints: ['←→ MOVE', '↑ ROTATE', '↓ DROP', 'SPACE HARD DROP'],
+      hints: ['←→ MOVE', '↑ ROTATE', '↓ DROP', 'SPACE HARD DROP', 'C HOLD'],
       screen: 'dark',
       side: true,
       pad: true,
