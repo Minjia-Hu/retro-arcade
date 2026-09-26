@@ -42,6 +42,7 @@ const MODES: { id: 'pvp' | AiLevel['id']; label: string }[] = [
 const PILL_LABEL: Record<'pvp' | AiLevel['id'], string> = {
   pvp: 'PVP', easy: 'EASY', medium: 'MEDIUM', hard: 'HARD',
 };
+const PLAY_HINTS = ['CLICK TO PLACE', 'FIVE IN A ROW WINS'];
 
 export function createGomoku(): Game {
   let game: L.GomokuState | null = null; // null = not started (mode menu open)
@@ -55,19 +56,26 @@ export function createGomoku(): Game {
   let thinking = false;
   let worker: Worker | null = null;
   let token = 0; // invalidates stale Worker replies (after restart / back to menu)
-  let endedAt = 0; // when the game ended; 0 means the result overlay was consumed (back to menu)
+  let endedAt = 0; // result shortcut is armed only while the result card is open
   let hover = -1; // hovered intersection, -1 = none
   let hoverCleanup: (() => void) | null = null;
 
-  let head: { black: HTMLElement; white: HTMLElement } | null = null;
+  let head: { black: HTMLElement; white: HTMLElement; result: HTMLElement; newGame: HTMLButtonElement } | null = null;
   let shownAi: boolean | null = null; // cache for the turn-chip labels; reset in buildHead
 
   function buildHead(host: HTMLElement): void {
     host.innerHTML = `
       <div class="chip" data-ref="black" aria-label="Black">● BLACK</div>
-      <div class="chip" data-ref="white" aria-label="White">○ WHITE</div>`;
+      <div class="chip" data-ref="white" aria-label="White">○ WHITE</div>
+      <span class="chip" data-ref="result" role="status" hidden></span>
+      <button class="head-btn" data-ref="new-game" hidden>▶ NEW GAME</button>`;
     const q = (r: string) => host.querySelector<HTMLElement>(`[data-ref="${r}"]`)!;
-    head = { black: q('black'), white: q('white') };
+    const newGame = q('new-game') as HTMLButtonElement;
+    newGame.addEventListener('click', () => {
+      newGame.blur();
+      showMenu();
+    });
+    head = { black: q('black'), white: q('white'), result: q('result'), newGame };
     shownAi = false; // matches the hard-coded BLACK/WHITE defaults above
   }
 
@@ -82,6 +90,13 @@ export function createGomoku(): Game {
       head.white.textContent = ai ? '○ CPU' : '○ WHITE';
     }
     const turn = game.turn;
+    const ended = game.status !== 'playing';
+    head.black.hidden = ended;
+    head.white.hidden = ended;
+    head.result.hidden = !ended;
+    head.newGame.hidden = !ended;
+    const title = ended ? resultTitle() : '';
+    if (head.result.textContent !== title) head.result.textContent = title;
     head.black.classList.toggle('is-turn', turn === L.BLACK && game.status === 'playing');
     head.white.classList.toggle('is-turn', turn === L.WHITE && game.status === 'playing');
   }
@@ -156,6 +171,8 @@ export function createGomoku(): Game {
     token += 1;
     thinking = false;
     hover = -1;
+    endedAt = 0;
+    ctx?.setHints(PLAY_HINTS);
     ctx?.overlay(null);
     ctx?.setPill(PILL_LABEL[m]);
     ctx?.audio.play('click');
@@ -163,7 +180,9 @@ export function createGomoku(): Game {
   }
 
   function showMenu(): void {
+    endedAt = 0;
     const resumable = game !== null && game.status === 'playing';
+    const reviewable = game !== null && game.status !== 'playing';
     ctx?.overlay({
       title: 'GOMOKU',
       tone: 'win',
@@ -172,22 +191,37 @@ export function createGomoku(): Game {
         ...(resumable
           ? [{ label: '✕ RESUME', kind: 'secondary' as const, onPress: () => ctx?.overlay(null) }]
           : []),
+        ...(reviewable
+          ? [{ label: 'VIEW BOARD', kind: 'secondary' as const, onPress: viewBoard }]
+          : []),
         ...MODES.map((m) => ({
           label: m.label, kind: 'secondary' as const, onPress: () => startGame(m.id),
         })),
       ],
-      hints: [resumable ? 'RESUME OR PICK A MODE' : 'PICK A MODE TO BEGIN'],
+      hints: [resumable ? 'RESUME OR PICK A MODE' : reviewable ? 'VIEW BOARD OR PICK A MODE' : 'PICK A MODE TO BEGIN'],
     });
   }
 
-  /** While the result overlay is up, Space / a canvas tap = ▶ NEW GAME (not for the mode menu). Returns whether the input was consumed */
-  function restartIfEnded(): boolean {
+  function viewBoard(): void {
+    if (!game || game.status === 'playing') return;
+    endedAt = 0;
+    hover = -1;
+    ctx?.overlay(null);
+  }
+
+  /** Result shortcuts reveal the final board; menus and review never consume them. */
+  function viewResultIfEnded(): boolean {
     if (!ctx?.overlayOpen() || !game || game.status === 'playing' || !endedAt) return false;
     if (performance.now() - endedAt >= 400) { // clicks pile up at the moment of the last move
-      endedAt = 0; // pressing again with the menu open doesn't reopen it
-      showMenu();
+      viewBoard();
     }
     return true;
+  }
+
+  function resultTitle(): string {
+    if (!game || game.status === 'draw') return 'DRAW';
+    if (mode !== 'pvp') return game.winner === L.BLACK ? 'YOU WIN' : 'CPU WINS';
+    return game.winner === L.BLACK ? 'BLACK WINS' : 'WHITE WINS';
   }
 
   function reportEnd(): void {
@@ -195,12 +229,18 @@ export function createGomoku(): Game {
     endedAt = performance.now();
     const draw = game.status === 'draw';
     const humanWon = mode === 'pvp' || game.winner === L.BLACK;
+    ctx?.setHints(draw
+      ? ['FINAL BOARD', 'RING: LAST MOVE']
+      : ['FINAL BOARD', 'RING: LAST MOVE', 'LINE: WINNING ROW']);
     ctx?.overlay({
-      title: draw ? 'DRAW' : game.winner === L.BLACK ? 'BLACK WINS' : 'WHITE WINS',
+      title: resultTitle(),
       tone: draw ? 'win' : humanWon ? 'win' : 'lose',
       lines: [MODES.find((m) => m.id === mode)!.label],
-      actions: [{ label: '▶ NEW GAME', onPress: showMenu }],
-      hints: ['SPACE / TAP FOR A NEW GAME'],
+      actions: [
+        { label: 'VIEW BOARD', onPress: viewBoard },
+        { label: '▶ NEW GAME', kind: 'secondary', onPress: showMenu },
+      ],
+      hints: ['SPACE / TAP TO VIEW BOARD'],
     });
   }
 
@@ -221,7 +261,7 @@ export function createGomoku(): Game {
   }
 
   function placeStone(cssX: number, cssY: number): void {
-    if (restartIfEnded()) return;
+    if (viewResultIfEnded()) return;
     if (!canInteract() || !game) return;
     const idx = intersectionAt(cssX, cssY);
     if (idx < 0 || game.board[idx] !== L.EMPTY) return;
@@ -299,6 +339,41 @@ export function createGomoku(): Game {
     g.restore();
   }
 
+  /** Presentation only: highlight winning runs through the last move using logic.ts's directions. */
+  function drawFinalMarkers(): void {
+    if (!g || !game || game.status === 'playing' || game.last < 0) return;
+    const x = game.last % L.SIZE;
+    const y = Math.floor(game.last / L.SIZE);
+    g.save();
+    g.strokeStyle = PAPER.hover;
+    g.lineWidth = 3;
+    g.lineCap = 'round';
+    if (game.status === 'won') {
+      for (const [dx, dy] of L.DIRS) {
+        let x1 = x, y1 = y, x2 = x, y2 = y;
+        let count = 1;
+        while (L.inBounds(x1 - dx, y1 - dy) && game.board[at(x1 - dx, y1 - dy)] === game.winner) {
+          x1 -= dx; y1 -= dy; count++;
+        }
+        while (L.inBounds(x2 + dx, y2 + dy) && game.board[at(x2 + dx, y2 + dy)] === game.winner) {
+          x2 += dx; y2 += dy; count++;
+        }
+        if (count < 5) continue;
+        g.beginPath();
+        g.moveTo(px(x1), px(y1));
+        g.lineTo(px(x2), px(y2));
+        g.stroke();
+      }
+    }
+    // A contrasting centre keeps the last-move ring distinct from the winning line.
+    g.beginPath();
+    g.arc(px(x), px(y), 5, 0, Math.PI * 2);
+    g.fillStyle = game.board[game.last] === L.BLACK ? PAPER.black : PAPER.white;
+    g.fill();
+    g.stroke();
+    g.restore();
+  }
+
   function render(): void {
     if (!g) return;
     drawBoardBase();
@@ -306,6 +381,7 @@ export function createGomoku(): Game {
       for (let i = 0; i < game.board.length; i++) {
         if (game.board[i] !== L.EMPTY) drawStone(i, game.board[i]);
       }
+      drawFinalMarkers();
       if (canInteract()) drawHoverGhost();
     }
     syncHead();
@@ -317,7 +393,7 @@ export function createGomoku(): Game {
       name: 'Gomoku',
       icon: '⚫',
       displayName: 'GOMOKU',
-      hints: ['CLICK TO PLACE', 'FIVE IN A ROW WINS'],
+      hints: PLAY_HINTS,
       screen: 'paper',
       head: true,
       pausable: false,
@@ -336,7 +412,14 @@ export function createGomoku(): Game {
 
       ctx.input.onTapAt(canvas, placeStone);
       ctx.input.onKey((code) => {
-        if (code === 'Space' || code === 'Enter') restartIfEnded();
+        if (code !== 'Space' && code !== 'Enter') return;
+        // Let a focused native button own the action. InputService prevents Space's
+        // default, so activate it here; Enter already has native button behavior.
+        if (document.activeElement instanceof HTMLButtonElement) {
+          if (code === 'Space') document.activeElement.click();
+          return;
+        }
+        viewResultIfEnded();
       });
 
       // The hover ghost needs move coordinates, which InputService doesn't offer; native listeners go straight on the canvas

@@ -314,7 +314,7 @@ test('SUDOKU: Space after solving returns to the difficulty menu', async ({ page
   await expect(page.locator('.settle-title')).toHaveText('DIFFICULTY');
 });
 
-test('GOMOKU: Space after a result returns to the mode menu', async ({ page }) => {
+test('GOMOKU: Space after a result reveals the final board', async ({ page }) => {
   await page.goto('/#/gomoku');
   await page.click('[data-act="overlay:0"]'); // 2 PLAYERS
   await expect(page.locator('.settle-card')).toBeHidden();
@@ -331,7 +331,9 @@ test('GOMOKU: Space after a result returns to the mode menu', async ({ page }) =
 
   await page.waitForTimeout(450);
   await page.keyboard.press('Space');
-  await expect(page.locator('.settle-title')).toHaveText('GOMOKU');
+  await expect(page.locator('.settle-card')).toBeHidden();
+  await expect(page.locator('[data-ref="result"]')).toHaveText('BLACK WINS');
+  await expect(page.locator('.cab-hints')).toContainText('FINAL BOARD');
 });
 
 test('MINES: Space after the game ends restarts at the same difficulty', async ({ page }) => {
